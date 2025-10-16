@@ -4,8 +4,7 @@
  * A utility class for parsing command-line arguments, loading environment variables, and running shell commands.
  *
  * This class provides a convenient interface for building and parsing CLI options, loading .env files,
- * and executing shell scripts from Groovy applications. It is designed to support the Slack support library's
- * command-line interface and related automation tasks.
+ * and executing shell scripts from Groovy applications.
  *
  * Example usage:
  * <pre>

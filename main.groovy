@@ -79,11 +79,15 @@ if (options.test) {
         hero.description = "The Protagonist"
         hero.bio = "A friendly neighborhood Code Wizard"
         println "### Our hero:"
-        println hero.toJsonPretty()
+        println hero.toJson()
 
         hero.armorType = ArmorType.LIGHT
         println "### After dawning his trousers, our hero is now:"
-        println hero.toJsonPretty()
+        println hero.toJson()
+
+        println "### Putting ${hero.name} in the house."
+        home.addOccupant(hero)
+        println home.toJsonPretty()
     }
 
     testRoutines["Inventory"] = {
@@ -92,28 +96,28 @@ if (options.test) {
         weapon.description = "A wizards staff"
         hero.inventory.addItem(weapon)
         println "### With ${weapon.name} in hand, our hero now has this:"
-        println hero.toJsonPretty()
+        println hero.toJson()
 
         hero.inventory.useItem(weapon)
         println "### Our hero used ${weapon.name}, but it should still be in his inventory:"
-        println hero.toJsonPretty()
+        println hero.toJson()
 
         def potion = new Item("Healing potion", ItemType.CONSUMABLE)
         potion.description = "Some brain-sauce for the static tantrums"
         potion.stack = 3
         hero.inventory.addItem(potion)
         println "### After picking up a stack of ${potion.stack} ${potion.name}(s), our hero now has this:"
-        println hero.toJsonPretty()
+        println hero.toJson()
 
         hero.inventory.useItem(potion)
         println "### And after downing a breakfast of champions (${potion.name}), he is left with this:"
-        println hero.toJsonPretty()
+        println hero.toJson()
 
         def muffin = new Item("PoppySeed Muffin", ItemType.CONSUMABLE)
         muffin.description = "A lil' nibble for later"
         hero.inventory.addItem(muffin)
         println "### Our hero picked up a ${muffin.name}, which makes his character sheet this:"
-        println hero.toJsonPretty()
+        println hero.toJson()
 
 
         println "### Adding anything else to our bag should fail:"
@@ -127,11 +131,11 @@ if (options.test) {
 
         println "### Using a potion:"
         hero.inventory.useItem(potion)
-        println hero.toJsonPretty()
+        println hero.toJson()
 
         println "### And another:"
         hero.inventory.useItem(potion)
-        println hero.toJsonPretty()
+        println hero.toJson()
 
         println "### And... another? (should fail):"
         try {
@@ -142,7 +146,7 @@ if (options.test) {
         }
 
         println "### Finally, or hero ends up like this:"
-        println hero.toJsonPretty()
+        println hero.toJson()
     }
 
     testRoutines["Narrator"] = {
@@ -153,7 +157,7 @@ if (options.test) {
             home.toJson(),
             "You are joined by:",
             hero.toJson(),
-            "They say: Good Morning. Would you please update me about my little house, and some details about my character?"
+            "They say: Good Morning. Would you please describe this location, it's occupants, and some details about the ${hero.name} character?"
         ].join('\r\n')
         def output = narrator.generateResponse(input)
 
