@@ -78,7 +78,8 @@ class Poi {
             "  latitude: ${location.lat}",
             "  longitude: ${location.lon}",
             "  altitude: ${location.alt}",
-            "  inventory:\r\n${inventory}"
+            "  inventory:\r\n${inventory}",
+            "  occupants (max:${occupantsMax}, occ:${occupantsCurrent}):\r\n${occupants}"
         ]
         return output.join("\r\n")
     }
