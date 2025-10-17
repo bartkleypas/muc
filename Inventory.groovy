@@ -37,7 +37,6 @@ class Inventory {
             return
         }
         if (item.stack <= 1) {
-            println "Exhausted stock of ${item.name}. Removing from bag."
             removeItem(item)
             return
         }
@@ -57,8 +56,8 @@ class Inventory {
     String toString() {
         def output = []
         output.add("  - name: ${name}")
-        output.add("    size: ${slotsMax}")
-        output.add("    occupied: ${slotsOccupied}")
+        output.add("    slots: ${slotsMax}")
+        output.add("    taken: ${slotsOccupied}")
         items.each { name, item ->
             output.add("    - item: ${name}")
             output.add("      stack: ${item.stack}")

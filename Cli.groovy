@@ -20,6 +20,7 @@ class Cli {
     CliBuilder cliBuilder
     OptionAccessor options
     LogLevel logLevel
+    Logger logger
 
     /**
      * The .env file containing environment variables.
@@ -34,6 +35,7 @@ class Cli {
      */
     Cli() {
         this.logLevel = LogLevel.INFO
+        this.logger = new Logger()
         cliBuilder = new CliBuilder(
             usage: 'groovy main [args]'
         )
@@ -81,6 +83,14 @@ class Cli {
         }
         return options
     }
+
+    String log(String logLine) {
+        println logLine
+    }
+}
+
+class Logger {
+
 }
 
 class RetryHandler {

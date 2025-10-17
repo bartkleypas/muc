@@ -39,17 +39,19 @@ class Character {
 
     @Override
     String toString() {
-        def output = [
-            "Character:",
+        def out = [
             "- name: ${name}",
             "  description: ${description}",
             "  bio: ${bio}",
             "  health: ${health}",
             "  armor: ${armorType}",
-            "  location: ${location.lat}, ${location.lon}, ${location.alt}",
+            "  location: ${location}",
             "  inventory:",
-            inventory
         ]
-        return output.join('\r\n')
+        out.add("  - ${inventory.name}")
+        def inv = inventory.items.each { name, item ->
+            out.add("    - ${name}")
+        }
+        return out.join('\r\n')
     }
 }

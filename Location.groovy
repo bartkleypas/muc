@@ -18,7 +18,7 @@ class Location {
             "lon: ${lon}",
             "alt: ${alt}"
         ]
-        return output.join("\r\n")
+        return output.join(", ")
     }
 }
 
@@ -27,7 +27,7 @@ class Poi {
     String description
     Location location
     Inventory inventory
-    Map<String, List<Character>> occupants
+    List<String> occupants
     int occupantsMax
     int occupantsCurrent
     float radius
@@ -37,7 +37,7 @@ class Poi {
         this.description = description
         this.location = location
         this.inventory = new Inventory(name: name, slotsMax: 10)
-        this.occupants = new HashMap<String, List<Character>>()
+        this.occupants = []
         this.occupantsMax = 10
         this.occupantsCurrent = 0
         this.radius = 10 // in meters? some units i guess
@@ -47,7 +47,7 @@ class Poi {
         if (occupantsCurrent >= occupantsMax) {
             throw new RuntimeException("Occupants max reached. Cannot add new occupant.")
         }
-        occupants.put(occupant.name, new ArrayList<Character>() {{ add(occupant) }})
+        occupants.add(occupant.name)
         occupantsCurrent++
     }
 
@@ -72,15 +72,15 @@ class Poi {
     @Override
     String toString() {
         def output = [
-            "Location:",
             "- name: ${name}",
             "  description: ${description}",
-            "  latitude: ${location.lat}",
-            "  longitude: ${location.lon}",
-            "  altitude: ${location.alt}",
+            "  location: ${location}",
             "  inventory:\r\n${inventory}",
-            "  occupants (max:${occupantsMax}, occ:${occupantsCurrent}):\r\n${occupants}"
+            "  occupants:",
+            "    max: ${occupantsMax}",
+            "    occ: ${occupantsCurrent}"
         ]
+        occupants.each { output.add("    - ${it}") }
         return output.join("\r\n")
     }
 }

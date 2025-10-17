@@ -3,7 +3,7 @@ class Rng {
 }
 
 enum DiceType {
-    D2,
+    D2, // Available, but also a "Coin"... See Coin class below
     D4,
     D6,
     D8,
@@ -59,12 +59,7 @@ class Coin {
 
     @Override
     String toString() {
-        String output
-        if ( this.val == true ) {
-            output = "Heads"
-        } else {
-            output = "Tails"
-        }
-        return output
+        def out = this.val ? "Heads" : "Tails"
+        return out
     }
 }

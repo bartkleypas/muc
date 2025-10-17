@@ -31,14 +31,14 @@ class Model {
      * @return The generated response from the Ollama service, or null if an error occurred.
      */
     String generateResponse(String prompt) {
-        URL url = new URL("${provider.apiUrl}/completions")
+        URL url = new URL("${provider.apiUrl}")
 
         def post = url.openConnection()
         def body = [
             'model': model,
             'messages': [[
                 "role": "user",
-                "content": prompt
+                "content": "${systemPrompt}\r\n${prompt}"
             ]],
             'temperature': 0.7
         ]

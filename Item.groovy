@@ -1,7 +1,7 @@
 import groovy.json.JsonOutput
 
 enum ItemType {
-    WEAPON,
+    TOOL,
     ARMOR,
     TRINKET,
     CONSUMABLE,
