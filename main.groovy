@@ -167,7 +167,7 @@ if (options.test) {
         cli.log(out.join('\r\n'))
     }
 
-    def narrator
+    def george
     testRoutines["Narrator"] = {
         def out = []
         def hero = new Character("George")
@@ -188,7 +188,7 @@ if (options.test) {
         def data = new JsonSlurper().parseText(model.generateResponse(input))
         out.add(data.choices[0].message.content)
 
-        narrator = hero
+        george = hero
         cli.log(out.join('\r\n'))
     }
 
