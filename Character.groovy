@@ -1,7 +1,7 @@
 import groovy.json.JsonOutput
 
 enum ArmorType {
-    NAKED,
+    NA,
     LIGHT,
     MEDIUM,
     HEAVY,
@@ -22,7 +22,7 @@ class Character {
         this.description = description
         this.bio = bio
         this.health = 10
-        this.armorType = ArmorType.NAKED
+        this.armorType = ArmorType.NA
         this.inventory = new Inventory() // Initialize the inventory
         this.location = location
     }

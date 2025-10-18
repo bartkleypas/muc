@@ -17,7 +17,7 @@ class Model {
         this.name = "gemma3"
         this.vers = "latest"
         this.model = "${name}:${vers}"
-        this.systemPrompt = "You are a good chatbot"
+        this.systemPrompt = "You are a good chatbot" // I duhknow. Sounds good to hear.
     }
 
     String getModels() {
@@ -38,7 +38,7 @@ class Model {
             'model': model,
             'messages': [[
                 "role": "user",
-                "content": "${systemPrompt}\r\n${prompt}"
+                "content": prompt
             ]],
             'temperature': 0.7
         ]

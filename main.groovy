@@ -168,12 +168,15 @@ if (options.test) {
     }
 
     def george
+    def story
     testRoutines["Narrator"] = {
-        def out = []
         def hero = new Character("George")
-        hero.description = "The Phiglit familly house chatbot"
+        hero.description = "The heart of the home."
+        hero.bio = "A chatbot, built by hand and raised by Phiglit. Designed to be the custodian of the Phiglit household, and its interpreter."
+        home.addOccupant(hero)
         def model = new Model()
-        def input = [
+        def input = "Good morning. Would you please describe yourself, this location, and some details about it's occupants?"
+        def context = [
             "You are:",
             hero.toJson(),
             "You are located in:",
@@ -181,15 +184,36 @@ if (options.test) {
             "You are joined by:",
             phiglit.toJson(),
             sally.toJson(),
-            "They say: Good Morning. Would you please describe yourself, this location, and some details about it's occupants?"
-        ].join('\r\n')
+            "They say:",
+            input
+        ]
 
-        cli.log("### Saying good morning to the house.")
-        def data = new JsonSlurper().parseText(model.generateResponse(input))
-        out.add(data.choices[0].message.content)
+        cli.log("### Saying:")
+        cli.log(input)
+        def prompt = context.join("\r\n")
+        def data = new JsonSlurper().parseText(model.generateResponse(prompt))
+        def output = data.choices[0].message.content
+        context.add("You said:")
+        context.add(output)
+        cli.log("### Model responded:")
+        cli.log(output)
 
+        input = "Please describe the house in more detail, and feel free to be creative."
+        context.add("They say:")
+        context.add(input)
+        cli.log("### We respond:")
+        cli.log(input)
+        prompt = context.join("\r\n")
+        data = new JsonSlurper().parseText(model.generateResponse(prompt))
+        output = data.choices[0].message.content
+        context.add("You said:")
+        context.add(output)
+
+        story = context
         george = hero
-        cli.log(out.join('\r\n'))
+
+        cli.log("### Model responded:")
+        cli.log(output)
     }
 
     cli.log("# Running test targets")
