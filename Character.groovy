@@ -10,6 +10,7 @@ enum ArmorType {
 
 class Character {
     String name
+    String role
     String description
     String bio
     int health
@@ -17,8 +18,9 @@ class Character {
     Inventory inventory
     Location location
 
-    Character(String name) {
+    Character() {
         this.name = name
+        this.role = "user"
         this.description = description
         this.bio = bio
         this.health = 10

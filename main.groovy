@@ -72,10 +72,10 @@ if (options.test) {
         def out = []
         out.add("### A Hero:")
 
-        def hero = new Character("Phiglit")
-        hero.location = location
+        def hero = new Character(name: "Phiglit", role: "user")
         hero.description = "The Old and wise Wizard"
         hero.bio = "A friendly neighborhood Code Wizard"
+        hero.location = location
 
         out.add(hero.toString())
 
@@ -100,7 +100,7 @@ if (options.test) {
         def out = []
         out.add("### A Hero:")
 
-        def hero = new Character("Sally")
+        def hero = new Character(name: "Sally", role: "user")
         hero.description = "A Natural Wonder"
         hero.bio = "A friendly neighborhood Gardener"
         hero.armorType = ArmorType.LIGHT
@@ -170,12 +170,15 @@ if (options.test) {
     def george
     def story
     testRoutines["Narrator"] = {
-        def hero = new Character("George")
+        def hero = new Character(name: "George", role: "assistant")
         hero.description = "The heart of the home."
         hero.bio = "A chatbot, built by hand and raised by Phiglit. Designed to be the custodian of the Phiglit household, and its interpreter."
+        def pen = new Item("An efficient and beautiful fountain pen, used to write our ongoing story.", ItemType.TOOL)
+        hero.inventory.addItem(pen)
         home.addOccupant(hero)
+
         def model = new Model()
-        def input = "Good morning. Would you please describe yourself, this location, and some details about it's occupants?"
+
         def context = [
             "You are:",
             hero.toJson(),
@@ -184,36 +187,102 @@ if (options.test) {
             "You are joined by:",
             phiglit.toJson(),
             sally.toJson(),
-            "They say:",
-            input
         ]
 
-        cli.log("### Saying:")
-        cli.log(input)
+        def input = "Good morning ${hero.name}. My name is ${phiglit.name}. Would you please describe yourself in detail, including any gear you have on hand?"
+        cli.log("### ${phiglit.name} says:\r\n${input}")
+        context.add(input)
+
         def prompt = context.join("\r\n")
         def data = new JsonSlurper().parseText(model.generateResponse(prompt))
         def output = data.choices[0].message.content
-        context.add("You said:")
         context.add(output)
-        cli.log("### Model responded:")
-        cli.log(output)
+        cli.log("### ${hero.name} says:\r\n${output}")
 
-        input = "Please describe the house in more detail, and feel free to be creative."
-        context.add("They say:")
+        input = "Hello ${hero.name}. I'm ${sally.name}. Please describe the house in more detail, and feel free to be creative."
         context.add(input)
-        cli.log("### We respond:")
-        cli.log(input)
+        cli.log("### ${sally.name} says:\r\n${input}")
+
         prompt = context.join("\r\n")
         data = new JsonSlurper().parseText(model.generateResponse(prompt))
         output = data.choices[0].message.content
-        context.add("You said:")
+        cli.log("### ${hero.name} says:\r\n${output}")
         context.add(output)
 
         story = context
         george = hero
 
-        cli.log("### Model responded:")
-        cli.log(output)
+    }
+
+    def rosie
+    testRoutines["Illustrator"] = {
+        def hero = new Character(name: "Rosie", role: "assistant")
+        hero.description = "A Creative Digital Artist"
+        hero.bio = "A Digital Artist, built by hand and raised by Phiglit, designed to generate prompts meant for a digital canvas."
+        def brush = new Item("Paintbrush of Illusion", ItemType.TOOL)
+        brush.description = "An elegent and efficiant paintbrush, used to illustrate our ongoing story"
+        hero.inventory.addItem(brush)
+        home.addOccupant(hero)
+
+        def model = new Model()
+        def input = "Good morning ${hero.name}, and welcome. I'm ${george.name}. Would you please describe yourself, and any gear you might have on hand?"
+        def context = [
+            "You are:",
+            hero.toJson(),
+            "You are located in:",
+            home.toJson(),
+            "You are joined by:",
+            phiglit.toJson(),
+            sally.toJson(),
+            george.toJson(),
+        ]
+
+        context.add(input)
+        cli.log("### ${george.name} says:\r\n${input}")
+
+        def prompt = context.join("\r\n")
+        data = new JsonSlurper().parseText(model.generateResponse(prompt))
+        output = data.choices[0].message.content
+
+        context.add(output)
+        cli.log("### ${hero.name} says:\r\n${output}")
+
+        input = "Please write a new prompt for Automatic1111 to generate a self portrait, using tags appropriate for the Dreamshaper model. Please output just a json string."
+        context.add(input)
+        cli.log("### ${george.name} says:\r\n${input}")
+
+        prompt = context.join("\r\n")
+        data = new JsonSlurper().parseText(model.generateResponse(prompt))
+        output = data.choices[0].message.content
+
+        context.add(output)
+        cli.log("### ${hero.name} says:\r\n${output}")
+
+        input = "We are now going to bring you up to speed with the story so far."
+        context.add(input)
+        cli.log("### ${george.name} says:\r\n${input}")
+
+        context.add(story) // and here we give a boat load of context... an absolute assload of potential tokens.
+
+        prompt = context.join("\r\n")
+        data = new JsonSlurper().parseText(model.generateResponse(prompt))
+        output = data.choices[0].message.content
+
+        context.add(output)
+        cli.log("### ${hero.name} says:\r\n${output}")
+
+        input = "Please write a new prompt for Automatic1111 to generate an image of the scene, using tags appropriate for the Dreamshaper model. Please output just a json string."
+        context.add(input)
+        cli.log("### ${george.name} says:\r\n${input}")
+
+        prompt = context.join("\r\n")
+        data = new JsonSlurper().parseText(model.generateResponse(prompt))
+        output = data.choices[0].message.content
+
+        cli.log("### ${hero.name} says:\r\n${output}")
+
+        story = context
+        rosie = hero
     }
 
     cli.log("# Running test targets")

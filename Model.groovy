@@ -31,7 +31,7 @@ class Model {
      * @return The generated response from the Ollama service, or null if an error occurred.
      */
     String generateResponse(String prompt) {
-        URL url = new URL("${provider.apiUrl}")
+        URL url = new URL(provider.apiUrl)
 
         def post = url.openConnection()
         def body = [
@@ -87,4 +87,8 @@ class Provider {
         path.withInputStream { props.load(it) }
         return props
     }
+}
+
+class Memory {
+
 }
