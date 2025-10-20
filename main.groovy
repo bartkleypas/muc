@@ -247,7 +247,18 @@ if (options.test) {
         context.add(output)
         cli.log("### ${hero.name} says:\r\n${output}")
 
-        input = "Please write a new prompt for Automatic1111 to generate a self portrait, using tags appropriate for the Dreamshaper model. Please output just a json string."
+        input = "Please write a prompt for Automatic1111 to generate a self portrait, including your items. Please use descriptions appropriate for the Dreamshaper model, and output just a json string."
+        context.add(input)
+        cli.log("### ${george.name} says:\r\n${input}")
+
+        prompt = context.join("\r\n")
+        data = new JsonSlurper().parseText(model.generateResponse(prompt))
+        output = data.choices[0].message.content
+
+        context.add(output)
+        cli.log("### ${hero.name} says:\r\n${output}")
+
+        input = "Please write a prompt for Automatic1111 to generate a portrait of me, ${george.name}, Please inclide my gear, use descriptions appropriate for the Dreamshaper model. Please output just a json string."
         context.add(input)
         cli.log("### ${george.name} says:\r\n${input}")
 
