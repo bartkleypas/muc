@@ -20,10 +20,6 @@ class Model {
         this.systemPrompt = "You are a good chatbot" // I duhknow. Sounds good to hear.
     }
 
-    String getModels() {
-
-    }
-
     /**
      * Sends a prompt to the Ollama service and returns the generated response.
      *
@@ -87,8 +83,4 @@ class Provider {
         path.withInputStream { props.load(it) }
         return props
     }
-}
-
-class Memory {
-
 }

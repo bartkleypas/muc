@@ -4,6 +4,7 @@ import groovy.json.JsonSlurper
 
 import Cli
 import Character
+import Illustrator
 import Inventory
 import Item
 import Location
@@ -105,6 +106,7 @@ if (options.test) {
         hero.bio = "A friendly neighborhood Gardener"
         hero.armorType = ArmorType.LIGHT
         hero.location = location
+        home.addOccupant(hero)
 
         out.add("### And she comes prepared, with:")
         def tool = new Item("Shovel of Fortitude", ItemType.TOOL)
@@ -161,7 +163,6 @@ if (options.test) {
         out.add("### Finally, our hero ends up like this:")
         out.add(hero.toString())
 
-        home.addOccupant(hero)
 
         sally = hero
         cli.log(out.join('\r\n'))
@@ -173,7 +174,8 @@ if (options.test) {
         def hero = new Character(name: "George", role: "assistant")
         hero.description = "The heart of the home."
         hero.bio = "A chatbot, built by hand and raised by Phiglit. Designed to be the custodian of the Phiglit household, and its interpreter."
-        def pen = new Item("An efficient and beautiful fountain pen, used to write our ongoing story.", ItemType.TOOL)
+        def pen = new Item("A Pen of Writing", ItemType.TOOL)
+        pen.description = "An ornate, but efficiant fountain pen"
         hero.inventory.addItem(pen)
         home.addOccupant(hero)
 
@@ -199,19 +201,8 @@ if (options.test) {
         context.add(output)
         cli.log("### ${hero.name} says:\r\n${output}")
 
-        input = "Hello ${hero.name}. I'm ${sally.name}. Please describe the house in more detail, and feel free to be creative."
-        context.add(input)
-        cli.log("### ${sally.name} says:\r\n${input}")
-
-        prompt = context.join("\r\n")
-        data = new JsonSlurper().parseText(model.generateResponse(prompt))
-        output = data.choices[0].message.content
-        cli.log("### ${hero.name} says:\r\n${output}")
-        context.add(output)
-
         story = context
         george = hero
-
     }
 
     def rosie
@@ -226,7 +217,7 @@ if (options.test) {
 
         def model = new Model()
         def input = "Good morning ${hero.name}, and welcome. I'm ${george.name}. Would you please describe yourself, and any gear you might have on hand?"
-        def context = [
+        context = [
             "You are:",
             hero.toJson(),
             "You are located in:",
@@ -247,7 +238,8 @@ if (options.test) {
         context.add(output)
         cli.log("### ${hero.name} says:\r\n${output}")
 
-        input = "Please write a prompt for Automatic1111 to generate a self portrait, including your items. Please use descriptions appropriate for the Dreamshaper model, and output just a json string."
+        // Ask for a prompt to feed to Comfy UI
+        input = "Please write a prompt for ComfyUI to generate a self portrait, including your items. Please tailor your description as appropriate for the Dreamshaper model. Please output your response as json."
         context.add(input)
         cli.log("### ${george.name} says:\r\n${input}")
 
@@ -258,39 +250,34 @@ if (options.test) {
         context.add(output)
         cli.log("### ${hero.name} says:\r\n${output}")
 
-        input = "Please write a prompt for Automatic1111 to generate a portrait of me, ${george.name}, Please inclide my gear, use descriptions appropriate for the Dreamshaper model. Please output just a json string."
-        context.add(input)
-        cli.log("### ${george.name} says:\r\n${input}")
+        def lines = output.readLines()
+        def cleaned = lines.size() > 1 ? lines.subList(1, lines.size() -1) : []
+        data = new JsonSlurper().parseText(cleaned.join())
 
+        // _Now_ we make the thing.
+        def canvas = new Illustrator()
+        canvas.style = ImageType.PORTRAIT
+        canvas.title = "${hero.name}"
+        prompt = canvas.getPrompt(data.prompt)
+
+        cli.log(canvas.generateImage(prompt))
+
+        // and another
+        input = "Please write a prompt for ComfyUI to generate an image of George. Please tailor your description as appropriate for the Dreamshaper model. Please output your response as json."
+        context.add(input)
         prompt = context.join("\r\n")
         data = new JsonSlurper().parseText(model.generateResponse(prompt))
         output = data.choices[0].message.content
+        lines = output.readLines()
+        cleaned = lines.size() > 1 ? lines.subList(1, lines.size() -1) : []
+        data = new JsonSlurper().parseText(cleaned.join())
 
-        context.add(output)
-        cli.log("### ${hero.name} says:\r\n${output}")
+        canvas = new Illustrator()
+        canvas.style = ImageType.PORTRAIT
+        canvas.title = "${george.name}"
+        prompt = canvas.getPrompt(data.prompt)
 
-        input = "We are now going to bring you up to speed with the story so far."
-        context.add(input)
-        cli.log("### ${george.name} says:\r\n${input}")
-
-        context.add(story) // and here we give a boat load of context... an absolute assload of potential tokens.
-
-        prompt = context.join("\r\n")
-        data = new JsonSlurper().parseText(model.generateResponse(prompt))
-        output = data.choices[0].message.content
-
-        context.add(output)
-        cli.log("### ${hero.name} says:\r\n${output}")
-
-        input = "Please write a new prompt for Automatic1111 to generate an image of the scene, using tags appropriate for the Dreamshaper model. Please output just a json string."
-        context.add(input)
-        cli.log("### ${george.name} says:\r\n${input}")
-
-        prompt = context.join("\r\n")
-        data = new JsonSlurper().parseText(model.generateResponse(prompt))
-        output = data.choices[0].message.content
-
-        cli.log("### ${hero.name} says:\r\n${output}")
+        cli.log(canvas.generateImage(prompt))
 
         story = context
         rosie = hero
@@ -303,4 +290,15 @@ if (options.test) {
     }
 
     println "# And this concludes the tests. If you can read this, it means everything 'passed'"
+}
+
+if (options.image) {
+    def illustrator = new Illustrator()
+    illustrator.style = ImageType.PORTRAIT
+    illustrator.title = "ComfyUI"
+    println "Prompt here:"
+    def input = System.in.newReader().readLine()
+    def prompt = illustrator.getPrompt(input)
+
+    illustrator.generateImage(prompt)
 }

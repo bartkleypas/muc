@@ -48,6 +48,7 @@ class Cli {
             h(longOpt: 'help', 'Try to help')
             t(longOpt: 'test', 'Run tests')
             j(longOpt: 'json', 'json output')
+            i(longOpt: 'image', 'generate an image')
         }
     }
 
