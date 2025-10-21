@@ -35,7 +35,7 @@ class Dice {
         this.faces = type.getFaces(type)
         this.roll = (Math.random() * faces) + 1
     }
-    
+
     Dice roll() {
         return new Dice(type)
     }

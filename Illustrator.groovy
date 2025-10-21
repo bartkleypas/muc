@@ -61,7 +61,7 @@ class Illustrator {
         post.setDoOutput(true)
         post.setRequestProperty("Content-Type", "application/json")
         post.getOutputStream().write(body.getBytes("UTF-8"))
-        
+
         def responseCode = post.getResponseCode()
 
         if (responseCode == 200) {
@@ -71,7 +71,6 @@ class Illustrator {
         throw new RuntimeException("Something Went wrong.")
         return prompt
     }
-
 }
 
 class ImgProvider {
@@ -85,12 +84,12 @@ class ImgProvider {
         if (envFile.exists()) {
             envVars.putAll(loadDotEnv(envFile))
         }
-        
+
         this.apiUrl = envVars.COMFYUI_API_URL
         this.apiKey = envVars.COMFYUI_API_KEY
         this.token = apiKey
     }
-    
+
     public loadDotEnv(File path) {
         assert path.exists()
         Properties props = new Properties()

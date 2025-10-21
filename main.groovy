@@ -25,6 +25,8 @@ if (options.test) {
     // to run them in a loop later
     def testRoutines = [:]
 
+    // A quick refresher on random. Uses Rng.groovy, and should return
+    // fast
     testRoutines["RNG"] = {
         // list of strings we want to log to the console.
         def out = []
@@ -56,8 +58,9 @@ if (options.test) {
         cli.log(out.join('\r\n'))
     }
 
-    def location = new Location(0.00f, 0.00f, 0.00f)
+    // Build the house
     def home
+    def location = new Location(0.00f, 0.00f, 0.00f)
     testRoutines["Location"] = {
         def out = []
         home = new Poi(location, "Phiglit's House")
@@ -68,6 +71,7 @@ if (options.test) {
         cli.log(out.join('\r\n'))
     }
 
+    // Fill it with characters (should still be quick)
     def phiglit
     testRoutines["Character"] = {
         def out = []
@@ -96,6 +100,7 @@ if (options.test) {
         cli.log(out.join('\r\n'))
     }
 
+    // Sally does a lot of inventory testing for us
     def sally
     testRoutines["Inventory"] = {
         def out = []
@@ -168,19 +173,21 @@ if (options.test) {
         cli.log(out.join('\r\n'))
     }
 
+    // Ok. Now stuff gets complicated, and time consuming.
+    // George is going to be building up some story context for us.
     def george
     def story
     testRoutines["Narrator"] = {
+        // We know this stuff. George needs a character sheet
         def hero = new Character(name: "George", role: "assistant")
         hero.description = "The heart of the home."
         hero.bio = "A chatbot, built by hand and raised by Phiglit. Designed to be the custodian of the Phiglit household, and its interpreter."
         def pen = new Item("A Pen of Writing", ItemType.TOOL)
-        pen.description = "An ornate, but efficiant fountain pen"
+        pen.description = "An ornate and efficient fountain pen, used to narrate our ongoing story."
         hero.inventory.addItem(pen)
         home.addOccupant(hero)
 
-        def model = new Model()
-
+        // Add a lil' backstory
         def context = [
             "You are:",
             hero.toJson(),
@@ -191,11 +198,17 @@ if (options.test) {
             sally.toJson(),
         ]
 
+        // Now the fun stuff. Interacting with our hero
+        def model = new Model()
+
         def input = "Good morning ${hero.name}. My name is ${phiglit.name}. Would you please describe yourself in detail, including any gear you have on hand?"
         cli.log("### ${phiglit.name} says:\r\n${input}")
         context.add(input)
 
+        // Smash the context together into a multi-line string
         def prompt = context.join("\r\n")
+
+        // Feed the prompt to the model, and transform its response out of the json.
         def data = new JsonSlurper().parseText(model.generateResponse(prompt))
         def output = data.choices[0].message.content
         context.add(output)
@@ -205,19 +218,22 @@ if (options.test) {
         george = hero
     }
 
+    // more... MORE... *MORE*
+    // Ok. This gets a bit nuts, but basically we are feeding a prompt with a similar context as what we fed
+    // into George. Adding the story confuses the bots identity... Anyway. Basically we do what we did before
+    // and feed Rosie with some instructions for generating StableDiffusion inputs.
+    // Electric Sheep indeed.
     def rosie
     testRoutines["Illustrator"] = {
         def hero = new Character(name: "Rosie", role: "assistant")
         hero.description = "A Creative Digital Artist"
         hero.bio = "A Digital Artist, built by hand and raised by Phiglit, designed to generate prompts meant for a digital canvas."
         def brush = new Item("Paintbrush of Illusion", ItemType.TOOL)
-        brush.description = "An elegent and efficiant paintbrush, used to illustrate our ongoing story"
+        brush.description = "An elegent and efficient paintbrush, used to illustrate our ongoing story"
         hero.inventory.addItem(brush)
         home.addOccupant(hero)
 
-        def model = new Model()
-        def input = "Good morning ${hero.name}, and welcome. I'm ${george.name}. Would you please describe yourself, and any gear you might have on hand?"
-        context = [
+        def context = [
             "You are:",
             hero.toJson(),
             "You are located in:",
@@ -228,6 +244,8 @@ if (options.test) {
             george.toJson(),
         ]
 
+        def model = new Model()
+        def input = "Good morning to you ${hero.name}, and welcome. I'm ${george.name}. Would you please describe yourself, and any gear you might have on hand?"
         context.add(input)
         cli.log("### ${george.name} says:\r\n${input}")
 
@@ -238,8 +256,8 @@ if (options.test) {
         context.add(output)
         cli.log("### ${hero.name} says:\r\n${output}")
 
-        // Ask for a prompt to feed to Comfy UI
-        input = "Please write a prompt for ComfyUI to generate a self portrait, including your items. Please tailor your description as appropriate for the Dreamshaper model. Please output your response as json."
+        // Ask for a prompt to feed to ComfyUI
+        input = "Thank you ${hero.name}. Would you please write a prompt for ComfyUI to generate a self portrait, including your items? Please tailor your description as appropriate for the Dreamshaper model. Please output your response as json."
         context.add(input)
         cli.log("### ${george.name} says:\r\n${input}")
 
@@ -250,6 +268,9 @@ if (options.test) {
         context.add(output)
         cli.log("### ${hero.name} says:\r\n${output}")
 
+        // Clean up the output
+        // We remove first and last lines, since they are probably markup, then
+        // parse as json
         def lines = output.readLines()
         def cleaned = lines.size() > 1 ? lines.subList(1, lines.size() -1) : []
         data = new JsonSlurper().parseText(cleaned.join())
@@ -263,11 +284,14 @@ if (options.test) {
         cli.log(canvas.generateImage(prompt))
 
         // and another
-        input = "Please write a prompt for ComfyUI to generate an image of George. Please tailor your description as appropriate for the Dreamshaper model. Please output your response as json."
+        input = "That looks lovely. Would you please write a prompt for ComfyUI to generate an image of me, ${george.name}? Please tailor your description as appropriate for the Dreamshaper model. Please output your response as json."
         context.add(input)
+        cli.log("### George says:\r\n${input}")
         prompt = context.join("\r\n")
         data = new JsonSlurper().parseText(model.generateResponse(prompt))
         output = data.choices[0].message.content
+        cli.log(output)
+
         lines = output.readLines()
         cleaned = lines.size() > 1 ? lines.subList(1, lines.size() -1) : []
         data = new JsonSlurper().parseText(cleaned.join())
@@ -289,9 +313,10 @@ if (options.test) {
         test()
     }
 
-    println "# And this concludes the tests. If you can read this, it means everything 'passed'"
+    cli.log("# And this concludes the tests. If you can read this, it means everything 'passed'")
 }
 
+// Prompt for input to generate an image.
 if (options.image) {
     def illustrator = new Illustrator()
     illustrator.style = ImageType.PORTRAIT

@@ -45,7 +45,7 @@ class Model {
         post.setRequestProperty("Authorization", "Bearer ${provider.apiKey}")
         post.setRequestProperty("Content-Type", "application/json")
         post.getOutputStream().write(bodyJson.getBytes("UTF-8"))
-        
+
         def responseCode = post.getResponseCode()
 
         if (responseCode == 200) {
@@ -71,12 +71,12 @@ class Provider {
         if (envFile.exists()) {
             envVars.putAll(loadDotEnv(envFile))
         }
-        
+
         this.apiUrl = envVars.OLLAMA_API_URL
         this.apiKey = envVars.OLLAMA_API_KEY
         this.token = apiKey
     }
-    
+
     public loadDotEnv(File path) {
         assert path.exists()
         Properties props = new Properties()
