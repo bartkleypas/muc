@@ -14,6 +14,7 @@ class Illustrator {
     ImageType style
     String input
     int seed
+    int steps
 
     Illustrator() {
         this.title = title
@@ -22,6 +23,7 @@ class Illustrator {
         this.style = ImageType.PORTRAIT
         this.input = input
         this.seed = new Random().nextInt(100000000) // 8 digits of random
+        this.steps = 35
     }
 
     String getPrompt(String input) {
@@ -42,6 +44,7 @@ class Illustrator {
         }
 
         json.prompt["3"].inputs.seed = seed
+        json.prompt["3"].inputs.steps = steps
         json.prompt["4"].inputs.ckpt_name = checkpoint
         json.prompt["5"].inputs.width = width
         json.prompt["5"].inputs.height = height

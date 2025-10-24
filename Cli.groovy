@@ -49,6 +49,7 @@ class Cli {
             t(longOpt: 'test', 'Run tests')
             j(longOpt: 'json', 'json output')
             i(longOpt: 'image', 'generate an image')
+            c(longOpt: 'chat', 'start a chat')
         }
     }
 
@@ -87,6 +88,12 @@ class Cli {
 
     String log(String logLine) {
         println logLine
+    }
+
+    String waitForInput() {
+        println "### Response:"
+        def input = System.in.newReader().readLine()
+        return input
     }
 }
 

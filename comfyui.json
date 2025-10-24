@@ -1,8 +1,8 @@
 {"prompt": {
   "3": {
     "inputs": {
-      "seed": 1234567890,
-      "steps": 20,
+      "seed": 123456789101112,
+      "steps": 35,
       "cfg": 8,
       "sampler_name": "dpmpp_2m_sde_gpu",
       "scheduler": "karras",
@@ -53,8 +53,8 @@
     "inputs": {
       "text": "beautiful scenery nature glass bottle landscape, purple galaxy bottle,",
       "clip": [
-        "4",
-        1
+        "13",
+        0
       ]
     },
     "class_type": "CLIPTextEncode",
@@ -66,8 +66,8 @@
     "inputs": {
       "text": "text, watermark",
       "clip": [
-        "4",
-        1
+        "13",
+        0
       ]
     },
     "class_type": "CLIPTextEncode",
@@ -127,6 +127,19 @@
     "class_type": "ImageUpscaleWithModel",
     "_meta": {
       "title": "Upscale Image (using Model)"
+    }
+  },
+    "13": {
+    "inputs": {
+      "stop_at_clip_layer": -1,
+      "clip": [
+        "4",
+        1
+      ]
+    },
+    "class_type": "CLIPSetLastLayer",
+    "_meta": {
+      "title": "CLIP Set Last Layer"
     }
   }
 }}

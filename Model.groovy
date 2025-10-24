@@ -11,6 +11,8 @@ class Model {
     String vers
     String model
     String systemPrompt
+    String role
+    MessageBody body
 
     Model() {
         this.provider = new Provider()
@@ -18,6 +20,13 @@ class Model {
         this.vers = "latest"
         this.model = "${name}:${vers}"
         this.systemPrompt = "You are a good chatbot" // I duhknow. Sounds good to hear.
+        this.role = "assistant"
+        this.body = new MessageBody(
+            new ArrayList<>(),
+            model,
+            false, // stream?
+            0.7
+        )
     }
 
     /**
@@ -26,25 +35,17 @@ class Model {
      * @param prompt The prompt to send to the Ollama service.
      * @return The generated response from the Ollama service, or null if an error occurred.
      */
-    String generateResponse(String prompt) {
+    String generateResponse(MessageBody body) {
         URL url = new URL(provider.apiUrl)
-
         def post = url.openConnection()
-        def body = [
-            'model': model,
-            'messages': [[
-                "role": "user",
-                "content": prompt
-            ]],
-            'temperature': 0.7
-        ]
-        def bodyJson = JsonOutput.toJson(body)
+
+        def json = JsonOutput.toJson(body)
 
         post.setRequestMethod("POST")
         post.setDoOutput(true)
         post.setRequestProperty("Authorization", "Bearer ${provider.apiKey}")
         post.setRequestProperty("Content-Type", "application/json")
-        post.getOutputStream().write(bodyJson.getBytes("UTF-8"))
+        post.getOutputStream().write(json.getBytes("UTF-8"))
 
         def responseCode = post.getResponseCode()
 
@@ -53,6 +54,29 @@ class Model {
         }
         println post.getInputStream().getText()
         throw new RuntimeException("Something Went wrong.")
+    }
+}
+
+class MessageBody {
+    List<Map<String, Object>> messages
+    Object model
+    Boolean stream
+    Double temperature
+
+    MessageBody(List<Map<String, Object>> messages, Object model, Boolean stream, Double temperature) {
+        this.messages = new ArrayList<>(messages)
+        this.model = "gemma3:latest"
+        this.stream = stream
+        this.temperature = temperature
+    }
+
+    void addMessage(String role, String content) {
+        Map<String, Object> newMessage = Map.of("role", role, "content", content)
+        this.messages.add(newMessage)
+    }
+
+    List<Map<String, Object>> getMessages() {
+        return messages
     }
 }
 
