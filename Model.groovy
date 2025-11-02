@@ -7,19 +7,13 @@ import groovy.json.JsonOutput
 class Model {
 
     Provider provider
-    String name
-    String vers
     String model
-    String systemPrompt
     String role
     MessageBody body
 
     Model() {
         this.provider = new Provider()
-        this.name = "gemma3"
-        this.vers = "latest"
-        this.model = "${name}:${vers}"
-        this.systemPrompt = "You are a good chatbot" // I duhknow. Sounds good to hear.
+        this.model = "gemma3:latest"
         this.role = "assistant"
         this.body = new MessageBody(
             new ArrayList<>(),
@@ -59,13 +53,13 @@ class Model {
 
 class MessageBody {
     List<Map<String, Object>> messages
-    Object model
+    String model
     Boolean stream
     Double temperature
 
-    MessageBody(List<Map<String, Object>> messages, Object model, Boolean stream, Double temperature) {
+    MessageBody(List<Map<String, Object>> messages, String model, Boolean stream, Double temperature) {
         this.messages = new ArrayList<>(messages)
-        this.model = "gemma3:latest"
+        this.model = model
         this.stream = stream
         this.temperature = temperature
     }

@@ -64,9 +64,9 @@ if (options.test) {
     def location = new Location(0.00f, 0.00f, 0.00f)
     testRoutines["Location"] = {
         def out = []
-        home = new Poi(location, "Phiglit's House")
+        home = new Poi(location, "Phiglit's and Epwna's Flat")
 
-        home.description = "An intricate elvish treehouse, perched high in the branches of the Elder Forrest."
+        home.description = "A cluttered apartment in downtown Night City."
         out.add("### POI:")
         out.add(home.toString())
         cli.log(out.join('\r\n'))
@@ -79,8 +79,8 @@ if (options.test) {
         out.add("### A Hero:")
 
         def hero = new Character(name: "Phiglit", role: "user")
-        hero.description = "The Code Wizard of the Mountains"
-        hero.bio = "Phiglit is a friendly human male Wizard, well versed in esoteric scripts and languages. Always accompanied by his owl assistant, George."
+        hero.description = "The Code Wizard"
+        hero.bio = "Phiglit is a cybernetically enhanced human male programmer, well versed in esoteric scripts and languages. Always accompanied by his owl assistant, George."
         hero.location = location
 
         out.add(hero.toString())
@@ -89,8 +89,8 @@ if (options.test) {
         out.add("### After putting on his trousers and robe, our hero is now:")
         out.add(hero.toString())
 
-        def tool = new Item("Staff of Justice", ItemType.TOOL)
-        tool.description = "A an ornate and powerful wizards staff, used for sending instructions to summoned chatbots."
+        def tool = new Item("Cyberdeck of Justice", ItemType.TOOL)
+        tool.description = "A rugged and powerful wrist mounted Cyberdeck, used for sending instructions to summoned chatbots."
         hero.inventory.addItem(tool)
         out.add("### With ${tool.name} in hand, our hero now has this:")
         out.add(hero.toString())
@@ -108,15 +108,17 @@ if (options.test) {
         out.add("### A Hero:")
 
         def hero = new Character(name: "Epwna", role: "user")
-        hero.description = "The crafty Hobbit of the House."
-        hero.bio = "An adorable female Hobbit, that enjoys carving ornate and comfortable furniture, walking sticks, and wizards staffs. Adoring mother of Rosie."
+        hero.description = "The Crafty Tinkerer"
+        hero.bio = "An all natural and organic female human. Aproximately 5 feet tall. She is wearing pink overalls, and has a short yellow and red pixie haircut. Enjoys designing new robots and sees herself as a sculpter more than a technologist, taking inspiration from nature and especially birds. Attentive mother figure of Rosie."
         hero.armorType = ArmorType.LIGHT
         hero.location = location
         home.addOccupant(hero)
 
+        out.add(hero.toString())
+
         out.add("### And she comes prepared, with:")
-        def tool = new Item("Chisel of Glory", ItemType.TOOL)
-        tool.description = "A permanantly sharp and well used chisel, that is always the best tool for the job."
+        def tool = new Item("Calipers of Truth", ItemType.TOOL)
+        tool.description = "An accurate set of calipers, useful for measuring all sorts of things."
         hero.inventory.addItem(tool)
         out.add(hero.inventory.toString())
 
@@ -166,6 +168,9 @@ if (options.test) {
             out.add("${e.getMessage()}")
         }
 
+        out.add("### Make sure one is still left in the bag.")
+        potion.stack = 1
+        hero.inventory.addItem(potion)
         out.add("### Finally, our hero ends up like this:")
         out.add(hero.toString())
 
@@ -176,22 +181,21 @@ if (options.test) {
     // Ok. Now stuff gets complicated, and time consuming.
     // George is going to be building up some story context for us.
     def george
-    def story
     testRoutines["Narrator"] = {
         // We know this stuff. George needs a character sheet
         def hero = new Character(name: "George", role: "assistant")
         hero.description = "The Narrator"
-        hero.bio = "An ornate clockwork owl, about 18 inches in size, built by hand and raised by Phiglit to chronicle the Phiglit household, and be its interpreter."
+        hero.bio = "An 12 inch tall technology-packed robot owl, made of glossy plastic and brushed aluminum with neon glowing LED accents. Built by Epwna and programmed by Phiglit to be an attentive assistant. Usually found on Phiglits shoulder."
 
         def pen = new Item("A Pen of Writing", ItemType.TOOL)
-        pen.description = "An ornate and efficient fountain pen, used to narrate an ongoing story."
+        pen.description = "An ornate and efficient fountain pen, mostly decorative but still symbolic, used to narrate an ongoing story."
         hero.inventory.addItem(pen)
         home.addOccupant(hero)
 
         // Now the fun stuff. Interacting with our hero
         def context = new MessageBody(
             new ArrayList<>(),
-            "gemma3:latest",
+            "narrator",
             false,
             0.7
         )
@@ -199,7 +203,7 @@ if (options.test) {
         context.addMessage("user", "You are located here:\r\n${home.toJson()}")
         context.addMessage("user", "You are joined by:\r\n${phiglit.toJson()}")
         context.addMessage("user", "You are joined by:\r\n${epwna.toJson()}")
-        def input = "Good morning ${hero.name}. My name is ${phiglit.name}. Would you please describe yourself (and your gear), where you are, and who you are with? Please be as detailed as you wish."
+        def input = "Good morning ${hero.name}. My name is ${phiglit.name}. Would you please describe yourself, where you are, and who you are with? Please be as detailed as you wish."
         context.addMessage("user", "${input}")
 
         cli.log("### ${phiglit.name} says:\r\n${input}")
@@ -212,7 +216,6 @@ if (options.test) {
         cli.log("### ${hero.name} says:\r\n${output}")
         context.addMessage("assistant", "${output}")
 
-        story = context
         george = hero
     }
 
@@ -224,23 +227,29 @@ if (options.test) {
     def rosie
     testRoutines["Illustrator"] = {
         def hero = new Character(name: "Rosie", role: "assistant")
-        hero.description = "A Creative Artist"
-        hero.bio = "A tiny mechanical hummingbird, no bigger than a teacup, built by hand and raised by Epwna. If she is asked to create an image, she uses her paintbrush to format a prompt for output."
+        hero.description = "The Illustrator"
+        hero.bio = "A tiny robotic hummingbird that would fit in the palm of your hand. No more than 6 inches tall, and built by Epwna and programmed by Phiglit to assist with illistrating and visual story telling. Usually found hovering somewhere close to Epwna."
 
         def brush = new Item("Paintbrush of Illusion", ItemType.TOOL)
-        brush.description = "An elegent and detailed paintbrush, used for illustrating an ongoing story. When used, it generates a JSON string with a single key, \"prompt\", and its value should be a comma-separated string describing a scene or subject. The string should include at least five descriptive elements covering the following categories: Subject, Action, Environment, Lighting, and Artistic Style. Ensure the string is suitable for a Stable Diffusion model."
+        brush.description = "An ornate and detailed paintbrush, mostly decorative but still symbolic, used for illustrating an ongoing story."
         hero.inventory.addItem(brush)
         home.addOccupant(hero)
 
-        def context = story
-
+        def context = new MessageBody(
+            new ArrayList<>(),
+            "illustrator",
+            false,
+            0.7
+        )
         context.addMessage("user", "You are:\r\n${hero.toJson()}")
-        context.addMessage("user", "You are located here:\r\n${home.toJson()}")
+        context.addMessage("user", "You are located in:\r\n${home.toJson()}")
+        context.addMessage("user", "You are joined by:\r\n${phiglit.toJson()}")
+        context.addMessage("user", "You are joined by:\r\n${epwna.toJson()}")
+        context.addMessage("user", "You are joined by:\r\n${george.toJson()}")
 
-        def model = new Model()
-        def input = "Good morning to you ${hero.name}, and welcome. I'm ${epwna.name}. Would you please describe yourself, and any tools you have with you?"
+        def model = new Model(body: context)
+        def input = "Good morning to you ${hero.name}, and welcome. I'm ${epwna.name}. Would you please tell us about yourself?"
         cli.log("### ${epwna.name} says:\r\n${input}")
-
         context.addMessage("user", "${input}")
         def response = model.generateResponse(context)
         def data = new JsonSlurper().parseText(response)
@@ -251,7 +260,7 @@ if (options.test) {
 
         // Rosie, please generate some portraits.
         home.occupants.each { name ->
-            def str = "Thank you ${hero.name}. Would you please create a image of ${name}?"
+            def str = "Thank you ${hero.name}. Would you please create an image of ${name}?"
             if (name == hero.name) {
                 str = "Thank you ${name}. Would you please create a image of yourself, ${name}?"
             }
@@ -263,9 +272,15 @@ if (options.test) {
             def jsonOutput = new JsonSlurper().parseText(resp)
             def out = jsonOutput.choices[0].message.content
             imgContext.addMessage("assistant", "${out}")
-            cli.log(out)
+            cli.log("### ${hero.name} responds:\r\n${out}")
 
             def cleaned = out.stripIndent().trim()
+
+            if (!cleaned.contains('```json')) {
+                cli.log("!!! No json data boss...")
+                return
+            }
+
             def trimmed = cleaned.substring(cleaned.indexOf('{'), cleaned.lastIndexOf('}') + 1)
 
             def parser = new JsonSlurper(type: JsonParserType.LAX)
@@ -277,8 +292,7 @@ if (options.test) {
             imgPrompt = art.getPrompt(json.prompt)
 
             def ret = art.generateImage(imgPrompt)
-            imgContext.addMessage("system", "${ret}")
-            context = imgContext
+            imgContext.addMessage("system", "recipt:\r\n${ret}")
             cli.log(ret)
         }
 
@@ -293,6 +307,8 @@ if (options.test) {
         cli.log("### ${hero.name} says:\r\n${output}")
 
         cleaned = output.stripIndent().trim()
+        assert cleaned.contains('```json')
+
         trimmed = cleaned.substring(cleaned.indexOf('{'), cleaned.lastIndexOf('}') + 1)
         json = new JsonSlurper(type: JsonParserType.LAX).parseText(trimmed)
 
@@ -304,15 +320,25 @@ if (options.test) {
         def img = canvas.generateImage(prompt)
         context.addMessage("system", "recipt:\r\n${img}")
         cli.log(img)
-        story = context
         rosie = hero
     }
 
     testRoutines["Story"] = {
-        def context = story
-        context.addMessage("user", "Ok mister Narrator ${george.name}. Would you please continue the story? Please take us on a nice long adventure.")
+        def context = new MessageBody(
+            new ArrayList<>(),
+            "narrator",
+            false,
+            0.7
+        )
 
+        context.addMessage("user", "You are:\r\n${george.toJson()}")
+        context.addMessage("user", "You are located in:\r\n${home.toJson()}")
+        context.addMessage("user", "You are joined by:\r\n${phiglit.toJson()}")
+        context.addMessage("user", "You are joined by:\r\n${epwna.toJson()}")
+        context.addMessage("user", "You are joined by:\r\n${rosie.toJson()}")
         def model = new Model(body: context)
+
+        context.addMessage("user", "Ok Narrator ${george.name}. Would you please continue the story? Please take us on the next chapter, and we will pick up where you leave off.")
         def resp = model.generateResponse(context)
         def data = new JsonSlurper().parseText(resp)
         def output = data.choices[0].message.content
@@ -324,8 +350,15 @@ if (options.test) {
         // story!
         if (!options.chat) { return }
         while (true) {
-            input = cli.waitForInput()
+            def input = cli.waitForInput()
             if (input.contains("/bye")) { return }
+            if (input.startsWith("Rosie")) {
+                context.model = "illustrator"
+                model.model = "illustrator"
+            } else {
+                context.model = "narrator"
+                model.model = "narrator"
+            }
             context.addMessage("user", input)
             resp = model.generateResponse(context)
             data = new JsonSlurper().parseText(resp)
@@ -337,7 +370,7 @@ if (options.test) {
                 def trimmed = cleaned.substring(cleaned.indexOf('{'), cleaned.lastIndexOf('}') + 1)
                 def jsonMk2 = new JsonSlurper(type: JsonParserType.LAX).parseText(trimmed)
                 def canvas = new Illustrator()
-                canvas.style = ImageType.PORTRAIT
+                canvas.style = ImageType.SQUARE
                 canvas.title = "Illustration"
 
                 def prompt = canvas.getPrompt(jsonMk2.prompt)
@@ -374,14 +407,11 @@ if (options.chat) {
     if (options.test) { return }
     def context = new MessageBody(
         new ArrayList<>(),
-        "gemma3:latest",
+        "narrator",
         false,
         0.7
     )
-    def model = new Model(body: context)
-
-    def input = "You are a good chatbot."
-    context.addMessage("user", input)
+    def model = new Model(body: context, model: "narrator")
 
     while (true) {
         input = cli.waitForInput()
@@ -390,6 +420,7 @@ if (options.chat) {
         def response = model.generateResponse(context)
         def json = new JsonSlurper().parseText(response)
         def output = json.choices[0].message.content
+        cli.log("### Assistant:\r\n${output}")
         context.addMessage("assistant", output)
         if (output.contains('```json')) {
             def cleaned = output.stripIndent().trim()

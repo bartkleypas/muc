@@ -19,11 +19,11 @@ class Illustrator {
     Illustrator() {
         this.title = title
         this.provider = new ImgProvider()
-        this.checkpoint = "dreamshaper_8.safetensors"
+        this.checkpoint = "sdxl/sd_xl_base_1.0.safetensors"
         this.style = ImageType.PORTRAIT
         this.input = input
         this.seed = new Random().nextInt(100000000) // 8 digits of random
-        this.steps = 35
+        this.steps = 25
     }
 
     String getPrompt(String input) {
@@ -33,23 +33,24 @@ class Illustrator {
         String height
         String width
         if (style == ImageType.PORTRAIT) {
-            height = 768
-            width = 512
+            height = 1216
+            width = 832
         } else if (style == ImageType.LANDSCAPE) {
-            height = 512
-            width = 768
+            height = 832
+            width = 1216
         } else {
-            height = 512
-            width = 512
+            height = 1024
+            width = 1024
         }
 
-        json.prompt["3"].inputs.seed = seed
-        json.prompt["3"].inputs.steps = steps
         json.prompt["4"].inputs.ckpt_name = checkpoint
         json.prompt["5"].inputs.width = width
         json.prompt["5"].inputs.height = height
         json.prompt["6"].inputs.text = input
-        json.prompt["9"].inputs.filename_prefix = title
+        json.prompt["10"].inputs.noise_seed = seed
+        json.prompt["10"].inputs.steps = steps
+        json.prompt["15"].inputs.text = input
+        json.prompt["19"].inputs.filename_prefix = title
         def output = new JsonOutput().toJson(json)
         return output
     }
