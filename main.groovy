@@ -80,7 +80,7 @@ if (options.test) {
 
         def hero = new Character(name: "Phiglit", role: "user")
         hero.description = "The Code Wizard"
-        hero.bio = "A cybernetically enhanced male human. Aproximately 6 feet tall. Has grey hair with a full beard and mustash. Wearing a zippered hoodie and bluejeans."
+        hero.bio = "A cybernetically enhanced male human. Aproximately 6 feet tall. Has grey hair with a full beard and mustashe. Wearing a zippered hoodie and bluejeans."
         hero.armorType = ArmorType.LIGHT
         hero.location = location
         home.addOccupant(hero)
