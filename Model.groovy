@@ -9,18 +9,17 @@ class Model {
     Provider provider
     String model
     String role
-    MessageBody body
+    Boolean stream
+    Double temperature
+    Context body
 
     Model() {
         this.provider = new Provider()
         this.model = "gemma3:latest"
         this.role = "assistant"
-        this.body = new MessageBody(
-            new ArrayList<>(),
-            model,
-            false, // stream?
-            0.7
-        )
+        this.stream = false
+        this.temperature = 0.7
+        this.body = new Context()
     }
 
     /**
@@ -29,11 +28,18 @@ class Model {
      * @param prompt The prompt to send to the Ollama service.
      * @return The generated response from the Ollama service, or null if an error occurred.
      */
-    String generateResponse(MessageBody body) {
+    String generateResponse(Context body) {
         URL url = new URL(provider.apiUrl)
         def post = url.openConnection()
 
-        def json = JsonOutput.toJson(body)
+        def postData = [
+            messages: body.messages,
+            model: this.model,
+            stream: this.stream,
+            temperature: this.temperature
+        ]
+
+        def json = JsonOutput.toJson(postData)
 
         post.setRequestMethod("POST")
         post.setDoOutput(true)
@@ -51,26 +57,33 @@ class Model {
     }
 }
 
-class MessageBody {
-    List<Map<String, Object>> messages
-    String model
-    Boolean stream
-    Double temperature
+class Context {
+    List<Message> messages
 
-    MessageBody(List<Map<String, Object>> messages, String model, Boolean stream, Double temperature) {
+    Context() {
+        this.messages = new ArrayList<>()
+    }
+
+    Context(List<Message> messages) {
         this.messages = new ArrayList<>(messages)
-        this.model = model
-        this.stream = stream
-        this.temperature = temperature
     }
 
     void addMessage(String role, String content) {
-        Map<String, Object> newMessage = Map.of("role", role, "content", content)
-        this.messages.add(newMessage)
+        this.messages.add(new Message(role, content))
     }
 
-    List<Map<String, Object>> getMessages() {
+    List<Message> getMessages() {
         return messages
+    }
+}
+
+class Message {
+    String role
+    String content
+
+    Message(String role, String content) {
+        this.role = role
+        this.content = content
     }
 }
 

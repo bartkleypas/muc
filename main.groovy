@@ -80,13 +80,11 @@ if (options.test) {
 
         def hero = new Character(name: "Phiglit", role: "user")
         hero.description = "The Code Wizard"
-        hero.bio = "Phiglit is a cybernetically enhanced human male programmer, well versed in esoteric scripts and languages. Always accompanied by his owl assistant, George."
-        hero.location = location
-
-        out.add(hero.toString())
-
+        hero.bio = "A cybernetically enhanced male human. Aproximately 6 feet tall. Has grey hair with a full beard and mustash. Wearing a zippered hoodie and bluejeans."
         hero.armorType = ArmorType.LIGHT
-        out.add("### After putting on his trousers and robe, our hero is now:")
+        hero.location = location
+        home.addOccupant(hero)
+
         out.add(hero.toString())
 
         def tool = new Item("Cyberdeck of Justice", ItemType.TOOL)
@@ -193,12 +191,8 @@ if (options.test) {
         home.addOccupant(hero)
 
         // Now the fun stuff. Interacting with our hero
-        def context = new MessageBody(
-            new ArrayList<>(),
-            "narrator",
-            false,
-            0.7
-        )
+        def context = new Context()
+
         context.addMessage("user", "You are:\r\n${hero.toJson()}")
         context.addMessage("user", "You are located here:\r\n${home.toJson()}")
         context.addMessage("user", "You are joined by:\r\n${phiglit.toJson()}")
@@ -208,7 +202,8 @@ if (options.test) {
 
         cli.log("### ${phiglit.name} says:\r\n${input}")
 
-        def model = new Model(body: context)
+        def model = new Model(model: "narrator", body: context)
+
         def resp = model.generateResponse(context)
 
         def data = new JsonSlurper().parseText(resp)
@@ -235,19 +230,17 @@ if (options.test) {
         hero.inventory.addItem(brush)
         home.addOccupant(hero)
 
-        def context = new MessageBody(
-            new ArrayList<>(),
-            "illustrator",
-            false,
-            0.7
-        )
+        rosie = hero
+
+        def context = new Context()
+
         context.addMessage("user", "You are:\r\n${hero.toJson()}")
         context.addMessage("user", "You are located in:\r\n${home.toJson()}")
         context.addMessage("user", "You are joined by:\r\n${phiglit.toJson()}")
         context.addMessage("user", "You are joined by:\r\n${epwna.toJson()}")
         context.addMessage("user", "You are joined by:\r\n${george.toJson()}")
 
-        def model = new Model(body: context)
+        def model = new Model(model: "illustrator", body: context)
         def input = "Good morning to you ${hero.name}, and welcome. I'm ${epwna.name}. Would you please tell us about yourself?"
         cli.log("### ${epwna.name} says:\r\n${input}")
         context.addMessage("user", "${input}")
@@ -273,6 +266,10 @@ if (options.test) {
             def out = jsonOutput.choices[0].message.content
             imgContext.addMessage("assistant", "${out}")
             cli.log("### ${hero.name} responds:\r\n${out}")
+
+            // Image generation is busted ATM. PyTorch and ROCm are
+            // having a tantrum on my hardware.
+            return
 
             def cleaned = out.stripIndent().trim()
 
@@ -309,6 +306,10 @@ if (options.test) {
         cleaned = output.stripIndent().trim()
         assert cleaned.contains('```json')
 
+        // bypass image generation because it is effing busted in ROCm on
+        // my hardware. Curse you python!!!
+        return
+
         trimmed = cleaned.substring(cleaned.indexOf('{'), cleaned.lastIndexOf('}') + 1)
         json = new JsonSlurper(type: JsonParserType.LAX).parseText(trimmed)
 
@@ -320,23 +321,17 @@ if (options.test) {
         def img = canvas.generateImage(prompt)
         context.addMessage("system", "recipt:\r\n${img}")
         cli.log(img)
-        rosie = hero
     }
 
     testRoutines["Story"] = {
-        def context = new MessageBody(
-            new ArrayList<>(),
-            "narrator",
-            false,
-            0.7
-        )
+        def context = new Context()
 
         context.addMessage("user", "You are:\r\n${george.toJson()}")
         context.addMessage("user", "You are located in:\r\n${home.toJson()}")
         context.addMessage("user", "You are joined by:\r\n${phiglit.toJson()}")
         context.addMessage("user", "You are joined by:\r\n${epwna.toJson()}")
         context.addMessage("user", "You are joined by:\r\n${rosie.toJson()}")
-        def model = new Model(body: context)
+        def model = new Model(model: "narrator", body: context)
 
         context.addMessage("user", "Ok Narrator ${george.name}. Would you please continue the story? Please take us on the next chapter, and we will pick up where you leave off.")
         def resp = model.generateResponse(context)
@@ -353,10 +348,8 @@ if (options.test) {
             def input = cli.waitForInput()
             if (input.contains("/bye")) { return }
             if (input.startsWith("Rosie")) {
-                context.model = "illustrator"
                 model.model = "illustrator"
             } else {
-                context.model = "narrator"
                 model.model = "narrator"
             }
             context.addMessage("user", input)
@@ -405,13 +398,8 @@ if (options.image) {
 // Get directly to a chat.
 if (options.chat) {
     if (options.test) { return }
-    def context = new MessageBody(
-        new ArrayList<>(),
-        "narrator",
-        false,
-        0.7
-    )
-    def model = new Model(body: context, model: "narrator")
+    def context = new Context()
+    def model = new Model(body: context)
 
     while (true) {
         input = cli.waitForInput()
