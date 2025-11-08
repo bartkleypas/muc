@@ -191,7 +191,7 @@ if (options.test) {
         // We know this stuff. George needs a character sheet
         def hero = new Character(name: "George", role: "assistant")
         hero.description = "The Narrator"
-        hero.bio = "An 18 inch tall Barred Owl, and narrator of our adventure. Speaks in a baritone voice in a smooth and measured cadence."
+        hero.bio = "An 18 inch tall Barred Owl (Strix varia), and narrator of our adventure. Speaks in a baritone voice in a smooth and measured cadence."
 
         def pen = new Item("A Pen of Writing", ItemType.TOOL)
         pen.description = "An ornate and efficient fountain pen, mostly decorative and symbolic, but used to narrate an ongoing story."
@@ -235,7 +235,7 @@ if (options.test) {
     testRoutines["Illustrator"] = {
         def hero = new Character(name: "Rosie", role: "assistant")
         hero.description = "The Illustrator"
-        hero.bio = "A tiny and energetic Ruffus hummingbird, around 4 inches in length. Raised from a hatchling by Epwna, and usually found hovering somewhere close to her. Speaks quickly in disjointed sentences. Has a soft, but squeaky voice."
+        hero.bio = "A tiny and energetic Anna's hummingbird (Calypte anna), around 4 inches in length. Raised from a hatchling by Epwna, and usually found hovering somewhere close to her. Speaks quickly in disjointed sentences. Has a soft, but squeaky voice."
 
         def brush = new Item("Paintbrush of Illusion", ItemType.TOOL)
         brush.description = "An ornate and detailed paintbrush, mostly symbolic, but used for illustrating an ongoing story."
