@@ -1,4 +1,7 @@
+
 import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+import java.io.File
 
 enum ArmorType {
     NA,
@@ -27,6 +30,49 @@ class Character {
         this.armorType = ArmorType.NA
         this.inventory = new Inventory() // Initialize the inventory
         this.location = location
+    }
+
+    File exportCharacterSheet(String filePath) {
+        File outFile = new File(filePath)
+        outFile.parentFile?.mkdirs()
+        outFile.text = JsonOutput.prettyPrint(JsonOutput.toJson(this))
+        return outFile
+    }
+
+    Character importCharacterSheet(String filePath) {
+        File jsonFile = new File(filePath)
+        assert jsonFile.exists()
+
+        def slurper = new JsonSlurper()
+        def data = slurper.parse(jsonFile)
+
+        Character c = new Character()
+        c.name = data.name
+        c.role = data.role
+        c.description = data.description
+        c.bio = data.bio
+        c.health = data.health
+        c.armorType = ArmorType.valueOf(data.armorType ?: "NA")
+
+        if (data.location) {
+            c.location = new Location(data.location.lat, data.location.lon, data.location.alt)
+        }
+
+        if (data.inventory) {
+            Inventory inv = new Inventory()
+            inv.name = data.inventory.name
+            inv.slotsMax = data.inventory.slotsMax
+
+            data.inventory.items?.each { itemName, itemList ->
+                itemList.each { itemMap ->
+                    Item item = new Item(itemMap.name, ItemType.valueOf(itemMap.type))
+                    item.stack = itemMap.stack
+                    inv.addItem(item)
+                }
+            }
+            c.inventory = inv
+        }
+        return c
     }
 
     String toJson() {

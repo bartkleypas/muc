@@ -64,9 +64,9 @@ if (options.test) {
     def location = new Location(0.00f, 0.00f, 0.00f)
     testRoutines["Location"] = {
         def out = []
-        home = new Poi(location, "Phiglit's and Epwna's Flat")
+        home = new Poi(location, "Phiglit's and Epwna's Home")
 
-        home.description = "A cluttered apartment in downtown Night City."
+        home.description = "A forest cottage in the Pacific North West"
         out.add("### POI:")
         out.add(home.toString())
         cli.log(out.join('\r\n'))
@@ -79,23 +79,26 @@ if (options.test) {
         out.add("### A Hero:")
 
         def hero = new Character(name: "Phiglit", role: "user")
-        hero.description = "The Code Wizard"
-        hero.bio = "A cybernetically enhanced male human. Aproximately 6 feet tall. Has grey hair with a full beard and mustashe. Wearing a zippered hoodie and bluejeans."
+        hero.description = "The Reclusive Code Wizard"
+        hero.bio = "A middle aged male human, standing about 6 feet tall. Has grey hair with a full beard and mustashe. Wearing a zippered hoodie and bluejeans. Runs Arch Linux, btw."
         hero.armorType = ArmorType.LIGHT
         hero.location = location
         home.addOccupant(hero)
 
         out.add(hero.toString())
 
-        def tool = new Item("Cyberdeck of Justice", ItemType.TOOL)
-        tool.description = "A rugged and powerful wrist mounted Cyberdeck, used for sending instructions to summoned chatbots."
+        def tool = new Item("Linux terminal of Justice", ItemType.TOOL)
+        tool.description = "A rugged and powerful pocket computer, used for sending instructions to chatbots."
         hero.inventory.addItem(tool)
         out.add("### With ${tool.name} in hand, our hero now has this:")
         out.add(hero.toString())
 
-        home.addOccupant(hero)
-
         phiglit = hero
+
+        def characterSheet = "Characters/${hero.name}.json"
+        out.add("### Writing character sheet to:\r\n${characterSheet}")
+        hero.exportCharacterSheet(characterSheet)
+
         cli.log(out.join('\r\n'))
     }
 
@@ -107,7 +110,7 @@ if (options.test) {
 
         def hero = new Character(name: "Epwna", role: "user")
         hero.description = "The Crafty Tinkerer"
-        hero.bio = "An all natural and organic female human. Aproximately 5 feet tall. She is wearing pink overalls, and has a short yellow and red pixie haircut. Enjoys designing new robots and sees herself as a sculpter more than a technologist, taking inspiration from nature and especially birds. Attentive mother figure of Rosie."
+        hero.bio = "A middle aged female human, standing around 5 feet tall. She is wearing pink overalls, and has a short yellow and red pixie haircut. Enjoys carving and carpentry, as well as a skilled sculpter. Takes inspiration from nature and especially birds."
         hero.armorType = ArmorType.LIGHT
         hero.location = location
         home.addOccupant(hero)
@@ -115,8 +118,8 @@ if (options.test) {
         out.add(hero.toString())
 
         out.add("### And she comes prepared, with:")
-        def tool = new Item("Calipers of Truth", ItemType.TOOL)
-        tool.description = "An accurate set of calipers, useful for measuring all sorts of things."
+        def tool = new Item("Chisle of Carving", ItemType.TOOL)
+        tool.description = "A chisle, that oddly never dulls, and is always just the right size for the job."
         hero.inventory.addItem(tool)
         out.add(hero.inventory.toString())
 
@@ -173,6 +176,11 @@ if (options.test) {
         out.add(hero.toString())
 
         epwna = hero
+
+        def characterSheet = "Characters/${hero.name}.json"
+        out.add("### Writing character sheet to:\r\n${characterSheet}")
+        hero.exportCharacterSheet(characterSheet)
+
         cli.log(out.join('\r\n'))
     }
 
@@ -183,12 +191,16 @@ if (options.test) {
         // We know this stuff. George needs a character sheet
         def hero = new Character(name: "George", role: "assistant")
         hero.description = "The Narrator"
-        hero.bio = "An 12 inch tall technology-packed robot owl, made of glossy plastic and brushed aluminum with neon glowing LED accents. Built by Epwna and programmed by Phiglit to be an attentive assistant. Usually found on Phiglits shoulder."
+        hero.bio = "An 18 inch tall Barred Owl, and narrator of our adventure. Speaks in a baritone voice in a smooth and measured cadence."
 
         def pen = new Item("A Pen of Writing", ItemType.TOOL)
-        pen.description = "An ornate and efficient fountain pen, mostly decorative but still symbolic, used to narrate an ongoing story."
+        pen.description = "An ornate and efficient fountain pen, mostly decorative and symbolic, but used to narrate an ongoing story."
         hero.inventory.addItem(pen)
         home.addOccupant(hero)
+
+        def characterSheet = "Characters/${hero.name}.json"
+        cli.log("### Writing character sheet to:\r\n${characterSheet}")
+        hero.exportCharacterSheet(characterSheet)
 
         // Now the fun stuff. Interacting with our hero
         def context = new Context()
@@ -223,14 +235,18 @@ if (options.test) {
     testRoutines["Illustrator"] = {
         def hero = new Character(name: "Rosie", role: "assistant")
         hero.description = "The Illustrator"
-        hero.bio = "A tiny robotic hummingbird that would fit in the palm of your hand. No more than 6 inches tall, and built by Epwna and programmed by Phiglit to assist with illistrating and visual story telling. Usually found hovering somewhere close to Epwna."
+        hero.bio = "A tiny and energetic Ruffus hummingbird, around 4 inches in length. Raised from a hatchling by Epwna, and usually found hovering somewhere close to her. Speaks quickly in disjointed sentences. Has a soft, but squeaky voice."
 
         def brush = new Item("Paintbrush of Illusion", ItemType.TOOL)
-        brush.description = "An ornate and detailed paintbrush, mostly decorative but still symbolic, used for illustrating an ongoing story."
+        brush.description = "An ornate and detailed paintbrush, mostly symbolic, but used for illustrating an ongoing story."
         hero.inventory.addItem(brush)
         home.addOccupant(hero)
 
         rosie = hero
+
+        def characterSheet = "Characters/${hero.name}.json"
+        cli.log("### Writing character sheet to:\r\n${characterSheet}")
+        hero.exportCharacterSheet(characterSheet)
 
         def context = new Context()
 
@@ -323,23 +339,43 @@ if (options.test) {
         cli.log(img)
     }
 
+    // Now, we should have some files backing our characters above.
+    // We can try loading those instead of the objects we have
+    // in the global scope. Eventually, we can discard the global
+    // state change stuff in the earlier steps entirely.
     testRoutines["Story"] = {
-        def context = new Context()
+        // Load George from the character sheet we built earlier
+        def hero = new Character()
+        def heroSheet = "Characters/George.json"
+        cli.log("### Loading hero character sheet:\r\n${heroSheet}")
+        hero = hero.importCharacterSheet(heroSheet)
+        assert hero.name == "George"
 
-        context.addMessage("user", "You are:\r\n${george.toJson()}")
+        // Load some context for our story
+        def context = new Context()
+        context.addMessage("user", "You are:\r\n${hero.toJson()}")
         context.addMessage("user", "You are located in:\r\n${home.toJson()}")
-        context.addMessage("user", "You are joined by:\r\n${phiglit.toJson()}")
-        context.addMessage("user", "You are joined by:\r\n${epwna.toJson()}")
-        context.addMessage("user", "You are joined by:\r\n${rosie.toJson()}")
+
+        // Load some party members from json files
+        home.occupants.each { name ->
+            if (name == hero.name) { return }
+            def characterSheet = "Characters/${name}.json"
+            cli.log("### Loading character sheet:\r\n${characterSheet}")
+            def character = new Character()
+            character = character.importCharacterSheet(characterSheet)
+            assert character.name == name
+            context.addMessage("user", "You are joined by:\r\n${character.toJson()}")
+        }
+
         def model = new Model(model: "narrator", body: context)
 
-        context.addMessage("user", "Ok Narrator ${george.name}. Would you please continue the story? Please take us on the next chapter, and we will pick up where you leave off.")
+        context.addMessage("user", "Ok Narrator ${hero.name}. Would you please continue the story? Please take us on the next chapter, and we will pick up where you leave off.")
         def resp = model.generateResponse(context)
         def data = new JsonSlurper().parseText(resp)
         def output = data.choices[0].message.content
         context.addMessage("assistant", output)
         story = context
-        cli.log("### ${george.name} says:\r\n${output}")
+        cli.log("### ${hero.name} says:\r\n${output}")
 
         // If we don't have a -c (--chat) arg, return. otherwise continue the
         // story!
