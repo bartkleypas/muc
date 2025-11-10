@@ -3,6 +3,7 @@
  */
 
 import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
 
 class Model {
 
@@ -50,7 +51,10 @@ class Model {
         def responseCode = post.getResponseCode()
 
         if (responseCode == 200) {
-            return post.getInputStream().getText()
+            def resp = post.getInputStream().getText()
+            def data = new JsonSlurper().parseText(resp)
+            def output = data.choices[0].message.content
+            return output
         }
         println post.getInputStream().getText()
         throw new RuntimeException("Something Went wrong.")
@@ -68,12 +72,59 @@ class Context {
         this.messages = new ArrayList<>(messages)
     }
 
-    void addMessage(String role, String content) {
-        this.messages.add(new Message(role, content))
+    void addMessage(String sender, String content) {
+        this.messages.add(new Message(sender, content))
     }
 
     List<Message> getMessages() {
         return messages
+    }
+
+    File exportContext(String filePath) {
+        File outFile = new File(filePath)
+        outFile.parentFile?.mkdirs()
+
+        def history = new Context()
+        this.properties.each { key, value ->
+            if (key == 'messages') {
+                def filteredHistory = this.messages.findAll { it.role != "system" }
+                history.messages.addAll(filteredHistory)
+            } 
+        }
+
+        outFile.text = JsonOutput.prettyPrint(JsonOutput.toJson(history))
+        return outFile
+    }
+
+    Context importContext(String filePath) {
+        File inFile = new File(filePath)
+        assert inFile.exists()
+        def json = new JsonSlurper().parse(inFile)
+        def msgs = json.messages.collect { new Message(it.role, it.content) }
+        return new Context(msgs)
+    }
+
+    Context swizzleSpeaker(String speaker) {
+        def ctx = new Context()
+        if (!messages.isEmpty() && "system".equals(messages.get(0).role)) {
+            Message msg = messages.get(0)
+            ctx.messages.add(msg)
+        }
+
+        // Boomer loop? Why not.
+        for (int i = 1; i < messages.size(); i++) {
+            Message turn = messages.get(i)
+
+            String roleToSend
+            String senderName = turn.role
+            if (senderName.equalsIgnoreCase(speaker)) {
+                roleToSend = "assistant"
+            } else {
+                roleToSend = "user"
+            }
+            ctx.addMessage(roleToSend, turn.content)
+        }
+        return ctx
     }
 }
 
