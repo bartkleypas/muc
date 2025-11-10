@@ -89,7 +89,7 @@ class Context {
             if (key == 'messages') {
                 def filteredHistory = this.messages.findAll { it.role != "system" }
                 history.messages.addAll(filteredHistory)
-            } 
+            }
         }
 
         outFile.text = JsonOutput.prettyPrint(JsonOutput.toJson(history))
