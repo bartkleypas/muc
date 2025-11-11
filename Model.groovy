@@ -115,12 +115,15 @@ class Context {
         for (int i = 1; i < messages.size(); i++) {
             Message turn = messages.get(i)
 
-            String roleToSend
             String senderName = turn.role
+            String roleToSend
+            String contentToSend
             if (senderName.equalsIgnoreCase(speaker)) {
                 roleToSend = "assistant"
+                contentToSend = turn.content
             } else {
                 roleToSend = "user"
+                contentToSend = "${senderName} says: ${turn.content}"
             }
             ctx.addMessage(roleToSend, turn.content)
         }

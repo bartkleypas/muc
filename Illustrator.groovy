@@ -26,7 +26,19 @@ class Illustrator {
         this.steps = 25
     }
 
-    String getPrompt(String input) {
+    // So, lets assume we are given a string that contains <IMAGE_DESC> tags
+    // Why? Because we tell the LLM in its system prompt to format it like this
+    // Lets hope we have an 'if output.contains("<IMAGE_DESC>") {}' control?
+    String promptToJson(String input) {
+        assert input.contains("<IMAGE_DESC>")
+
+        def matcher = input =~ /<IMAGE_DESC>(.*?)<\/IMAGE_DESC>/
+        def imgDesc = matcher[0][1].trim()
+        def out = getComfyUiJson(imgDesc)
+        return out
+    }
+
+    String getComfyUiJson(String input) {
         File jsonTemplate = new File("comfyui.json")
         def json = new JsonSlurper().parse(jsonTemplate)
 
@@ -55,11 +67,11 @@ class Illustrator {
         return output
     }
 
-    String generateImage(String prompt) {
+    String generateImage(String comfyUiJson) {
         URL url = new URL(provider.apiUrl)
 
         def post = url.openConnection()
-        def body = prompt
+        def body = comfyUiJson
 
         post.setRequestMethod("POST")
         post.setDoOutput(true)
@@ -73,7 +85,6 @@ class Illustrator {
         }
         println post.getInputStream().getText()
         throw new RuntimeException("Something Went wrong.")
-        return prompt
     }
 }
 

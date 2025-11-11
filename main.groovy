@@ -186,7 +186,6 @@ if (options.test) {
 
     // Ok. Now stuff gets complicated, and time consuming.
     // George is going to be building up some story context for us.
-    def george
     testRoutines["Narrator"] = {
         // We know this stuff. George needs a character sheet
         def hero = new Character(name: "George")
@@ -207,17 +206,32 @@ if (options.test) {
 
         // Load up our narrators instructions
         def georgePrompt = new File("Characters/George.prompt").text
+        context.addMessage("system", georgePrompt)
 
         // some background to feed to the narrator
         def background = [
-            georgePrompt,
-            "Your character sheet:",
+            "You are:",
             hero.toJson(),
             "Your location:",
             home.toJson(),
-        ].join('\r\n')
+            "You are joined by:"
+        ]
 
-        context.addMessage("system", background)
+        // Load some party members from json files
+        home.occupants.each { name ->
+            if (name == hero.name) { return }
+            characterSheet = "Characters/${name}.json"
+            cli.log("### Loading character sheet:\r\n${characterSheet}")
+            def character = new Character()
+            character = character.importCharacterSheet(characterSheet)
+            assert character.name == name
+            background.add(character.toJson())
+        }
+
+        // Overloads a single user context. Basically two "user"
+        // messages in a row, which has some uncertainty in the
+        // llm behavior. Mostly works i guess?
+        context.addMessage("Phiglit", background.join("\r\n"))
         def input = "Good morning ${hero.name}. My name is ${phiglit.name}. Would you please describe yourself and your location? Please be as detailed as you wish."
         cli.log("### Phiglit says:\r\n${input}")
         context.addMessage("Phiglit", input)
@@ -229,64 +243,37 @@ if (options.test) {
         context.addMessage(hero.name, output)
 
         context.exportContext("Story/Chapter_0.json")
-        george = hero
     }
 
-    // more... MORE... *MORE*
-    // Ok. This gets a bit nuts, but basically we are feeding a prompt with a similar context as what was fed
-    // into George. Basically we do what we did before, except this time, with some existing context (story)!
-    // Then, we feed Rosie with some instructions for generating StableDiffusion inputs.
-    // Electric Sheep indeed.
-    def rosie
+    // Pretty simple now... Really, just takes the last bit of the story, and grabs everything
+    // in between <IMAGE_DESC> tags.
     testRoutines["Illustrator"] = {
         def hero = new Character(name: "Rosie")
         hero.description = "The Illustrator"
         hero.bio = "A tiny and energetic Anna's hummingbird (Calypte anna), around 4 inches in length. Raised from a hatchling by Epwna, and usually found hovering somewhere close to her. Speaks quickly in disjointed sentences. Has a soft, but squeaky voice."
-
 
         def brush = new Item("Paintbrush of Illusion", ItemType.TOOL)
         brush.description = "An ornate and detailed paintbrush, mostly symbolic, but used for illustrating an ongoing story."
         hero.inventory.addItem(brush)
         home.addOccupant(hero)
 
-        rosie = hero
-
         def characterSheet = "Characters/${hero.name}.json"
         cli.log("### Writing character sheet to:\r\n${characterSheet}")
         hero.exportCharacterSheet(characterSheet)
 
-        // Load up our illustrators instructions
-        def context = new Context()
-        def rosiePrompt = new File("Characters/Rosie.prompt").text
-        context.addMessage("system", rosiePrompt)
-
-        def model = new Model(model: "illustrator", body: context)
-
         def story = new Context().importContext("Story/Chapter_0.json")
         def lastMessage = story.messages[-1]
         assert lastMessage.content.contains("<IMAGE_DESC>")
-        context.addMessage("Epwna", lastMessage.content)
-
-        def output = model.generateResponse(context.swizzleSpeaker(hero.name))
-        cli.log("### ${hero.name} says:\r\n${output}")
-
-        def cleaned = output.stripIndent().trim()
-        assert cleaned.contains('```json')
-
-        trimmed = cleaned.substring(cleaned.indexOf('{'), cleaned.lastIndexOf('}') + 1)
-        json = new JsonSlurper().parseText(trimmed)
 
         canvas = new Illustrator()
         canvas.style = ImageType.LANDSCAPE
         canvas.title = "${home.name}"
-        prompt = canvas.getPrompt("${json.prompt}, ${json.style}")
+        def comfyJson = canvas.promptToJson(lastMessage.content)
 
-        // bypass image generation because it is effing busted in ROCm on
-        // my hardware. Curse you python!!!
+        cli.log("${comfyJson}")
         return
 
-        def img = canvas.generateImage(prompt)
-        context.addMessage("system", "recipt:\r\n${img}")
+        def img = canvas.generateImage(comfyJson)
         cli.log(img)
     }
 
@@ -302,13 +289,12 @@ if (options.test) {
         hero = hero.importCharacterSheet(heroSheet)
         assert hero.name == "George"
 
-
         // Load some context for our story
         def context = new Context()
         def georgePrompt = new File("Characters/George.prompt").text
+        context.addMessage("system", georgePrompt)
 
         def background = [
-            georgePrompt,
             "You are:",
             hero.toJson(),
             "You are located:",
@@ -327,43 +313,34 @@ if (options.test) {
             background.add(character.toJson())
         }
 
-        context.addMessage("system", background.join("\r\n"))
+        context.addMessage("Phiglit", background.join("\r\n"))
         def story = new Context()
         story = story.importContext("Story/Chapter_0.json")
         context.messages.addAll(story.messages)
-        def model = new Model(model: "narrator", body: context)
 
-        context.addMessage("Phiglit", "Ok Narrator ${hero.name}. Would you please continue the story?")
-        def output = model.generateResponse(context.swizzleSpeaker("George"))
+        def narrator = new Model(model: "narrator")
+
+        def input = "I think, I would pick up the bass sitting close by, and strike up a relaxed groove."
+        cli.log("### Phiglit says:\r\n${input}")
+        context.addMessage("Phiglit", input)
+
+        def output = narrator.generateResponse(context.swizzleSpeaker("George"))
+        cli.log("### ${hero.name} says:\r\n${output}")
         context.addMessage(hero.name, output)
         context.exportContext("Story/Chapter_0.json")
-        cli.log("### ${hero.name} says:\r\n${output}")
 
         // If we don't have a -c (--chat) arg, return. otherwise continue the
         // story!
         if (!options.chat) { return }
         while (true) {
-            def input = cli.waitForInput()
+            input = cli.waitForInput()
 
             if (input.contains("/bye")) { return }
 
-            context.addMessage("user", input)
-            output = model.generateResponse(context.swizzleSpeaker("George"))
-            cli.log("### The assistant says:\r\n${output}")
+            context.addMessage("Phiglit", input)
+            output = narrator.generateResponse(context.swizzleSpeaker("George"))
+            cli.log("### George says:\r\n${output}")
             context.addMessage("George", output)
-            if (output.contains('```json')) {
-                def cleaned = output.stripIndent().trim()
-                def trimmed = cleaned.substring(cleaned.indexOf('{'), cleaned.lastIndexOf('}') + 1)
-                def jsonMk2 = new JsonSlurper().parseText(trimmed)
-                def canvas = new Illustrator()
-                canvas.style = ImageType.SQUARE
-                canvas.title = "Illustration"
-
-                def prompt = canvas.getPrompt("${jsonMk2.prompt}, ${jsonMk2.style}")
-                def img = canvas.generateImage(prompt)
-                context.addMessage("system", "recipt:\r\n${img}")
-                cli.log(img)
-            }
             context.exportContext("Story/Chapter_0.json")
         }
     }
