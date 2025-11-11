@@ -50,6 +50,7 @@ class Cli {
             j(longOpt: 'json', 'json output')
             i(longOpt: 'image', 'generate an image')
             c(longOpt: 'chat', 'start a chat')
+            debate(longOpt: "debate", "Let it cook")
         }
     }
 
