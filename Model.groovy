@@ -61,6 +61,8 @@ class Model {
     }
 }
 
+// A very utilitarian class that should probably be its own
+// file by now.
 class Context {
     List<Message> messages
 
@@ -68,18 +70,25 @@ class Context {
         this.messages = new ArrayList<>()
     }
 
+    // I should use this constructor more i guess.
+    // Doesn't come up often?
     Context(List<Message> messages) {
         this.messages = new ArrayList<>(messages)
     }
 
+    // I probably over-use this method. And it probably
+    // gets me into trouble.
     void addMessage(String sender, String content) {
         this.messages.add(new Message(sender, content))
     }
 
+    // I thought we were over getters and setters. Here I
+    // am doing it too. Sigh.
     List<Message> getMessages() {
         return messages
     }
 
+    // Write a file with our context to filePath
     File exportContext(String filePath) {
         File outFile = new File(filePath)
         outFile.parentFile?.mkdirs()
@@ -104,6 +113,9 @@ class Context {
         return new Context(msgs)
     }
 
+    // Basically make the "speaker" into an assistant, turn everyone
+    // else into a "user", and prepend "${speaker} says:" to the resulting
+    // strings in the returned context.messages list.
     Context swizzleSpeaker(String speaker) {
         def ctx = new Context()
         if (!messages.isEmpty() && "system".equals(messages.get(0).role)) {
@@ -131,6 +143,9 @@ class Context {
     }
 }
 
+// I need to use this more. I keep using the context.addMessage() helper
+// method to basically bypass this class. Still inportant for json obj
+// imports? Maybe?
 class Message {
     String role
     String content

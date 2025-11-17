@@ -300,7 +300,7 @@ if (options.test) {
 
         def narrator = new Model(model: "narrator")
 
-        def input = "I think, I would pick up the bass sitting close by, and strike up a relaxed groove."
+        def input = "I think I would like to pick up the electric bass and strike up a relaxed groove. Currently it is sitting in its stand by the hearth."
         cli.log("### Phiglit says:\r\n${input}")
         context.addMessage("Phiglit", input)
 
