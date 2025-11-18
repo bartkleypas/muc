@@ -1,0 +1,207 @@
+
+
+class Test {
+    Cli cli = new Cli()
+
+    void rng() {
+        Coin coin = new Coin() // 2 sided dice, ie: Coin
+        cli.log("### Picked up our lucky coin. It is showing:\r\n${coin}")
+
+        coin = coin.flip()
+        cli.log("### Flipping it, we get this:\r\n${coin}")
+
+        def flips = 8
+        def results = []
+        for (int i = 0; i < flips; i++) {
+            def flip = coin.flip()
+            def value = flip.val ? 1 : 0 // recast to "int"? stil a String, but now a numeral
+            results.add(value)
+        }
+        cli.log("### Flipping it a bunch (in binary):\r\n${results.join()}")
+
+        def d20 = new Dice(DiceType.D20)
+        cli.log("### Rolling a D20 on the desk:\r\n${d20}")
+    }
+
+    void location() {
+        Location location = new Location(0.00f, 0.00f, 0.00f)
+        cli.log("### Location:\r\n${location}")
+
+        Poi home = new Poi(location, "Phiglit's and Epwna's Home")
+        home.description = "A forest cottage in the Pacific North West"
+        cli.log("### POI:\r\n${home.toString()}")
+    }
+
+    void character() {
+        Character hero = new Character(name: "Phiglit")
+        hero.description = "The Reclusive Code Wizard"
+        hero.bio = "A middle aged male human, standing about 6 feet tall. Has grey hair with a full beard and mustashe. Wearing a zippered hoodie and bluejeans. Runs Arch Linux, btw."
+        hero.armorType = ArmorType.LIGHT
+        hero.location = new Location(0.00f, 0.00f, 0.00f)
+        cli.log("### A Hero:\r\n${hero.toString()}")
+
+        Item tool = new Item("Linux terminal of Justice", ItemType.TOOL)
+        tool.description = "A rugged and powerful pocket computer, used for sending instructions to chatbots."
+        hero.inventory.addItem(tool)
+        cli.log("### With ${tool.name} in hand, our hero now has this:\r\n${hero.toString()}")
+
+        def characterSheet = "Characters/${hero.name}.json"
+        cli.log("### Writing character sheet to:\r\n${characterSheet}")
+        hero.exportCharacterSheet(characterSheet)
+    }
+
+    // Epwna does a lot of inventory testing for us
+    void inventory() {
+        Character hero = new Character(name: "Epwna")
+        hero.description = "The Crafty Tinkerer"
+        hero.bio = "A middle aged female human, standing around 5 feet tall. She is wearing pink overalls, and has a short yellow and red pixie haircut. Enjoys carving and carpentry, as well as a skilled sculpter. Takes inspiration from nature and especially birds."
+        hero.armorType = ArmorType.LIGHT
+        hero.location = new Location(0.00f, 0.00f, 0.00f)
+        cli.log("### A Hero:\r\n${hero.toString()}")
+
+        Item tool = new Item("Chisel of Carving", ItemType.TOOL)
+        tool.description = "A chisel, that oddly never dulls, and is always just the right size for the job."
+        hero.inventory.addItem(tool)
+        cli.log("### And she comes prepared with:\r\n${hero.inventory.toString()}")
+
+        hero.inventory.useItem(tool)
+        cli.log("### Our hero used ${tool.name}, but it should still be in her inventory:\r\n${hero.inventory.toString()}")
+
+        Item potion = new Item("Healing potion", ItemType.CONSUMABLE)
+        potion.description = "Some brain-sauce for the static tantrums"
+        potion.stack = 3
+        hero.inventory.addItem(potion)
+        cli.log("### After picking up a stack of ${potion.stack} ${potion.name}(s), our hero now has this:\r\n${hero.inventory.toString()}")
+
+        hero.inventory.useItem(potion)
+        cli.log("### And after downing a breakfast of champions (${potion.name}), they are left with this:\r\n${hero.inventory.toString()}")
+
+        Item muffin = new Item("Blueberry Muffin", ItemType.CONSUMABLE)
+        muffin.description = "A muffin of infinite tasty goodness"
+        hero.inventory.addItem(muffin)
+        cli.log("### Our hero picked up a ${muffin.name}, filling her inventory slots in ${hero.inventory.name}:\r\n${hero.inventory.toString()}")
+
+        cli.log("### Adding anything else to ${hero.inventory.name} should fail:")
+        Item straw = new Item("Straw", ItemType.CONSUMABLE)
+        try {
+            hero.inventory.addItem(straw)
+        } catch (e) {
+            cli.log("!!! Yup. here is the error:\r\n${e.getMessage()}")
+        }
+
+        hero.inventory.useItem(potion)
+        cli.log("### After using a potion:\r\n${hero.inventory.toString()}")
+
+        hero.inventory.useItem(potion)
+        cli.log("### And another:\r\n${hero.inventory.toString()}")
+
+        cli.log("### And... another? (should fail):")
+        try {
+            hero.inventory.useItem(potion)
+        } catch (e) {
+            cli.log("!!! Yup. With this error:\r\n${e.getMessage()}")
+        }
+
+        cli.log("### Make sure one is still left in the bag.")
+        potion.stack = 1
+        hero.inventory.addItem(potion)
+        cli.log("### Finally, our hero ends up like this:\r\n${hero.toString()}")
+
+        def characterSheet = "Characters/${hero.name}.json"
+        cli.log("### Writing character sheet to:\r\n${characterSheet}")
+        hero.exportCharacterSheet(characterSheet)
+    }
+
+    void narrator() {
+        // We know this stuff. George needs a character sheet
+        Character hero = new Character(name: "George")
+        hero.description = "The Narrator"
+        hero.bio = "An 18 inch tall Barred Owl (Strix Varia), and narrator of our adventure. Speaks with a baritone voice in a smooth and measured cadence."
+
+        Item pen = new Item("A Pen of Writing", ItemType.TOOL)
+        pen.description = "An ornate and efficient fountain pen, mostly decorative and symbolic, but used to narrate an ongoing story."
+        hero.inventory.addItem(pen)
+
+        def characterSheet = "Characters/${hero.name}.json"
+        cli.log("### Writing character sheet to:\r\n${characterSheet}")
+        hero.exportCharacterSheet(characterSheet)
+
+        // Now the fun stuff. Interacting with our hero
+        Context context = new Context()
+
+        // Load up our narrators instructions
+        String georgePrompt = new File("Characters/George.prompt").text
+        context.addMessage("system", georgePrompt)
+
+        context.addMessage("user", "Your character sheet:\r\n${hero.toJson()}")
+        def input = "Good morning ${hero.name}. Would you please describe yourself? Please be as detailed as you wish."
+        cli.log("### user says:\r\n${input}")
+        context.addMessage("user", input)
+
+        def model = new Model(model: "narrator", body: context)
+        def output = model.generateResponse(context.swizzleSpeaker(hero.name))
+
+        cli.log("### ${hero.name} says:\r\n${output}")
+        context.addMessage(hero.name, output)
+
+        context.exportContext("Story/Chapter_0.json")
+    }
+
+    void illustrator() {
+        Character hero = new Character(name: "Rosie")
+        hero.description = "The Illustrator"
+        hero.bio = "A tiny and energetic Anna's hummingbird (Calypte anna), around 4 inches in length. Raised from a hatchling by Epwna, and usually found hovering somewhere close to her. Speaks quickly in disjointed sentences. Has a soft, but squeaky voice."
+
+        Item brush = new Item("Paintbrush of Illusion", ItemType.TOOL)
+        brush.description = "An ornate and detailed paintbrush, mostly symbolic, but used for illustrating an ongoing story."
+        hero.inventory.addItem(brush)
+
+        def characterSheet = "Characters/${hero.name}.json"
+        cli.log("### Writing character sheet to:\r\n${characterSheet}")
+        hero.exportCharacterSheet(characterSheet)
+
+        Context story = new Context().importContext("Story/Chapter_0.json")
+        Message lastMessage = story.messages[-1]
+        assert lastMessage.content.contains("<IMAGE_DESC>")
+
+        Illustrator canvas = new Illustrator()
+        canvas.style = ImageType.LANDSCAPE
+        canvas.title = "Illustration"
+        def comfyJson = canvas.promptToJson(lastMessage.content)
+
+        cli.log("### ComfyUI Json to send:\r\n${comfyJson}")
+        // Image generation is currently offline, so bailing out before we send off a request.
+        return
+
+        def img = canvas.generateImage(comfyJson)
+        cli.log(img)
+    }
+
+    void story() {
+        Character hero = new Character()
+
+        Context context = new Context()
+        String georgePrompt = new File("Characters/George.prompt").text
+        context.addMessage("system", georgePrompt)
+
+        def heroSheet = "Characters/George.json"
+        cli.log("### Loading hero character sheet:\r\n${heroSheet}")
+        hero = hero.importCharacterSheet(heroSheet)
+        assert hero.name == "George"
+
+        Context story = new Context()
+        story = story.importContext("Story/Chapter_0.json")
+        context.messages.addAll(story.messages)
+
+        Model narrator = new Model(model: "narrator")
+
+        def input = "I think I would like to pick up the electric bass and strike up a relaxed groove. Currently it is sitting in its stand by the hearth."
+        cli.log("### user says:\r\n${input}")
+        context.addMessage("user", input)
+
+        def output = narrator.generateResponse(context.swizzleSpeaker("George"))
+        cli.log("### ${hero.name} says:\r\n${output}")
+        context.addMessage(hero.name, output)
+        context.exportContext("Story/Chapter_0.json")
+    }
+}

@@ -1,7 +1,10 @@
 /**
  * Handles interaction with the language model (e.g., calling Ollama).
+ *
+ * <p>This class encapsulates the configuration for the Ollama client and
+ * provides a convenience method to send prompts and retrieve model
+ * responses.</p>
  */
-
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 
@@ -14,6 +17,12 @@ class Model {
     Double temperature
     Context body
 
+    /**
+     * Default constructor.
+     *
+     * <p>Initialises the provider, default model, role, streaming flag,
+     * temperature and an empty {@link Context} for the conversation.</p>
+     */
     Model() {
         this.provider = new Provider()
         this.model = "gemma3:latest"
@@ -26,8 +35,10 @@ class Model {
     /**
      * Sends a prompt to the Ollama service and returns the generated response.
      *
-     * @param prompt The prompt to send to the Ollama service.
-     * @return The generated response from the Ollama service, or null if an error occurred.
+     * @param body the {@link Context} containing the message history to send.
+     * @return the generated response from the Ollama service.
+     * @throws RuntimeException if the HTTP request fails or the API returns
+     *                          an unexpected status code.
      */
     String generateResponse(Context body) {
         URL url = new URL(provider.apiUrl)
@@ -61,34 +72,55 @@ class Model {
     }
 }
 
-// A very utilitarian class that should probably be its own
-// file by now.
+/**
+ * Represents a conversation context used by the model.
+ *
+ * <p>The context stores a list of {@link Message} objects. It provides
+ * helper methods to add messages, export to a JSON file, import from a
+ * file, and transform the context for different speakers.</p>
+ */
 class Context {
     List<Message> messages
 
+    /**
+     * Creates an empty context.
+     */
     Context() {
         this.messages = new ArrayList<>()
     }
 
-    // I should use this constructor more i guess.
-    // Doesn't come up often?
+    /**
+     * Creates a context with an initial list of messages.
+     *
+     * @param messages the initial list of messages.
+     */
     Context(List<Message> messages) {
         this.messages = new ArrayList<>(messages)
     }
 
-    // I probably over-use this method. And it probably
-    // gets me into trouble.
+    /**
+     * Adds a new message to the context.
+     *
+     * @param sender  the role of the sender (e.g., "user" or "assistant").
+     * @param content the message content.
+     */
     void addMessage(String sender, String content) {
         this.messages.add(new Message(sender, content))
     }
 
-    // I thought we were over getters and setters. Here I
-    // am doing it too. Sigh.
+    /**
+     * @return the list of messages in the context.
+     */
     List<Message> getMessages() {
         return messages
     }
 
-    // Write a file with our context to filePath
+    /**
+     * Exports the context (excluding system messages) to a JSON file.
+     *
+     * @param filePath the file path where the context should be written.
+     * @return the {@link File} object pointing to the exported file.
+     */
     File exportContext(String filePath) {
         File outFile = new File(filePath)
         outFile.parentFile?.mkdirs()
@@ -105,6 +137,12 @@ class Context {
         return outFile
     }
 
+    /**
+     * Imports a context from a JSON file.
+     *
+     * @param filePath the file path to read.
+     * @return a new {@link Context} instance populated with the file contents.
+     */
     Context importContext(String filePath) {
         File inFile = new File(filePath)
         assert inFile.exists()
@@ -113,9 +151,17 @@ class Context {
         return new Context(msgs)
     }
 
-    // Basically make the "speaker" into an assistant, turn everyone
-    // else into a "user", and prepend "${speaker} says:" to the resulting
-    // strings in the returned context.messages list.
+    /**
+     * Transforms the context for a specific speaker.
+     *
+     * <p>Turns the supplied {@code speaker} into an assistant, all other
+     * participants become a user, and their messages are prefixed with
+     * "<code>&lt;speaker&gt; says:</code>". The first system message is kept
+     * intact if present.</p>
+     *
+     * @param speaker the role that should be treated as the assistant.
+     * @return a new {@link Context} instance with the transformed messages.
+     */
     Context swizzleSpeaker(String speaker) {
         def ctx = new Context()
         if (!messages.isEmpty() && "system".equals(messages.get(0).role)) {
@@ -143,9 +189,12 @@ class Context {
     }
 }
 
-// I need to use this more. I keep using the context.addMessage() helper
-// method to basically bypass this class. Still inportant for json obj
-// imports? Maybe?
+/**
+ * Represents a single message in the conversation.
+ *
+ * <p>The message stores the role (e.g., "user" or "assistant") and the
+ * content of the message.</p>
+ */
 class Message {
     String role
     String content
@@ -158,6 +207,9 @@ class Message {
 
 /**
  * Holds the configuration details for the Ollama API.
+ *
+ * <p>Loads environment variables from {@code Secrets/.env} (if present)
+ * and exposes the API URL, key and token for use by {@link Model}.</p>
  */
 class Provider {
     File envFile = new File("Secrets/.env")
@@ -165,7 +217,12 @@ class Provider {
     String apiKey
     String token
 
-
+    /**
+     * Default constructor.
+     *
+     * <p>Loads the environment variables from the .env file and assigns
+     * them to the instance fields.</p>
+     */
     Provider() {
         def envVars = [:]
         if (envFile.exists()) {
@@ -177,6 +234,12 @@ class Provider {
         this.token = apiKey
     }
 
+    /**
+     * Loads key/value pairs from a .env file.
+     *
+     * @param path the {@link File} pointing to the .env file.
+     * @return a {@link Properties} map of the loaded variables.
+     */
     public loadDotEnv(File path) {
         assert path.exists()
         Properties props = new Properties()

@@ -92,8 +92,15 @@ class Cli {
     }
 
     String waitForInput() {
+        Console console = System.console()
+        if (console) {
+            String input = console.readLine("### Response:\r\n")
+            return input
+        }
+
         println "### Response:"
-        def input = System.in.newReader().readLine()
+        Scanner scanner = new Scanner(System.in)
+        String input = scanner.nextLine()
         return input
     }
 }
