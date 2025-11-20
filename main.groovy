@@ -1,16 +1,18 @@
-#!/usr/bin/env groovy
-import groovy.json.JsonOutput
-import groovy.json.JsonSlurper
-import groovy.json.JsonParserType
+#!/bin/bash
+//usr/bin/env groovy -cp lib/:lib/main.jar "$0" $@; exit $?
+
+import java.nio.file.Files
+import java.nio.file.Paths
+
+import org.kleypas.muc.model.Context
+import org.kleypas.muc.model.Message
+import org.kleypas.muc.model.Model
+import org.kleypas.muc.model.TagParser
+
+import org.kleypas.muc.illustrator.Illustrator
+import org.kleypas.muc.illustrator.ImageType
 
 import Cli
-import Character
-import Illustrator
-import Inventory
-import Item
-import Location
-import Model
-import Rng
 import Test
 
 Cli cli = new Cli()
@@ -20,6 +22,17 @@ if (options.json) {
     cli.logLevel = LogLevel.JSON
 }
 
+// Build the project if the `--build` flag is provided.
+if (options.build) {
+    println "Sent a build arg."
+
+    Files.createDirectories(Paths.get("./lib"))
+    cli.run("groovyc -d=./lib main.groovy")
+}
+
+// Ok, first step was hashtag simplify by at least
+// moving it into a helper class in Test.groovy. We can
+// refine it from here at least.
 if (options.test) {
     def test = new Test()
 
@@ -64,7 +77,15 @@ if (options.chat) {
 // Let the machine "chat" with its self.
 if (options.debate) {
     cli.log("Inside a debate")
+    // a "global state" context? Maybe?
     def debate = new Context()
+
+    cli.log("Introducing our Moderator:")
+    def moderatorName = "Moderator"
+    def moderatorContext = new Context()
+    def moderatorPrompt = "You are an impartial moderator of a debate between two chatbots. You must evaluate the chat history and summarize the points made by the participants. If they have come to a conclusion, please state it, concluding your response with either true or false between <COSENSUS> tags on the last line of your output. (ex: '\r\n<CONSENSUS>true</CONSENSUS>', OR '\r\n<CONSENSUS>false</CONSENSUS>')"
+    moderatorContext.addMessage("system", moderatorPrompt)
+    def moderator = new Model(model: "narrator")
 
     def proName = "Prodipto"
     def proContext = new Context()
@@ -74,8 +95,8 @@ if (options.debate) {
 
     def resp = ""
 
-    proContext.addMessage("Phiglit", "Good morning. Your position is pro-regulation of AI technology. Please state your opening arguments.")
-    debate.addMessage("Phiglit", "Good morning. Your position is pro-regulation of AI technology. Please state your opening arguments.")
+    proContext.addMessage(moderatorName, "Good morning. Your position is pro-regulation of AI technology. Please state your opening arguments.")
+    debate.addMessage(moderatorName, "Good morning. Your position is pro-regulation of AI technology. Please state your opening arguments.")
     resp = yayRegs.generateResponse(proContext.swizzleSpeaker(proName))
     cli.log("${proName} says:\r\n${resp}")
     debate.addMessage(proName, resp)
@@ -86,20 +107,22 @@ if (options.debate) {
     negContext.addMessage("system", negSystemPrompt)
     def booRegs = new Model(model: "smallfry")
 
-    negContext.addMessage("Phiglit", "Good morning. Your position is anti-regulation of AI technology. Please state your opening arguments.")
-    debate.addMessage("Phiglit", "Good morning. Your position is anti-regulation of AI technology. Please state your opening arguments.")
+    negContext.addMessage(moderatorName, "Good morning. Your position is anti-regulation of AI technology. Please state your opening arguments.")
+    debate.addMessage(moderatorName, "Good morning. Your position is anti-regulation of AI technology. Please state your opening arguments.")
     resp = booRegs.generateResponse(negContext.swizzleSpeaker(negName))
     cli.log("${negName} says:\r\n${resp}")
     debate.addMessage(negName, resp)
 
-    debate.exportContext("Story/Debate.json")
+    debate.exportContext("Story/Debate_0.json")
 
-    def debateRounds = 3
+    def debateRounds = 2
+    def consensus = false
     for (int i = 0; i < debateRounds; i++) {
+        def count = i+1
         def subContext = new Context()
 
-        debate.addMessage("Phiglit", "What is your response?")
-        cli.log("Phiglit says:\r\nWhat is your response?")
+        debate.addMessage(moderatorName, "What is your response?")
+        cli.log("${moderatorName} says:\r\nWhat is your response?")
         subContext.addMessage("system", proSystemPrompt)
         subContext.messages.addAll(debate.messages)
         resp = yayRegs.generateResponse(subContext.swizzleSpeaker(proName))
@@ -107,26 +130,28 @@ if (options.debate) {
         debate.addMessage(proName, resp)
 
         subContext = new Context()
-        debate.addMessage("Phiglit", "What is your response?")
-        cli.log("Phiglit says:\r\nWhat is your response?")
+        debate.addMessage(moderatorName, "What is your response?")
+        cli.log("${moderatorName} says:\r\nWhat is your response?")
         subContext.addMessage("system", negSystemPrompt)
         subContext.messages.addAll(debate.messages)
 
         resp = booRegs.generateResponse(subContext.swizzleSpeaker(negName))
         debate.addMessage(negName, resp)
+
+
+
         cli.log("${negName} says:\r\n${resp}")
     }
 
-    def closer = new Model(model: "narrator")
-    def closerSystemPrompt = "You are an impartial moderator of a debate between two chatbots. You must evaluate the chat history and summarize the points made by the participants. If they have come to a conclusion, please state it."
-    def closerContext = new Context()
-    closerContext.addMessage("system", closerSystemPrompt)
-    closerContext.messages.addAll(debate.messages)
-    closerContext.addMessage("user", "What is your evaluation?")
     debate.addMessage("user", "What is your evaluation?")
-    resp = closer.generateResponse(closerContext.swizzleSpeaker("Phiglit"))
-    cli.log("Closer:\r\n${resp}")
-    debate.addMessage("Phiglit", resp)
+    moderatorContext.messages.addAll(debate.messages)
+    resp = moderator.generateResponse(moderatorContext.swizzleSpeaker(moderatorName))
+    cli.log("${moderatorName} says:\r\n${resp}")
+    
+    consensus = TagParser.extractBoolean(resp, "CONSENSUS")
+    cli.log "Consensus reached?:\r\n${consensus}"
+
+    debate.addMessage(moderatorName, resp)
     debate.exportContext("Story/Debate.json")
     cli.log("How about a nice game of chess?")
 }

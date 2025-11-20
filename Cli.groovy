@@ -46,6 +46,7 @@ class Cli {
 
         cliBuilder.with {
             h(longOpt: 'help', 'Try to help')
+            b(longOpt: 'build', 'Build the project to lib/')
             t(longOpt: 'test', 'Run tests')
             j(longOpt: 'json', 'json output')
             i(longOpt: 'image', 'generate an image')

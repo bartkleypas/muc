@@ -1,4 +1,26 @@
 
+import org.kleypas.muc.rng.Coin
+import org.kleypas.muc.rng.Dice
+import org.kleypas.muc.rng.DiceType
+
+import org.kleypas.muc.location.Location
+import org.kleypas.muc.location.Poi
+
+import org.kleypas.muc.character.Character
+import org.kleypas.muc.character.ArmorType
+
+import org.kleypas.muc.inventory.Inventory
+import org.kleypas.muc.inventory.Item
+import org.kleypas.muc.inventory.ItemType
+
+import org.kleypas.muc.model.Context
+import org.kleypas.muc.model.Message
+import org.kleypas.muc.model.Model
+import org.kleypas.muc.model.Provider
+import org.kleypas.muc.model.TagParser
+
+import org.kleypas.muc.illustrator.Illustrator
+import org.kleypas.muc.illustrator.ImageType
 
 class Test {
     Cli cli = new Cli()
@@ -195,7 +217,7 @@ class Test {
 
         Model narrator = new Model(model: "narrator")
 
-        def input = "I think I would like to pick up the electric bass and strike up a relaxed groove. Currently it is sitting in its stand by the hearth."
+        def input = "I think I would like to pick up the electric bass and strike up a relaxed and groovy bassline. Currently it is sitting in its stand by the hearth."
         cli.log("### user says:\r\n${input}")
         context.addMessage("user", input)
 
