@@ -12,22 +12,22 @@ import org.kleypas.muc.model.TagParser
 import org.kleypas.muc.illustrator.Illustrator
 import org.kleypas.muc.illustrator.ImageType
 
-import Cli
+import org.kleypas.muc.cli.Cli
+import org.kleypas.muc.cli.Logger
+
 import Test
 
 Cli cli = new Cli()
 def options = cli.parse(args)
 
-if (options.json) {
-    cli.logLevel = LogLevel.JSON
-}
+Logger.info "Welcome to the Muc. Starting execution loop."
 
 // Build the project if the `--build` flag is provided.
 if (options.build) {
-    println "Sent a build arg."
+    Logger.info "Sent a build arg."
 
     Files.createDirectories(Paths.get("./lib"))
-    cli.run("groovyc -d=./lib main.groovy")
+    cli.runCommand "groovyc -d=./lib main.groovy"
 }
 
 // Ok, first step was hashtag simplify by at least
@@ -138,8 +138,6 @@ if (options.debate) {
         resp = booRegs.generateResponse(subContext.swizzleSpeaker(negName))
         debate.addMessage(negName, resp)
 
-
-
         cli.log("${negName} says:\r\n${resp}")
     }
 
@@ -147,7 +145,7 @@ if (options.debate) {
     moderatorContext.messages.addAll(debate.messages)
     resp = moderator.generateResponse(moderatorContext.swizzleSpeaker(moderatorName))
     cli.log("${moderatorName} says:\r\n${resp}")
-    
+
     consensus = TagParser.extractBoolean(resp, "CONSENSUS")
     cli.log "Consensus reached?:\r\n${consensus}"
 

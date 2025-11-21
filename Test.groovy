@@ -1,4 +1,7 @@
 
+import org.kleypas.muc.cli.Cli
+import org.kleypas.muc.cli.Logger
+
 import org.kleypas.muc.rng.Coin
 import org.kleypas.muc.rng.Dice
 import org.kleypas.muc.rng.DiceType
@@ -27,10 +30,10 @@ class Test {
 
     void rng() {
         Coin coin = new Coin() // 2 sided dice, ie: Coin
-        cli.log("### Picked up our lucky coin. It is showing:\r\n${coin}")
+        Logger.info "### Picked up our lucky coin. It is showing:\r\n${coin}"
 
         coin = coin.flip()
-        cli.log("### Flipping it, we get this:\r\n${coin}")
+        Logger.info "### Flipping it, we get this:\r\n${coin}"
 
         def flips = 8
         def results = []
@@ -39,19 +42,19 @@ class Test {
             def value = flip.val ? 1 : 0 // recast to "int"? stil a String, but now a numeral
             results.add(value)
         }
-        cli.log("### Flipping it a bunch (in binary):\r\n${results.join()}")
+        Logger.info "### Flipping it a bunch (in binary):\r\n${results.join()}"
 
         def d20 = new Dice(DiceType.D20)
-        cli.log("### Rolling a D20 on the desk:\r\n${d20}")
+        Logger.info "### Rolling a D20 on the desk:\r\n${d20}"
     }
 
     void location() {
         Location location = new Location(0.00f, 0.00f, 0.00f)
-        cli.log("### Location:\r\n${location}")
+        Logger.info "### Location:\r\n${location}"
 
         Poi home = new Poi(location, "Phiglit's and Epwna's Home")
         home.description = "A forest cottage in the Pacific North West"
-        cli.log("### POI:\r\n${home.toString()}")
+        Logger.info "### POI:\r\n${home.toString()}"
     }
 
     void character() {
@@ -60,15 +63,15 @@ class Test {
         hero.bio = "A middle aged male human, standing about 6 feet tall. Has grey hair with a full beard and mustashe. Wearing a zippered hoodie and bluejeans. Runs Arch Linux, btw."
         hero.armorType = ArmorType.LIGHT
         hero.location = new Location(0.00f, 0.00f, 0.00f)
-        cli.log("### A Hero:\r\n${hero.toString()}")
+        Logger.info "### A Hero:\r\n${hero.toString()}"
 
         Item tool = new Item("Linux terminal of Justice", ItemType.TOOL)
         tool.description = "A rugged and powerful pocket computer, used for sending instructions to chatbots."
         hero.inventory.addItem(tool)
-        cli.log("### With ${tool.name} in hand, our hero now has this:\r\n${hero.toString()}")
+        Logger.info "### With ${tool.name} in hand, our hero now has this:\r\n${hero.toString()}"
 
         def characterSheet = "Characters/${hero.name}.json"
-        cli.log("### Writing character sheet to:\r\n${characterSheet}")
+        Logger.info "### Writing character sheet to:\r\n${characterSheet}"
         hero.exportCharacterSheet(characterSheet)
     }
 
@@ -79,58 +82,58 @@ class Test {
         hero.bio = "A middle aged female human, standing around 5 feet tall. She is wearing pink overalls, and has a short yellow and red pixie haircut. Enjoys carving and carpentry, as well as a skilled sculpter. Takes inspiration from nature and especially birds."
         hero.armorType = ArmorType.LIGHT
         hero.location = new Location(0.00f, 0.00f, 0.00f)
-        cli.log("### A Hero:\r\n${hero.toString()}")
+        Logger.info "### A Hero:\r\n${hero.toString()}"
 
         Item tool = new Item("Chisel of Carving", ItemType.TOOL)
         tool.description = "A chisel, that oddly never dulls, and is always just the right size for the job."
         hero.inventory.addItem(tool)
-        cli.log("### And she comes prepared with:\r\n${hero.inventory.toString()}")
+        Logger.info "### And she comes prepared with:\r\n${hero.inventory.toString()}"
 
         hero.inventory.useItem(tool)
-        cli.log("### Our hero used ${tool.name}, but it should still be in her inventory:\r\n${hero.inventory.toString()}")
+        Logger.info "### Our hero used ${tool.name}, but it should still be in her inventory:\r\n${hero.inventory.toString()}"
 
         Item potion = new Item("Healing potion", ItemType.CONSUMABLE)
         potion.description = "Some brain-sauce for the static tantrums"
         potion.stack = 3
         hero.inventory.addItem(potion)
-        cli.log("### After picking up a stack of ${potion.stack} ${potion.name}(s), our hero now has this:\r\n${hero.inventory.toString()}")
+        Logger.info "### After picking up a stack of ${potion.stack} ${potion.name}(s), our hero now has this:\r\n${hero.inventory.toString()}"
 
         hero.inventory.useItem(potion)
-        cli.log("### And after downing a breakfast of champions (${potion.name}), they are left with this:\r\n${hero.inventory.toString()}")
+        Logger.info "### And after downing a breakfast of champions (${potion.name}), they are left with this:\r\n${hero.inventory.toString()}"
 
         Item muffin = new Item("Blueberry Muffin", ItemType.CONSUMABLE)
         muffin.description = "A muffin of infinite tasty goodness"
         hero.inventory.addItem(muffin)
-        cli.log("### Our hero picked up a ${muffin.name}, filling her inventory slots in ${hero.inventory.name}:\r\n${hero.inventory.toString()}")
+        Logger.info "### Our hero picked up a ${muffin.name}, filling her inventory slots in ${hero.inventory.name}:\r\n${hero.inventory.toString()}"
 
-        cli.log("### Adding anything else to ${hero.inventory.name} should fail:")
+        Logger.info "### Adding anything else to ${hero.inventory.name} should fail:"
         Item straw = new Item("Straw", ItemType.CONSUMABLE)
         try {
             hero.inventory.addItem(straw)
         } catch (e) {
-            cli.log("!!! Yup. here is the error:\r\n${e.getMessage()}")
+            Logger.info "!!! Yup. here is the error:\r\n${e.getMessage()}"
         }
 
         hero.inventory.useItem(potion)
-        cli.log("### After using a potion:\r\n${hero.inventory.toString()}")
+        Logger.info "### After using a potion:\r\n${hero.inventory.toString()}"
 
         hero.inventory.useItem(potion)
-        cli.log("### And another:\r\n${hero.inventory.toString()}")
+        Logger.info "### And another:\r\n${hero.inventory.toString()}"
 
-        cli.log("### And... another? (should fail):")
+        Logger.info "### And... another? (should fail):"
         try {
             hero.inventory.useItem(potion)
         } catch (e) {
-            cli.log("!!! Yup. With this error:\r\n${e.getMessage()}")
+            Logger.info "!!! Yup. With this error:\r\n${e.getMessage()}"
         }
 
-        cli.log("### Make sure one is still left in the bag.")
+        Logger.info "### Make sure one is still left in the bag."
         potion.stack = 1
         hero.inventory.addItem(potion)
-        cli.log("### Finally, our hero ends up like this:\r\n${hero.toString()}")
+        Logger.info "### Finally, our hero ends up like this:\r\n${hero.toString()}"
 
         def characterSheet = "Characters/${hero.name}.json"
-        cli.log("### Writing character sheet to:\r\n${characterSheet}")
+        Logger.info "### Writing character sheet to:\r\n${characterSheet}"
         hero.exportCharacterSheet(characterSheet)
     }
 
@@ -145,7 +148,7 @@ class Test {
         hero.inventory.addItem(pen)
 
         def characterSheet = "Characters/${hero.name}.json"
-        cli.log("### Writing character sheet to:\r\n${characterSheet}")
+        Logger.info "### Writing character sheet to:\r\n${characterSheet}"
         hero.exportCharacterSheet(characterSheet)
 
         // Now the fun stuff. Interacting with our hero
@@ -157,13 +160,13 @@ class Test {
 
         context.addMessage("user", "Your character sheet:\r\n${hero.toJson()}")
         def input = "Good morning ${hero.name}. Would you please describe yourself? Please be as detailed as you wish."
-        cli.log("### user says:\r\n${input}")
+        Logger.info "### user says:\r\n${input}"
         context.addMessage("user", input)
 
         def model = new Model(model: "narrator", body: context)
         def output = model.generateResponse(context.swizzleSpeaker(hero.name))
 
-        cli.log("### ${hero.name} says:\r\n${output}")
+        Logger.info "### ${hero.name} says:\r\n${output}"
         context.addMessage(hero.name, output)
 
         context.exportContext("Story/Chapter_0.json")
@@ -179,7 +182,7 @@ class Test {
         hero.inventory.addItem(brush)
 
         def characterSheet = "Characters/${hero.name}.json"
-        cli.log("### Writing character sheet to:\r\n${characterSheet}")
+        Logger.info "### Writing character sheet to:\r\n${characterSheet}"
         hero.exportCharacterSheet(characterSheet)
 
         Context story = new Context().importContext("Story/Chapter_0.json")
@@ -191,12 +194,12 @@ class Test {
         canvas.title = "Illustration"
         def comfyJson = canvas.promptToJson(lastMessage.content)
 
-        cli.log("### ComfyUI Json to send:\r\n${comfyJson}")
+        Logger.info "### ComfyUI Json to send:\r\n${comfyJson}"
         // Image generation is currently offline, so bailing out before we send off a request.
         return
 
         def img = canvas.generateImage(comfyJson)
-        cli.log(img)
+        Logger.info "### Recipt:\r\n${img}"
     }
 
     void story() {
@@ -207,7 +210,7 @@ class Test {
         context.addMessage("system", georgePrompt)
 
         def heroSheet = "Characters/George.json"
-        cli.log("### Loading hero character sheet:\r\n${heroSheet}")
+        Logger.info "### Loading hero character sheet:\r\n${heroSheet}"
         hero = hero.importCharacterSheet(heroSheet)
         assert hero.name == "George"
 
@@ -218,11 +221,11 @@ class Test {
         Model narrator = new Model(model: "narrator")
 
         def input = "I think I would like to pick up the electric bass and strike up a relaxed and groovy bassline. Currently it is sitting in its stand by the hearth."
-        cli.log("### user says:\r\n${input}")
+        Logger.info "### user says:\r\n${input}"
         context.addMessage("user", input)
 
         def output = narrator.generateResponse(context.swizzleSpeaker("George"))
-        cli.log("### ${hero.name} says:\r\n${output}")
+        Logger.info "### ${hero.name} says:\r\n${output}"
         context.addMessage(hero.name, output)
         context.exportContext("Story/Chapter_0.json")
     }
