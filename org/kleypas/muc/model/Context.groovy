@@ -64,19 +64,30 @@ class Context {
     // --- Context Pruning (New Implementation to control O(N^2) scaling) ---
 
     /**
+     * Estimates the token count for a single message based on character count.
+     * @param message The message to estimate tokens for.
+     * @return The estimated number of tokens.
+     */
+    // Style B: Explicit return type and parameter type, private access
+    private int estimateMessageTokenCount(final Message message) {
+        // Safe navigation for content in case it's null
+        final int charCount = message.content?.length() ?: 0
+        // Rough estimate: 1 token is roughly 4 characters
+        return charCount / 4
+    }
+
+    /**
      * Estimates the current token count based on character count (a simple proxy).
      * @return The estimated number of tokens.
      */
     // Style B: Explicit return type and private access
     private int estimateTokenCount() {
-        int charCount = 0
+        int tokenCount = 0
         // Use explicit types for the loop (Style B preferred)
         for (final Message msg : this.messages) {
-            // Safe navigation for content in case it's null
-            charCount += msg.content?.length() ?: 0
+            tokenCount += estimateMessageTokenCount(msg)
         }
-        // Rough estimate: 1 token is roughly 4 characters
-        return charCount / 4
+        return tokenCount 
     }
     
     /**
@@ -86,7 +97,7 @@ class Context {
     public void pruneContext() {
         int currentTokens = this.estimateTokenCount()
         
-        // While too large and there's more than one message (to preserve the initial instruction)
+        // While too large and there's more than one message (to preserve the initial introduction)
         while (currentTokens > MAX_TOKENS && this.messages.size() > 1) {
             int messageIndexToRemove = -1
             
@@ -100,9 +111,10 @@ class Context {
             }
             
             if (messageIndexToRemove != -1) {
-                // Remove the oldest non-system message
+                final Message removedMsg = this.messages.get(messageIndexToRemove)
+                final int tokensToSubtract = estimateMessageTokenCount(removedMsg)
                 this.messages.remove(messageIndexToRemove)
-                currentTokens = this.estimateTokenCount()
+                currentTokens -= tokensToSubtract
             } else {
                 // Only system messages remain
                 break
