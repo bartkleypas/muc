@@ -1,6 +1,7 @@
 
 import org.kleypas.muc.cli.Cli
 import org.kleypas.muc.cli.Logger
+import org.kleypas.muc.cli.LogLevel
 
 import org.kleypas.muc.rng.Coin
 import org.kleypas.muc.rng.Dice
@@ -28,7 +29,12 @@ import org.kleypas.muc.illustrator.ImageType
 class Test {
     Cli cli = new Cli()
 
+    Test() {
+        Logger.setLevel(LogLevel.INFO)
+    }
+
     void rng() {
+        Logger.info "## Running RNG tests"
         Coin coin = new Coin() // 2 sided dice, ie: Coin
         Logger.info "### Picked up our lucky coin. It is showing:\r\n${coin}"
 
@@ -49,6 +55,7 @@ class Test {
     }
 
     void location() {
+        Logger.info "## Running Location tests"
         Location location = new Location(0.00f, 0.00f, 0.00f)
         Logger.info "### Location:\r\n${location}"
 
@@ -58,6 +65,7 @@ class Test {
     }
 
     void character() {
+        Logger.info "## Running Character tests"
         Character hero = new Character(name: "Phiglit")
         hero.description = "The Reclusive Code Wizard"
         hero.bio = "A middle aged male human, standing about 6 feet tall. Has grey hair with a full beard and mustashe. Wearing a zippered hoodie and bluejeans. Runs Arch Linux, btw."
@@ -77,6 +85,7 @@ class Test {
 
     // Epwna does a lot of inventory testing for us
     void inventory() {
+        Logger.info "## Running Inventory tests"
         Character hero = new Character(name: "Epwna")
         hero.description = "The Crafty Tinkerer"
         hero.bio = "A middle aged female human, standing around 5 feet tall. She is wearing pink overalls, and has a short yellow and red pixie haircut. Enjoys carving and carpentry, as well as a skilled sculpter. Takes inspiration from nature and especially birds."
@@ -138,6 +147,7 @@ class Test {
     }
 
     void narrator() {
+        Logger.info "## Running Narrator tests"
         // We know this stuff. George needs a character sheet
         Character hero = new Character(name: "George")
         hero.description = "The Narrator"
@@ -173,6 +183,7 @@ class Test {
     }
 
     void illustrator() {
+        Logger.info "## Running Illustrator tests"
         Character hero = new Character(name: "Rosie")
         hero.description = "The Illustrator"
         hero.bio = "A tiny and energetic Anna's hummingbird (Calypte anna), around 4 inches in length. Raised from a hatchling by Epwna, and usually found hovering somewhere close to her. Speaks quickly in disjointed sentences. Has a soft, but squeaky voice."
@@ -185,7 +196,9 @@ class Test {
         Logger.info "### Writing character sheet to:\r\n${characterSheet}"
         hero.exportCharacterSheet(characterSheet)
 
-        Context story = new Context().importContext("Story/Chapter_0.json")
+        Logger.info "### Reading last message from:\r\nStory/Chapter_0.json"
+        Context story = new Context()
+        story.importContext("Story/Chapter_0.json")
         Message lastMessage = story.messages[-1]
         assert lastMessage.content.contains("<IMAGE_DESC>")
 
@@ -203,6 +216,7 @@ class Test {
     }
 
     void story() {
+        Logger.info "## Running Story tests"
         Character hero = new Character()
 
         Context context = new Context()
@@ -214,6 +228,7 @@ class Test {
         hero = hero.importCharacterSheet(heroSheet)
         assert hero.name == "George"
 
+        Logger.info "### Loading story from:\r\nStory/Chapter_0.json"
         Context story = new Context()
         story = story.importContext("Story/Chapter_0.json")
         context.messages.addAll(story.messages)

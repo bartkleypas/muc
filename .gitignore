@@ -2,3 +2,6 @@
 .env
 
 Secrets/
+
+build/
+lib/
