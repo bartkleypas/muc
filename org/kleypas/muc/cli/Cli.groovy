@@ -85,7 +85,7 @@ public class Cli {
     private void logSanitizedEnvVars(Map<String, String> originalMap) {
         if (Logger.currentLevel.getLevelValue() <= LogLevel.DEBUG.getLevelValue()) {
             Map<String, String> sanitizedMap = [:]
-            
+
             originalMap.each { key, value ->
                 // Check if the key contains any of the identifiers in SECRET_KEYS (case-insensitive)
                 def isSecret = SECRET_KEYS.any { secretPart ->
@@ -99,7 +99,7 @@ public class Cli {
                     sanitizedMap.put(key, value)
                 }
             }
-            
+
             Logger.debug("Loaded Environment Variables: ${sanitizedMap}")
         }
     }

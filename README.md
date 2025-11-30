@@ -35,6 +35,7 @@ All application modes are invoked directly via the `groovy` command pointing to 
 | `groovy main.groovy -i` | **Image Mode:** Prompts the model to generate an image based on your text input (requires relevant API configuration). |
 | `groovy main.groovy -t` | **Test Mode:** Runs the integrated test harness defined in `Test.groovy`. |
 | `groovy main.groovy -v` | **Verbose Mode:** Adds verbose output to the console for debugging (can be combined with other commands, e.g., `groovy main.groovy -c -v`). |
+| `groovy main.groovy --debate` | **Debate:** Starts a debate. Put in a `-v` to get the output on the command line. |
 
 ---
 

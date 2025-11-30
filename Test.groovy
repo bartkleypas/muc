@@ -198,7 +198,7 @@ class Test {
 
         Logger.info "### Reading last message from:\r\nStory/Chapter_0.json"
         Context story = new Context()
-        story.importContext("Story/Chapter_0.json")
+        story = story.importContext("Story/Chapter_0.json")
         Message lastMessage = story.messages[-1]
         assert lastMessage.content.contains("<IMAGE_DESC>")
 

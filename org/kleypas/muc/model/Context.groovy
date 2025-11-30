@@ -1,9 +1,12 @@
 package org.kleypas.muc.model
 
 import groovy.json.JsonOutput
+import groovy.lang.Closure
+
+import java.io.File
+import java.time.Instant
 import java.util.ArrayList
 import java.util.List
-import java.io.File
 
 /**
  * Represents the conversational history (Context) for an LLM interaction.
@@ -15,8 +18,8 @@ class Context {
     public List<Message> messages
 
     // Constant for maximum tokens to combat O(N^2) complexity
-    private static final int MAX_TOKENS = 32768 
-    
+    // private static final int MAX_TOKENS = 32768
+    private static final int MAX_TOKENS = 8192
     // --- Constructors ---
 
     /**
@@ -96,11 +99,11 @@ class Context {
     // Style B: Explicit return type
     public void pruneContext() {
         int currentTokens = this.estimateTokenCount()
-        
+
         // While too large and there's more than one message (to preserve the initial introduction)
         while (currentTokens > MAX_TOKENS && this.messages.size() > 1) {
             int messageIndexToRemove = -1
-            
+
             // Iterate using standard loop (Style B) to find the first non-system message
             for (int i = 0; i < this.messages.size(); i++) {
                 final Message msg = this.messages.get(i)
@@ -109,7 +112,7 @@ class Context {
                     break
                 }
             }
-            
+
             if (messageIndexToRemove != -1) {
                 final Message removedMsg = this.messages.get(messageIndexToRemove)
                 final int tokensToSubtract = estimateMessageTokenCount(removedMsg)
@@ -133,7 +136,7 @@ class Context {
     public Context swizzleSpeaker(String speaker) {
         // Use strong typing for local variables
         final Context newContext = new Context()
-        
+
         // Preserve first system message (Style B: explicit type casting for iteration)
         if (!messages.isEmpty() && "system".equals(messages.get(0).role)) {
             final Message systemMsg = messages.get(0)
@@ -147,7 +150,7 @@ class Context {
             final String senderName = turn.role
             final String roleToSend
             final String contentToSend
-            
+
             if (senderName.equalsIgnoreCase(speaker)) {
                 roleToSend = "assistant"
                 contentToSend = turn.content
@@ -179,18 +182,26 @@ class Context {
         final File outFile = new File(filePath)
         outFile.parentFile?.mkdirs()
 
-        // Style B: Use explicit type for history object
-        final Context history = new Context()
-        
         // Use Groovy idiomatic closure for finding messages (acceptable for small utility functions)
-        final List<Message> filteredHistory = this.messages.findAll { 
+        final List<Message> filteredHistory = this.messages.findAll {
             final Message msg = it
             !msg.role.equalsIgnoreCase("system") 
         }
-        history.messages.addAll(filteredHistory)
+
+        final List<Map> serializedMessages = filteredHistory.collect { Message msg ->
+            final Map msgMap = [
+                role: msg.role,
+                content: msg.content,
+                messageId: msg.messageId,
+                timestamp: msg.timestamp.toString()
+            ]
+            return msgMap
+        }
+
+        final Map historyMap = [messages: serializedMessages]
 
         // Use strong typing and explicit method calls for JSON
-        outFile.text = JsonOutput.prettyPrint(JsonOutput.toJson(history.messages))
+        outFile.text = JsonOutput.prettyPrint(JsonOutput.toJson(historyMap))
         return outFile
     }
 
@@ -203,15 +214,20 @@ class Context {
     public Context importContext(String filePath) {
         final File inFile = new File(filePath)
         assert inFile.exists()
-        
+
         // Use strong typing for local variables
         final groovy.json.JsonSlurper jsonSlurper = new groovy.json.JsonSlurper()
         final Map json = jsonSlurper.parse(inFile) as Map
-        
+
         // Use Groovy idiomatic 'collect' for transformation (acceptable in Style B for mapping)
-        final List<Message> msgs = json.messages.collect { 
+        final List<Message> msgs = json.messages.collect {
             final Map msgMap = it as Map
-            new Message(msgMap.role as String, msgMap.content as String) 
+            final String role = msgMap.role as String
+            final String content = msgMap.content as String
+            final String messageId = msgMap.messageId as String ?: UUID.randomUUID().toString()
+            final Instant timestamp = msgMap.timestamp ? Instant.parse(msgMap.timestamp as String) : Instant.now()
+
+            new Message(role, content, messageId, timestamp)
         }
         return new Context(msgs)
     }
