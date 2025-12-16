@@ -166,18 +166,18 @@ class Test {
 
         // Load up our narrators instructions
         String georgePrompt = new File("Characters/George.prompt").text
-        context.addMessage("system", georgePrompt)
+        String georgeSheet = new File("Characters/George.json").text
+        String input = "Good morning ${hero.name}. Would you please describe yourself? Please be as detailed as you wish."
+        context.addMessage("system", "/set system $georgePrompt\r\n---\r\nAnd here is your character sheet: $georgeSheet\r\n---\r\nTo start the adventure, this is your first user input: $input")
 
-        context.addMessage("user", "Your character sheet:\r\n${hero.toJson()}")
-        def input = "Good morning ${hero.name}. Would you please describe yourself? Please be as detailed as you wish."
         Logger.info "### user says:\r\n${input}"
-        context.addMessage("user", input)
+        def userMessage = context.addMessage("user", input).getLastMessage()
 
         def model = new Model(model: "narrator", body: context)
         def output = model.generateResponse(context.swizzleSpeaker(hero.name))
 
         Logger.info "### ${hero.name} says:\r\n${output}"
-        context.addMessage(hero.name, output)
+        def modelMessage = context.addMessage(hero.name, output, userMessage.messageId).getLastMessage()
 
         context.exportContext("Story/Chapter_0.json")
     }
@@ -217,31 +217,26 @@ class Test {
 
     void story() {
         Logger.info "## Running Story tests"
-        Character hero = new Character()
 
         Context context = new Context()
         String georgePrompt = new File("Characters/George.prompt").text
-        context.addMessage("system", georgePrompt)
-
-        def heroSheet = "Characters/George.json"
-        Logger.info "### Loading hero character sheet:\r\n${heroSheet}"
-        hero = hero.importCharacterSheet(heroSheet)
-        assert hero.name == "George"
+        context.addMessage("system", "/set system $georgePrompt")
 
         Logger.info "### Loading story from:\r\nStory/Chapter_0.json"
-        Context story = new Context()
-        story = story.importContext("Story/Chapter_0.json")
-        context.messages.addAll(story.messages)
+        def storyContext = new Context().importContext("Story/Chapter_0.json")
 
+        context.messages.addAll(storyContext.messages)
+
+        def lastMessage = context.getLastMessage()
         Model narrator = new Model(model: "narrator")
 
         def input = "I think I would like to pick up the electric bass and strike up a relaxed and groovy bassline. Currently it is sitting in its stand by the hearth."
         Logger.info "### user says:\r\n${input}"
-        context.addMessage("user", input)
+        def userMessage = context.addMessage("user", input, lastMessage.messageId).getLastMessage()
 
         def output = narrator.generateResponse(context.swizzleSpeaker("George"))
-        Logger.info "### ${hero.name} says:\r\n${output}"
-        context.addMessage(hero.name, output)
+        Logger.info "### George says:\r\n${output}"
+        def modelMessage = context.addMessage("George", output, userMessage.messageId).getLastMessage()
         context.exportContext("Story/Chapter_0.json")
     }
 }

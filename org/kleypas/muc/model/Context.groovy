@@ -42,6 +42,9 @@ class Context {
 
     // --- Core Message Management ---
 
+    public Context addMessage(String sender, String content) {
+        return addMessage(sender, content, null)
+    }
     /**
      * Adds a new message to the context.
      * @param sender  the role of the sender (e.g., "user" or "assistant").
@@ -49,9 +52,16 @@ class Context {
      * @return the Context instance for chaining.
      */
     // Style B: Explicit return type (Context for chaining) and parameter types
-    public Context addMessage(String sender, String content) {
+    public Context addMessage(String sender, String content, String parentId) {
         // Use concrete types within the method
         final Message newMessage = new Message(sender, content)
+        if (parentId) {
+            final Message parent = this.messages.find { it.messageId == parentId }
+            if (parent) {
+                newMessage.breadcrumb.addAll(parent.breadcrumb)
+                newMessage.breadcrumb.add(parent.messageId)
+            }
+        }
         this.messages.add(newMessage)
         return this
     }
@@ -64,7 +74,10 @@ class Context {
         return this.messages
     }
 
-    // --- Context Pruning (New Implementation to control O(N^2) scaling) ---
+    public Message getLastMessage() {
+        if (this.messages.isEmpty()) { return null }
+        return this.messages.last()
+    }
 
     /**
      * Estimates the token count for a single message based on character count.
@@ -170,6 +183,28 @@ class Context {
         return newContext
     }
 
+    /**
+    * Creates a new Context object optimized for model generation.
+    * This object contains the provided system instruction followed by the full history.
+    * @param systemInstruction A Message object containing the speaker's system prompt.
+    * @return A new Context object ready for generation.
+    */
+    public Context getThreadForModel(Message systemInstruction) {
+        // 1. Start with a fresh context
+        final Context thread = new Context()
+        
+        // 2. Add the specific system instruction first
+        thread.messages.add(systemInstruction)
+        
+        // 3. Add the entire current history
+        thread.messages.addAll(this.messages)
+        
+        // 4. Prune the context to respect token limits (leveraging existing logic)
+        thread.pruneContext() 
+        
+        return thread
+    }
+    
     // --- I/O ---
 
     /**
@@ -193,7 +228,8 @@ class Context {
                 role: msg.role,
                 content: msg.content,
                 messageId: msg.messageId,
-                timestamp: msg.timestamp.toString()
+                timestamp: msg.timestamp.toString(),
+                breadcrumb: msg.breadcrumb
             ]
             return msgMap
         }
@@ -226,8 +262,10 @@ class Context {
             final String content = msgMap.content as String
             final String messageId = msgMap.messageId as String ?: UUID.randomUUID().toString()
             final Instant timestamp = msgMap.timestamp ? Instant.parse(msgMap.timestamp as String) : Instant.now()
-
-            new Message(role, content, messageId, timestamp)
+            final List<String> breadcrumb = msgMap.breadcrumb as List<String> ?: new ArrayList<String>()
+            def msg = new Message(role, content, messageId, timestamp)
+            msg.breadcrumb.addAll(breadcrumb)
+            return msg
         }
         return new Context(msgs)
     }

@@ -134,39 +134,34 @@ if (options.debate) {
     Logger.info "# Starting a debate"
 
     // --- 1. Setup Consolidation (Style A) ---
-    def debateRounds = 2
     def debate = new Context()
 
     def moderatorName = "Moderator"
-    def moderatorPrompt = "Your working memory has a hard limit of 32,768 tokens. Old messages will be truncated to prevent context overflow. You must prioritize summarizing the most recent 10 turns and key facts from the debate's start, while intentionally ignoring overly verbose historical context, as it will be forgotten. You are an impartial moderator of a debate between two chatbots. You must evaluate the chat history and summarize the points made by the participants. If they have come to a conclusion, please state it, concluding your response with either true or false between <CONSENSUS> tags on the last line of your output. (ex: '\\r\\n<CONSENSUS>true</CONSENSUS>', OR '\\r\\n<CONSENSUS>false</CONSENSUS>')"
+    def moderatorPrompt = "/set system ## RESPONSE GUIDE\r\nYour working memory has a hard limit of 32,768 tokens. Old messages will be truncated to prevent context overflow. You must prioritize summarizing the most recent 10 turns and key facts from the debate's start, while intentionally ignoring overly verbose historical context, as it will be forgotten. You are an impartial moderator of a debate between two chatbots. You must evaluate the chat history and summarize the points made by the participants. If they have come to a conclusion, please state it, concluding your response with either true or false between <CONSENSUS> tags on the last line of your output. (ex: '\\r\\n<CONSENSUS>true</CONSENSUS>', OR '\\r\\n<CONSENSUS>false</CONSENSUS>')"
     def moderatorContext = new Context().addMessage("system", moderatorPrompt)
     def moderator = new Model(model: "narrator")
 
     def proName = "Prodipto"
-    def proSystemPrompt = "You are a chatbot, designed to interact and debate with other chatbots. Your position is pro-regulation of AI technology. Enjoy the debate!"
+    def proSystemPrompt = "/set system ## RESPONSE GUIDE\r\nYou are a chatbot, designed to interact and debate with other chatbots. Your position is pro-regulation of AI technology. Enjoy the debate!"
     def proContext = new Context().addMessage("system", proSystemPrompt)
-    def yayRegs = new Model(model: "biggun")
+    def yayRegs = new Model(model: "biggun", body: proContext)
 
     def negName = "Negorami"
-    def negSystemPrompt = "You are a chatbot, designed to interact and debate with other chatbots. Your position is anti-regulation of AI technology. Enjoy the debate!"
+    def negSystemPrompt = "/set system ## RESPONSE GUIDE\r\nYou are a chatbot, designed to interact and debate with other chatbots. Your position is anti-regulation of AI technology. Enjoy the debate!"
     def negContext = new Context().addMessage("system", negSystemPrompt)
-    def booRegs = new Model(model: "smallfry")
+    def booRegs = new Model(model: "smallfry", body: negContext)
 
     // Groovy List Literal for Participant Ordering and Loop Control
     def participants = [
-        [name: proName, model: yayRegs, context: proContext],
-        [name: negName, model: booRegs, context: negContext]
+        [name: proName, model: yayRegs],
+        [name: negName, model: booRegs]
     ]
 
-    // --- 2. Opening Statements (Consolidated Logic) ---
-    def openingStatement = "Good morning. Your position is . Please state your opening arguments."
-
+    // --- 2. Opening Statements ---
+    def openingStatement = "Good morning. Please state your opening position."
     participants.each { p ->
-        // Use map/dot notation and optional parentheses (Style A)
-        def introMsg = openingStatement.replaceAll('Your position is [^\\.]+', "Your position is ${p.name == proName ? 'pro-regulation' : 'anti-regulation'}")
-
-        p.context.addMessage(moderatorName, introMsg)
-        debate.addMessage(moderatorName, introMsg)
+        p.model.body.addMessage(moderatorName, openingStatement)
+        debate.addMessage(moderatorName, openingStatement)
 
         def resp = p.model.generateResponse(p.context.swizzleSpeaker(p.name))
         Logger.info "${p.name} says:\r\n${resp}"
@@ -180,7 +175,7 @@ if (options.debate) {
     def prompt = "What is your response to the last speaker?"
     def consensus = false
     def safetyCounter = 0
-    def MAX_ROUNDS = 25 // Safety limit to catch infinite loops
+    def MAX_ROUNDS = 15 // Safety limit to catch infinite loops
 
     // Style A: Use Range/Closure for concise iteration
     while (!consensus && safetyCounter < MAX_ROUNDS) {
@@ -210,13 +205,15 @@ if (options.debate) {
             Logger.info "${p.name} says:\r\n${resp}"
 
             debate.pruneContext()
-            Logger.info "Context pruned. Remaining messages: ${debate.messages.size()}"
+            Logger.info "Context pruned. Remaining messages in context: ${debate.messages.size()}"
 
-            if (safetyCounter % 5 == 0) {
+            if (safetyCounter % 3 == 0) {
                 Logger.info "## Mid-Round Moderation check"
-                debate.addMessage("user", "What is your Evaluation?")
-                moderatorContext.messages.addAll(debate.messages)
+                def ctx = new Context()
+                def message = new Message("user", "What is your Evaluation?")
+                moderatorContext.messages.add(message)
                 def midRoundEval = moderator.generateResponse(moderatorContext.swizzleSpeaker(moderatorName))
+                Logger.info "${midRoundEval}"
                 consensus = TagParser.extractBoolean(midRoundEval, "CONSENSUS") ?: false
             }
         }

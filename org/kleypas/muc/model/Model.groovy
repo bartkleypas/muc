@@ -63,13 +63,19 @@ class Model {
 
         def responseCode = post.getResponseCode()
 
-        if (responseCode == 200) {
-            def resp = post.getInputStream().getText()
-            def data = new JsonSlurper().parseText(resp)
-            def output = data.choices[0].message.content
-            return output
+        if (responseCode != 200) {
+            def errMsg = post.getInputStream().getText()
+            throw new RuntimeException("Something went wrong:\r\n${errMsg}")
         }
-        println post.getInputStream().getText()
-        throw new RuntimeException("Something Went wrong.")
+
+        def resp = post.getInputStream().getText()
+        def data = new JsonSlurper().parseText(resp)
+
+        if (!data) {
+            throw new RuntimeException("Null data")
+        }
+
+        def output = data.choices[0].message.content
+        return output
     }
 }

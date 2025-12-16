@@ -153,7 +153,7 @@ public class Cli {
 
             // Groovy's "execute()" method is the idiomatic, powerful way to run external processes
             Process process = command.execute()
-            
+
             // Wait for the process to finish and handle output/error streams concurrently
             process.waitForProcessOutput(System.out, System.err)
             int exitValue = process.exitValue()
@@ -170,6 +170,36 @@ public class Cli {
         }
     }
 
+    /**
+     * Above methods big brother.
+     *
+     * @param command The shell command string to execute.
+     * @return A Map containing 'exitCode', 'standardOutput', and 'errorOutput'
+     */
+    public Map runCommandWithOutput(String command) {
+        Logger.debug("Executing command: ${command}")
+
+        def process = command.execute()
+        process.waitFor()
+
+        // Capture output streams
+        String standardOutput = process.in.text.trim()
+        String errorOutput = process.err.text.trim()
+
+        def exitCode = process.exitValue()
+
+        if (exitCode != 0) {
+            Logger.error("Command FAILED (Exit Code: ${exitCode}). Error: ${errorOutput}")
+        } else {
+            Logger.debug("Command SUCCESS. Output length: ${standardOutput.length()} bytes")
+        }
+
+        return [
+            exitCode: exitCode,
+            standardOutput: standardOutput,
+            errorOutput: errorOutput
+        ]
+    }
 
     /**
      * Retrieves a loaded environment variable value.

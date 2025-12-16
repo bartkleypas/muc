@@ -18,17 +18,17 @@ class Message {
     Instant timestamp
     List<String> breadcrumb = new ArrayList<>()
 
-    Message(String role, String content, String messageId, Instant timestamp) {
-        this.role = role
-        this.content = content
-        this.messageId = messageId
-        this.timestamp = timestamp
-    }
-
     Message(String role, String content) {
         this.role = role
         this.content = content
         this.messageId = UUID.randomUUID().toString()
         this.timestamp = Instant.now()
+    }
+    
+    Message(String role, String content, String messageId, Instant timestamp) {
+        this.role = role
+        this.content = content
+        this.messageId = messageId
+        this.timestamp = timestamp
     }
 }
