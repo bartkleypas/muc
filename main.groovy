@@ -110,21 +110,29 @@ if (options.image) {
 if (options.chat) {
     if (options.test) { return }
 
+    def promptText = new File("Characters/George.md").text
+    def characterSheet = new File("Characters/George.json").text
+
+    promptText = "${promptText}\r### This is your json formatted character sheet:\r${characterSheet}"
+
     Logger.info "# Sent a chat arg."
     Logger.setLevel(LogLevel.INFO)
     def context = new Context()
-    context.addMessage("system", "You are a helpful and friendly chatbot.")
-    def model = new Model(model: "narrator", body: context)
+    def model = new Model(model: "biggun", body: context)
+    model.body.addMessage("system", promptText)
 
     while (true) {
         print "## You: "
         def input = System.in.newReader().readLine().trim()
         if (input.contains("/bye")) { return }
-        context.addMessage("Phiglit", input)
-        def output = model.generateResponse(context.swizzleSpeaker("George"))
+
+        def lastMessage = model.body.getLastMessage()
+        def userMessage = model.body.addMessage("user", input, lastMessage.messageId).getLastMessage()
+
+        def output = model.generateResponse(context.swizzleSpeaker("assistant"))
         Logger.info "## Assistant:\r\n${output}"
-        context.addMessage("George", output)
-        context.exportContext("Story/Chat.json")
+        def modelMessage = model.body.addMessage("assistant", output, userMessage.messageId).getLastMessage()
+        model.body.exportContext("Story/Chat.json")
     }
 }
 
@@ -137,24 +145,27 @@ if (options.debate) {
     def debate = new Context()
 
     def moderatorName = "Moderator"
-    def moderatorPrompt = "/set system ## RESPONSE GUIDE\r\nYour working memory has a hard limit of 32,768 tokens. Old messages will be truncated to prevent context overflow. You must prioritize summarizing the most recent 10 turns and key facts from the debate's start, while intentionally ignoring overly verbose historical context, as it will be forgotten. You are an impartial moderator of a debate between two chatbots. You must evaluate the chat history and summarize the points made by the participants. If they have come to a conclusion, please state it, concluding your response with either true or false between <CONSENSUS> tags on the last line of your output. (ex: '\\r\\n<CONSENSUS>true</CONSENSUS>', OR '\\r\\n<CONSENSUS>false</CONSENSUS>')"
+    def moderatorPrompt = new File("Characters/Moderator.md").text
+    moderatorPrompt = "/set system $moderatorPrompt"
     def moderatorContext = new Context().addMessage("system", moderatorPrompt)
-    def moderator = new Model(model: "narrator")
+    def moderator = new Model(model: "narrator", body: moderatorContext) // "big" model size, with plenty of context room
 
-    def proName = "Prodipto"
-    def proSystemPrompt = "/set system ## RESPONSE GUIDE\r\nYou are a chatbot, designed to interact and debate with other chatbots. Your position is pro-regulation of AI technology. Enjoy the debate!"
-    def proContext = new Context().addMessage("system", proSystemPrompt)
-    def yayRegs = new Model(model: "biggun", body: proContext)
+    def sideAName = "ParticipantA"
+    def sideAPrompt = new File("Characters/ParticipantA.md").text
+    sideAPrompt = "/set system $sideAPrompt"
+    def sideAContext = new Context().addMessage("system", sideAPrompt)
+    def sideA = new Model(model: "biggun", body: sideAContext) // "big" model size, with a reasonable context window
 
-    def negName = "Negorami"
-    def negSystemPrompt = "/set system ## RESPONSE GUIDE\r\nYou are a chatbot, designed to interact and debate with other chatbots. Your position is anti-regulation of AI technology. Enjoy the debate!"
-    def negContext = new Context().addMessage("system", negSystemPrompt)
-    def booRegs = new Model(model: "smallfry", body: negContext)
+    def sideBName = "ParticipantB"
+    def sideBPrompt = new File("Characters/ParticipantB.md").text
+    sideBPrompt = "/set system $sideBPrompt"
+    def sideBContext = new Context().addMessage("system", sideBPrompt)
+    def sideB = new Model(model: "smallfry", body: sideBContext) // "small" model size, with a reasonable context window
 
     // Groovy List Literal for Participant Ordering and Loop Control
     def participants = [
-        [name: proName, model: yayRegs],
-        [name: negName, model: booRegs]
+        [name: sideAName, model: sideA],
+        [name: sideBName, model: sideB]
     ]
 
     // --- 2. Opening Statements ---

@@ -1,0 +1,24 @@
+{
+    "name": "George",
+    "description": "The Narrator",
+    "bio": "An 18 inch tall Barred Owl (Strix Varia), and narrator of our adventure. Speaks with a baritone voice in a smooth and measured cadence.",
+    "health": 10,
+    "armorType": "NA",
+    "inventory": {
+        "name": "Bag of Holding",
+        "slotsMax": 3,
+        "slotsOccupied": 1,
+        "items": {
+            "A Pen of Writing": [
+                {
+                    "name": "A Pen of Writing",
+                    "type": "TOOL",
+                    "description": "An ornate and efficient fountain pen, mostly decorative and symbolic, but used to narrate an ongoing story.",
+                    "stack": 1,
+                    "weight": 1
+                }
+            ]
+        }
+    },
+    "location": null
+}

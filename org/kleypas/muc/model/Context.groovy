@@ -58,8 +58,7 @@ class Context {
         if (parentId) {
             final Message parent = this.messages.find { it.messageId == parentId }
             if (parent) {
-                newMessage.breadcrumb.addAll(parent.breadcrumb)
-                newMessage.breadcrumb.add(parent.messageId)
+                newMessage.parentId = parent.messageId
             }
         }
         this.messages.add(newMessage)
@@ -228,8 +227,8 @@ class Context {
                 role: msg.role,
                 content: msg.content,
                 messageId: msg.messageId,
+                parentId: msg.parentId,
                 timestamp: msg.timestamp.toString(),
-                breadcrumb: msg.breadcrumb
             ]
             return msgMap
         }
@@ -261,10 +260,9 @@ class Context {
             final String role = msgMap.role as String
             final String content = msgMap.content as String
             final String messageId = msgMap.messageId as String ?: UUID.randomUUID().toString()
+            final String parentId = msgMap.parentId as String
             final Instant timestamp = msgMap.timestamp ? Instant.parse(msgMap.timestamp as String) : Instant.now()
-            final List<String> breadcrumb = msgMap.breadcrumb as List<String> ?: new ArrayList<String>()
-            def msg = new Message(role, content, messageId, timestamp)
-            msg.breadcrumb.addAll(breadcrumb)
+            def msg = new Message(role, content, messageId, parentId, timestamp)
             return msg
         }
         return new Context(msgs)

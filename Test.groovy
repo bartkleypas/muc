@@ -165,7 +165,7 @@ class Test {
         Context context = new Context()
 
         // Load up our narrators instructions
-        String georgePrompt = new File("Characters/George.prompt").text
+        String georgePrompt = new File("Characters/George.md").text
         String georgeSheet = new File("Characters/George.json").text
         String input = "Good morning ${hero.name}. Would you please describe yourself? Please be as detailed as you wish."
         context.addMessage("system", "/set system $georgePrompt\r\n---\r\nAnd here is your character sheet: $georgeSheet\r\n---\r\nTo start the adventure, this is your first user input: $input")
@@ -219,7 +219,7 @@ class Test {
         Logger.info "## Running Story tests"
 
         Context context = new Context()
-        String georgePrompt = new File("Characters/George.prompt").text
+        String georgePrompt = new File("Characters/George.md").text
         context.addMessage("system", "/set system $georgePrompt")
 
         Logger.info "### Loading story from:\r\nStory/Chapter_0.json"
