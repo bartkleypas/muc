@@ -1,8 +1,6 @@
 package org.kleypas.muc.model
 
 import java.time.Instant
-import java.util.List
-import java.util.ArrayList
 import java.util.UUID
 
 /**
@@ -15,19 +13,21 @@ class Message {
     String role
     String content
     String messageId
+    String parentId
     Instant timestamp
-    List<String> breadcrumb = new ArrayList<>()
 
-    Message(String role, String content) {
+    Message(String role, String content, String parentId = null) {
         this.role = role
         this.content = content
+        this.parentId = parentId
         this.messageId = UUID.randomUUID().toString()
         this.timestamp = Instant.now()
     }
     
-    Message(String role, String content, String messageId, Instant timestamp) {
+    Message(String role, String content, String messageId, String parentId, Instant timestamp) {
         this.role = role
         this.content = content
+        this.parentId = parentId
         this.messageId = messageId
         this.timestamp = timestamp
     }
