@@ -17,6 +17,8 @@ class Context {
     // Style B: Explicit List type for messages and explicit access modifier
     public List<Message> messages
 
+    public String logPath
+
     // Constant for maximum tokens to combat O(N^2) complexity
     // private static final int MAX_TOKENS = 32768
     private static final int MAX_TOKENS = 8192
@@ -42,9 +44,15 @@ class Context {
 
     // --- Core Message Management ---
 
+    public Context enableLogging(String path) {
+        this.logPath = path
+        return this
+    }
+
     public Context addMessage(String sender, String content) {
         return addMessage(sender, content, null)
     }
+
     /**
      * Adds a new message to the context.
      * @param sender  the role of the sender (e.g., "user" or "assistant").
@@ -62,6 +70,7 @@ class Context {
             }
         }
         this.messages.add(newMessage)
+        appendMessageToLog(newMessage)
         return this
     }
 
@@ -238,6 +247,19 @@ class Context {
         // Use strong typing and explicit method calls for JSON
         outFile.text = JsonOutput.prettyPrint(JsonOutput.toJson(historyMap))
         return outFile
+    }
+
+    private void appendMessageToLog(Message msg) {
+        if (this.logPath) {
+            def entry = [
+                timestamp: new java.util.Date().toString(),
+                messageId: msg.messageId,
+                parentId: msg.parentId,
+                role: msg.role,
+                content: msg.content
+            ]
+            new File(this.logPath) << groovy.json.JsonOutput.toJson(entry) + "\n"
+        }
     }
 
     /**
