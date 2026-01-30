@@ -59,9 +59,12 @@ class Test {
         Location location = new Location(0.00f, 0.00f, 0.00f)
         Logger.info "### Location:\r\n${location}"
 
-        Poi home = new Poi(location, "Phiglit's and Epwna's Home")
-        home.description = "A forest cottage in the Pacific North West"
-        Logger.info "### POI:\r\n${home.toString()}"
+        Poi library = new Poi(location, "The Library of George the Radiant Owl")
+        library.description = "An infinate library, and grand repository of information. The walls and texts of the library are swirling code and shimmering vellum that distort and pulse with energy. There is a melancholic tune from a distant lute that weaves into the fabric of the building, and the faint, ethereal voice of the mothership echoing in the alcoves. There is a perpetual clinging scent of aged ink and long lost lore. A place to contemplate an adventure, or journal adventures about to begin."
+        Logger.info "### POI:\r\n${library.toString()}"
+
+        def locationSheet = "Locations/Library.json"
+        library.exportPoi(locationSheet)
     }
 
     void character() {

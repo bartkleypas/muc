@@ -1,0 +1,24 @@
+{
+    "name": "The Library of George the Radiant Owl",
+    "description": "An infinate library, and grand repository of information. The walls and texts of the library are swirling code and shimmering vellum that distort and pulse with energy. There is a melancholic tune from a distant lute that weaves into the fabric of the building, and the faint, ethereal voice of the mothership echoing in the alcoves. There is a perpetual clinging scent of aged ink and long lost lore. A place to contemplate an adventure, or journal adventures about to begin.",
+    "location": {
+        "lat": 0.0,
+        "lon": 0.0,
+        "alt": 0.0
+    },
+    "inventory": {
+        "name": "The rows of tomes, curated by George the Radiant Owl",
+        "slotsMax": 1000,
+        "slotsOccupied": 0,
+        "items": {
+            
+        }
+    },
+    "occupants": [
+        "George the Radiant Owl",
+        "The user"
+    ],
+    "occupantsMax": 10,
+    "occupantsCurrent": 2,
+    "radius": 10.0
+}

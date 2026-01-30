@@ -97,6 +97,15 @@ class Poi {
         return output
     }
 
+    public File exportPoi(String filePath) {
+        final File outFile = new File(filePath)
+        outFile.parentFile?.mkdirs()
+
+        def output = this.toJsonPretty()
+        outFile.text = output
+        return outFile
+    }
+
     /**
      * {@inheritDoc}
      *

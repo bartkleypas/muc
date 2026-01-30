@@ -113,11 +113,14 @@ if (options.chat) {
     def promptText = new File("Characters/George.md").text
     def characterSheet = new File("Characters/George.json").text
 
-    promptText = "${promptText}\r### This is your json formatted character sheet:\r${characterSheet}"
+    promptText = promptText + "\r### This is your json formatted character sheet:\r${characterSheet}"
+
+    def locationSheet = new File("Locations/Library.json").text
+    promptText = promptText + "\r### This is your json formatted location details:\r${locationSheet}"
 
     Logger.info "# Sent a chat arg."
     Logger.setLevel(LogLevel.INFO)
-    def context = new Context()
+    def context = new Context().enableLogging("Story/Story_live.jsonl")
     def model = new Model(model: "biggun", body: context)
     model.body.addMessage("system", promptText)
 
@@ -136,121 +139,61 @@ if (options.chat) {
     }
 }
 
-// Let the machine "chat" with its self.
 if (options.debate) {
-    // Style A: Use implicit typing (def) and map literal for model configuration
-    Logger.info "# Starting a debate"
+    Logger.info "# Starting a debate: Let it cook."
 
-    // --- 1. Setup Consolidation (Style A) ---
-    def debate = new Context()
+    // --- 1. The Registry of Souls (Aligned with Model.groovy) ---
+    def debate = new Context().enableLogging("Story/Debate_live.jsonl")
 
-    def moderatorName = "Moderator"
-    def moderatorPrompt = new File("Characters/Moderator.md").text
-    moderatorPrompt = "/set system $moderatorPrompt"
-    def moderatorContext = new Context().addMessage("system", moderatorPrompt)
-    def moderator = new Model(model: "narrator", body: moderatorContext) // "big" model size, with plenty of context room
+    def moderator = new Model(model: "narrator")
+    debate.addMessage("system", new File("Characters/Moderator.md").text)
 
-    def sideAName = "ParticipantA"
-    def sideAPrompt = new File("Characters/ParticipantA.md").text
-    sideAPrompt = "/set system $sideAPrompt"
-    def sideAContext = new Context().addMessage("system", sideAPrompt)
-    def sideA = new Model(model: "biggun", body: sideAContext) // "big" model size, with a reasonable context window
-
-    def sideBName = "ParticipantB"
-    def sideBPrompt = new File("Characters/ParticipantB.md").text
-    sideBPrompt = "/set system $sideBPrompt"
-    def sideBContext = new Context().addMessage("system", sideBPrompt)
-    def sideB = new Model(model: "smallfry", body: sideBContext) // "small" model size, with a reasonable context window
-
-    // Groovy List Literal for Participant Ordering and Loop Control
-    def participants = [
-        [name: sideAName, model: sideA],
-        [name: sideBName, model: sideB]
-    ]
-
-    // --- 2. Opening Statements ---
-    def openingStatement = "Good morning. Please state your opening position."
-    participants.each { p ->
-        p.model.body.addMessage(moderatorName, openingStatement)
-        debate.addMessage(moderatorName, openingStatement)
-
-        def resp = p.model.generateResponse(p.context.swizzleSpeaker(p.name))
-        Logger.info "${p.name} says:\r\n${resp}"
-        debate.addMessage(p.name, resp)
+    // We map participant names to their specific Model configurations
+    def participants = ["ParticipantA", "ParticipantB"].collect { role ->
+        debate.addMessage(role, "You are ${role}. Identity: " + new File("Characters/${role}.md").text)
+        return [role: role, model: new Model(model: "biggun")]
     }
 
-    Logger.info "## Exporting our current context:\r\nStory/Debate_0.json"
-    debate.exportContext("Story/Debate_0.json")
 
-    // --- 3. Debate Rounds (Refactored using Groovy Range and Pruning) ---
-    def prompt = "What is your response to the last speaker?"
-    def consensus = false
-    def safetyCounter = 0
-    def MAX_ROUNDS = 15 // Safety limit to catch infinite loops
+    // --- 2. The Recursive Closure (Fixes the nesting error) ---
+    def conductRound 
+    conductRound = { Context mainContext, List debateTeam, Model mod, int round, int max ->
+        if (round > max) return mainContext
 
-    // Style A: Use Range/Closure for concise iteration
-    while (!consensus && safetyCounter < MAX_ROUNDS) {
-        safetyCounter++
-        Logger.info "--- Round ${safetyCounter} ---"
+        Logger.info "--- Round ${round} ---"
 
-        // Use a loop to iterate through participants for each round
-        participants.each { p ->
-            // Rebuild context without creating new Context objects every time (or just create a fresh one)
-            def subContext = new Context()
+        debateTeam.each { p ->
+            Logger.info("PRE_GEN: ${p.role} context has ${mainContext.messages} messages.")
+            // Moderator interjection added to the shared chain
+            mainContext.addMessage("Moderator", "Round ${round}: What is your response to the last speaker?")
+            
+            // Generate response using the existing Model.generateResponse(Context)
+            // Note: swizzleSpeaker provides the context the model needs to see
+            def resp = p.model.generateResponse(mainContext.swizzleSpeaker(p.role))
 
-            // Add system instruction specific to the participant
-            subContext.addMessage("system", p.context.messages[0].content)
-
-            // Add full debate history
-            subContext.messages.addAll debate.messages
-
-            // Moderator interjection
-            debate.addMessage(moderatorName, prompt)
-            Logger.info "${moderatorName} says:\r\n${prompt}"
-
-            // Generate response (optional parentheses)
-            def resp = p.model.generateResponse(subContext.swizzleSpeaker(p.name))
-
-            // Update main debate context
-            debate.addMessage(p.name, resp)
-            Logger.info "${p.name} says:\r\n${resp}"
-
-            debate.pruneContext()
-            Logger.info "Context pruned. Remaining messages in context: ${debate.messages.size()}"
-
-            if (safetyCounter % 3 == 0) {
-                Logger.info "## Mid-Round Moderation check"
-                def ctx = new Context()
-                def message = new Message("user", "What is your Evaluation?")
-                moderatorContext.messages.add(message)
-                def midRoundEval = moderator.generateResponse(moderatorContext.swizzleSpeaker(moderatorName))
-                Logger.info "${midRoundEval}"
-                consensus = TagParser.extractBoolean(midRoundEval, "CONSENSUS") ?: false
+            if (resp == null || resp.isEmpty()) {
+                Logger.error("GHOST DETECTED: ${p.role} produced an empty string!")
             }
+            mainContext.addMessage(p.role, resp)
+            Logger.info "[${p.role}]: ${resp}"
         }
 
-        // CRITICAL: Call pruneContext to combat O(N^2) scaling
-        debate.pruneContext()
-        Logger.info "Context pruned. Remaining messages: ${debate.messages.size()}"
+        // Evaluation: The Moderator checks for CONSENSUS
+        def evalCtx = mainContext.swizzleSpeaker("Moderator")
+        evalCtx.addMessage("user", "What is your evaluation? (Search for <CONSENSUS>true</CONSENSUS>)")
+        def eval = mod.generateResponse(evalCtx)
+        
+        if (TagParser.extractBoolean(eval, "CONSENSUS")) {
+            Logger.info "## Consensus reached: ${eval}"
+            return mainContext
+        }
+
+        return conductRound.call(mainContext, debateTeam, mod, round + 1, max)
     }
 
-    // --- 4. Final Moderation & Consensus Check ---
-    Logger.info "## Final Moderation"
-
-    // Ensure final context is not pruned before moderation, just use the final debate context.
-    debate.addMessage("user", "What is your evaluation?")
-
-    // Copy full debate history into the moderator's context
-    moderatorContext.messages.addAll(debate.messages)
-
-    def finalResp = moderator.generateResponse(moderatorContext.swizzleSpeaker(moderatorName))
-    Logger.info "${moderatorName} says:\r\n${finalResp}"
-
-    // Use safe navigation in case TagParser returns null (Style A)
-    consensus = TagParser.extractBoolean(finalResp, "CONSENSUS") ?: false
-    Logger.info "Consensus reached?:\r\n${consensus}"
-
-    debate.addMessage(moderatorName, finalResp)
-    debate.exportContext("Story/Debate.json")
-    Logger.info "How about a nice game of chess?"
+    // --- 3. Fire the Engine ---
+    conductRound(debate, participants, moderator, 1, 15)
+    
+    debate.exportContext("Story/Debate_Final.json")
+    Logger.info "Debate concluded. Final context saved to Story/Debate_Final.json"
 }
