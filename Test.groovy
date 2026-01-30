@@ -2,6 +2,7 @@
 import org.kleypas.muc.cli.Cli
 import org.kleypas.muc.cli.Logger
 import org.kleypas.muc.cli.LogLevel
+import org.kleypas.muc.cli.TerminalBridge
 
 import org.kleypas.muc.rng.Coin
 import org.kleypas.muc.rng.Dice
@@ -150,39 +151,39 @@ class Test {
     }
 
     void narrator() {
-        Logger.info "## Running Narrator tests"
-        // We know this stuff. George needs a character sheet
-        Character hero = new Character(name: "George")
-        hero.description = "The Narrator"
-        hero.bio = "An 18 inch tall Barred Owl (Strix Varia), and narrator of our adventure. Speaks with a baritone voice in a smooth and measured cadence."
+        try {
+            Logger.info "## Running Unified Narrator Test"
 
-        Item pen = new Item("A Pen of Writing", ItemType.TOOL)
-        pen.description = "An ornate and efficient fountain pen, mostly decorative and symbolic, but used to narrate an ongoing story."
-        hero.inventory.addItem(pen)
+            // 2. Prep the State
+            String georgePrompt = new File("Characters/George.md").text
+            String georgeSheet = new File("Characters/George.json").text
+            String locationSheet = new File("Locations/Library.json").text
 
-        def characterSheet = "Characters/${hero.name}.json"
-        Logger.info "### Writing character sheet to:\r\n${characterSheet}"
-        hero.exportCharacterSheet(characterSheet)
+            // Build the System Anchor
+            String fullSystemPrompt = "${georgePrompt}\n### Character Sheet:\n${georgeSheet}\n### Location:\n${locationSheet}"
 
-        // Now the fun stuff. Interacting with our hero
-        Context context = new Context()
+            // 3. Initialize Context with Streaming
+            Context context = new Context().enableLogging("Story/Narrator.jsonl")
+            Model model = new Model(model: "biggun", body: context)
+            model.body.addMessage("system", fullSystemPrompt)
 
-        // Load up our narrators instructions
-        String georgePrompt = new File("Characters/George.md").text
-        String georgeSheet = new File("Characters/George.json").text
-        String input = "Good morning ${hero.name}. Would you please describe yourself? Please be as detailed as you wish."
-        context.addMessage("system", "/set system $georgePrompt\r\n---\r\nAnd here is your character sheet: $georgeSheet\r\n---\r\nTo start the adventure, this is your first user input: $input")
+            // 4. The Interaction
+            String input = "Describe the Scriptorium, George."
+            Logger.info "### user says: ${input}"
 
-        Logger.info "### user says:\r\n${input}"
-        def userMessage = context.addMessage("user", input).getLastMessage()
+            def systemMessage = model.body.getLastMessage()
+            def userMessage = model.body.addMessage("user", input, systemMessage.messageId).getLastMessage()
 
-        def model = new Model(model: "narrator", body: context)
-        def output = model.generateResponse(context.swizzleSpeaker(hero.name))
+            // Generate and Log
+            def output = model.generateResponse(context.swizzleSpeaker("George"))
+            Logger.info "### George says: ${output}"
 
-        Logger.info "### ${hero.name} says:\r\n${output}"
-        def modelMessage = context.addMessage(hero.name, output, userMessage.messageId).getLastMessage()
+            def modelMessage = model.body.addMessage("assistant", output, userMessage.messageId).getLastMessage()
+            model.body.exportContext("Story/Chapter_0.json")
 
-        context.exportContext("Story/Chapter_0.json")
+        } finally {
+            Logger.info "Test done."
+        }
     }
 
     void illustrator() {
@@ -221,9 +222,9 @@ class Test {
     void story() {
         Logger.info "## Running Story tests"
 
-        Context context = new Context()
+        Context context = new Context().enableLogging("Story/Story_test.jsonl")
         String georgePrompt = new File("Characters/George.md").text
-        context.addMessage("system", "/set system $georgePrompt")
+        context.addMessage("system", georgePrompt)
 
         Logger.info "### Loading story from:\r\nStory/Chapter_0.json"
         def storyContext = new Context().importContext("Story/Chapter_0.json")
@@ -241,5 +242,27 @@ class Test {
         Logger.info "### George says:\r\n${output}"
         def modelMessage = context.addMessage("George", output, userMessage.messageId).getLastMessage()
         context.exportContext("Story/Chapter_0.json")
+    }
+
+    // NOTE: Will break test execution waiting for input.
+    void tui() {
+        // Using Groovy's 'use' or a simple try-with-resources equivalent
+        def bridge = new TerminalBridge()
+        try {
+            bridge.drawSignature()
+            int rad = 80
+            boolean running = true
+
+            while (running) {
+                bridge.updateHUD("The Grand Repository", "Phiglit (Ready)", rad)
+
+                char key = (char) bridge.readKey()
+                if (key == 'r' && rad < 100) rad += 5
+                else if (key == 'e' && rad > 0) rad -= 5
+                else if (key == 'q') running = false
+            }
+        } finally {
+            bridge.close()
+        }
     }
 }

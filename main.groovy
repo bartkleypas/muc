@@ -88,6 +88,7 @@ if (options.test) {
     test.narrator()
     test.illustrator()
     test.story()
+    // test.tui() // <-- NOTE: Will block test completion needing input if enabled.
 }
 
 // Prompt for input to generate an image.

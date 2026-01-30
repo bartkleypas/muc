@@ -289,4 +289,27 @@ class Context {
         }
         return new Context(msgs)
     }
+
+    public Context importStream(String filePath) {
+        final File inFile = new File(filePath)
+        assert inFile.exists()
+
+        final List<Message> msgs = []
+        final groovy.json.JsonSlurper jsonSlurper = new groovy.json.JsonSlurper()
+
+        inFile.eachLine { line ->
+            if (line.trim()) {
+                final Map msgMap = jsonSlurper.parseText(line) as Map
+
+                final String role = msgMap.role as String
+                final String content = msgMap.content as String
+                final String messageId = msgMap.messageId as String ?: UUID.randomUUID().toString()
+                final String parentId = msgMap.parentId as String
+                final Instant timestamp = msgMap.timestamp ? Instant.parse(msgMap.timestamp as String) : Instant.now()
+
+                msgs << new Message(role, content, messageId, parentId, timestamp)
+            }
+        }
+        return new Context(msgs)
+    }
 }
