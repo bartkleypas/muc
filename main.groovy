@@ -12,6 +12,7 @@ import org.kleypas.muc.illustrator.ImageType
 import org.kleypas.muc.cli.Cli
 import org.kleypas.muc.cli.Logger
 import org.kleypas.muc.cli.LogLevel
+import org.kleypas.muc.cli.TerminalBridge
 
 import Test
 
@@ -109,34 +110,71 @@ if (options.image) {
 
 // Get directly to a chat.
 if (options.chat) {
+    Logger.setLevel(LogLevel.INFO)
     if (options.test) { return }
 
-    def promptText = new File("Characters/George.md").text
-    def characterSheet = new File("Characters/George.json").text
+    def historyFile = "Story/Narrator.jsonl"
+    if (options.chat instanceof String) {
+        historyFile = options.chat
+    }
 
-    promptText = promptText + "\r### This is your json formatted character sheet:\r${characterSheet}"
+    def context = new Context().enableLogging(historyFile)
 
-    def locationSheet = new File("Locations/Library.json").text
-    promptText = promptText + "\r### This is your json formatted location details:\r${locationSheet}"
+    if (new File(historyFile).exists()) {
+        Logger.info "## Resuming Chronicle from ${historyFile}..."
+        context = context.importStream(historyFile)
+        context.enableLogging(historyFile)
+    } else {
+        Logger.info "## Building a new Chronicle to ${historyFile}..."
+        def promptText = new File("Characters/George.md").text
+
+        def characterSheet = new File("Characters/George.json").text
+        promptText = promptText + "\r### This is your json formatted character sheet:\r${characterSheet}"
+
+        def locationSheet = new File("Locations/Library.json").text
+        promptText = promptText + "\r### This is your json formatted location details:\r${locationSheet}"
+        context.addMessage("system", promptText)
+    }
 
     Logger.info "# Sent a chat arg."
-    Logger.setLevel(LogLevel.INFO)
-    def context = new Context().enableLogging("Story/Story_live.jsonl")
-    def model = new Model(model: "biggun", body: context)
-    model.body.addMessage("system", promptText)
+    new TerminalBridge().withCloseable { bridge ->
+        bridge.drawSignature()
+        def reader = org.jline.reader.LineReaderBuilder.builder()
+                        .terminal(bridge.terminal)
+                        .build()
 
-    while (true) {
-        print "## You: "
-        def input = System.in.newReader().readLine().trim()
-        if (input.contains("/bye")) { return }
+        String prompt = "\u001B[1;32m## You\u001B[0m: "
 
-        def lastMessage = model.body.getLastMessage()
-        def userMessage = model.body.addMessage("user", input, lastMessage.messageId).getLastMessage()
+        def model = new Model(model: "narrator", body: context)
 
-        def output = model.generateResponse(context.swizzleSpeaker("assistant"))
-        Logger.info "## Assistant:\r\n${output}"
-        def modelMessage = model.body.addMessage("assistant", output, userMessage.messageId).getLastMessage()
-        model.body.exportContext("Story/Chat.json")
+        while (true) {
+            bridge.updateHUD(
+                "The Library of George",
+                "George (Strix Varia)",
+                80
+            )
+
+            def input = reader.readLine(prompt)?.trim()
+            if (!input || input == "/bye" || input == "q") { break }
+
+            bridge.terminal.writer().print("\033[1A\033[2K")
+
+            bridge.printSpeaker("user")
+            bridge.printToken(input)
+            bridge.flushBuffer()
+
+            def lastMessage = context.getLastMessage()
+            def userMessage = context.addMessage("user", input, lastMessage?.messageId).getLastMessage()
+
+            bridge.printSpeaker("assistant")
+            StringBuilder fullOutput = new StringBuilder()
+            model.streamResponse(context) { token ->
+                bridge.printToken(token)
+                fullOutput.append(token)
+            }
+            bridge.flushBuffer()
+            context.addMessage("assistant", fullOutput.toString(), userMessage.messageId)
+        }
     }
 }
 
