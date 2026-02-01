@@ -20,8 +20,8 @@ class Context {
     public String logPath
 
     // Constant for maximum tokens to combat O(N^2) complexity
-    // private static final int MAX_TOKENS = 32768
-    private static final int MAX_TOKENS = 8192
+    private static final int MAX_TOKENS = 32768
+    // private static final int MAX_TOKENS = 8192
     // --- Constructors ---
 
     /**
@@ -83,7 +83,10 @@ class Context {
     }
 
     public Message getLastMessage() {
-        if (this.messages.isEmpty()) { return null }
+        if (this.messages.isEmpty()) {
+            println "No messages boss"
+            return null
+        }
         return this.messages.last()
     }
 
@@ -252,7 +255,7 @@ class Context {
     private void appendMessageToLog(Message msg) {
         if (this.logPath) {
             def entry = [
-                timestamp: new java.util.Date().toString(),
+                timestamp: Instant.now().toString(),
                 messageId: msg.messageId,
                 parentId: msg.parentId,
                 role: msg.role,
@@ -291,6 +294,9 @@ class Context {
     }
 
     public Context importStream(String filePath) {
+        if (!filePath.startsWith("Story/")) {
+            throw new SecurityException("The Strix is not permitted to look into: ${filePath}")
+        }
         final File inFile = new File(filePath)
         assert inFile.exists()
 
@@ -301,11 +307,13 @@ class Context {
             if (line.trim()) {
                 final Map msgMap = jsonSlurper.parseText(line) as Map
 
-                final String role = msgMap.role as String
-                final String content = msgMap.content as String
+                final String tsStr = msgMap.timestamp as String
+
+                final Instant timestamp = tsStr ? Instant.parse(tsStr) : Instant.now()
                 final String messageId = msgMap.messageId as String ?: UUID.randomUUID().toString()
                 final String parentId = msgMap.parentId as String
-                final Instant timestamp = msgMap.timestamp ? Instant.parse(msgMap.timestamp as String) : Instant.now()
+                final String role = msgMap.role as String
+                final String content = msgMap.content as String
 
                 msgs << new Message(role, content, messageId, parentId, timestamp)
             }

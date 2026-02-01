@@ -50,7 +50,7 @@ public class Cli {
             t(longOpt: 'test', 'Run integration tests')
             j(longOpt: 'json', 'Enable JSON output format')
             i(longOpt: 'image', 'Activate image generation mode')
-            c(longOpt: 'chat', 'Start a direct chat interface')
+            c(longOpt: 'chat', argName: 'str', args: 1, optionalArg: true, 'Start a direct chat interface')
             v(longOpt: 'verbose', 'Enable verbose (INFO) logging')
             d(longOpt: 'debug', 'Enable debug logging')
             debate(longOpt: "debate", "Enable debate mode (Let it cook)")

@@ -11,7 +11,9 @@ class TerminalBridge implements AutoCloseable {
     private Terminal terminal
     private Status statusLine
     private Attributes originalAttributes
-    
+    private int currentLinePos = 0
+    private StringBuilder wordBuffer = new StringBuilder()
+
     TerminalBridge() {
         this.terminal = TerminalBuilder.builder().system(true).build()
         this.originalAttributes = terminal.enterRawMode()
@@ -61,6 +63,23 @@ class TerminalBridge implements AutoCloseable {
         if (statusLine) statusLine.update([])
         if (originalAttributes) terminal.setAttributes(originalAttributes)
         terminal.writer().println("\n\u001B[32m[SYSTEM]\u001B[0m: Bridge offline. Terminal restored.")
+        terminal.flush()
+    }
+
+    void printSpeaker(String role) {
+        String color = (role.equalsIgnoreCase("assistant")) ? "\u001B[1;36m" : "\u001B[1;32m"
+        String name = (role.equalsIgnoreCase("assistant")) ? "[George]" : "[You]"
+        terminal.writer().print("\n${color}${name}\u001b[0m: ")
+        terminal.flush()
+    }
+
+    void printToken(String token) {
+        terminal.writer()print(token)
+        terminal.flush()
+    }
+
+    void flushBuffer() {
+        terminal.writer().println()
         terminal.flush()
     }
 }

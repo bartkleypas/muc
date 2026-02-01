@@ -78,4 +78,54 @@ class Model {
         def output = data.choices[0].message.content
         return output
     }
+
+    /**
+    * Streams the response from the model, allowing for real-time output.
+    */
+    void streamResponse(Context body, Closure onToken) {
+        URL url = new URL(provider.apiUrl)
+        def post = url.openConnection()
+
+        def postData = [
+            messages: body.messages,
+            model: this.model,
+            stream: true, // THE CRITICAL TOGGLE
+            temperature: this.temperature
+        ]
+
+        def json = JsonOutput.toJson(postData)
+
+        post.setRequestMethod("POST")
+        post.setDoOutput(true)
+        post.setRequestProperty("Authorization", "Bearer ${provider.apiKey}")
+        post.setRequestProperty("Content-Type", "application/json")
+        post.getOutputStream().write(json.getBytes("UTF-8"))
+
+        if (post.getResponseCode() == 200) {
+            // Use a reader to process the stream line-by-line
+            post.getInputStream().withReader { reader ->
+                String line
+                while ((line = reader.readLine()) != null) {
+                    line = line.trim()
+                    if (!line || line == "data: [DONE]") continue
+
+                    if (line.startsWith("data: ")) {
+                        line = line.substring(6).trim()
+                    }
+
+                    try {
+                        def data = new JsonSlurper().parseText(line)
+                        def token = data.choices ? data.choices[0]?.delta?.content : data.message?.content
+                        if (token) {
+                            onToken(token)
+                        }
+                    } catch (Exception e) {
+                        println "\r\n[DEBUG] Failed to parse line: ${line}"
+                    }
+                }
+            }
+        } else {
+            throw new RuntimeException("Stream failed: " + post.getErrorStream().getText())
+        }
+    }
 }
