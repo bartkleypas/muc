@@ -158,6 +158,7 @@ class Test {
             String georgePrompt = new File("Characters/George.md").text
             String georgeSheet = new File("Characters/George.json").text
             String locationSheet = new File("Locations/Library.json").text
+            def defaultHarmony = [nurturance: 0.90, playfulness: 1.10, steadfastness: 1.70, attunement: 1.85]
 
             // Build the System Anchor
             String fullSystemPrompt = "${georgePrompt}\n### Character Sheet:\n${georgeSheet}\n### Location:\n${locationSheet}"
