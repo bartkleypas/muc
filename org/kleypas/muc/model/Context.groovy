@@ -60,9 +60,14 @@ class Context {
      * @return the Context instance for chaining.
      */
     // Style B: Explicit return type (Context for chaining) and parameter types
-    public Context addMessage(String sender, String content, String parentId) {
+    public Context addMessage(String sender, String content, String parentId,
+                               Double n = 1.0, Double p = 1.0, Double s = 1.0, Double a = 1.0 ) {
         // Use concrete types within the method
         final Message newMessage = new Message(sender, content)
+        newMessage.nurturance = n
+        newMessage.playfulness = p
+        newMessage.steadfastness = s
+        newMessage.attunement = a
         if (parentId) {
             final Message parent = this.messages.find { it.messageId == parentId }
             if (parent) {
@@ -259,6 +264,10 @@ class Context {
                 messageId: msg.messageId,
                 parentId: msg.parentId,
                 role: msg.role,
+                nurturance: msg.nurturance,
+                playfulness: msg.playfulness,
+                steadfastness: msg.steadfastness,
+                attunement: msg.attunement,
                 content: msg.content
             ]
             new File(this.logPath) << groovy.json.JsonOutput.toJson(entry) + "\n"
@@ -315,7 +324,13 @@ class Context {
                 final String role = msgMap.role as String
                 final String content = msgMap.content as String
 
-                msgs << new Message(role, content, messageId, parentId, timestamp)
+                // Radiance values set to 1.0 for legacy compat
+                final Double n = msgMap.nurturance ?: 1.0
+                final Double p = msgMap.playfulness ?: 1.0
+                final Double s = msgMap.steadfastness ?: 1.0
+                final Double a = msgMap.attunement ?: 1.0
+
+                msgs << new Message(role, content, messageId, parentId, timestamp, n, p, s, a)
             }
         }
         return new Context(msgs)
