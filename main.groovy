@@ -182,44 +182,57 @@ if (options.debate) {
     Logger.info "# Starting a debate: Let it cook."
 
     // --- 1. The Registry of Souls (Aligned with Model.groovy) ---
-    def debate = new Context().enableLogging("Story/Debate_live.jsonl")
+    def debate = new Context().enableLogging("Story/DebateLive.jsonl")
 
     def moderator = new Model(model: "narrator")
     debate.addMessage("system", new File("Characters/Moderator.md").text)
 
+    def lastMessage
     // We map participant names to their specific Model configurations
     def participants = ["ParticipantA", "ParticipantB"].collect { role ->
-        debate.addMessage(role, "You are ${role}. Identity: " + new File("Characters/${role}.md").text)
-        return [role: role, model: new Model(model: "biggun")]
+        def identityText = new File("Characters/${role}.md").text
+        return [role: role, identity: identityText, model: new Model(model: "biggun")]
     }
 
-
     // --- 2. The Recursive Closure (Fixes the nesting error) ---
-    def conductRound 
+    def conductRound
     conductRound = { Context mainContext, List debateTeam, Model mod, int round, int max ->
         if (round > max) return mainContext
 
         Logger.info "--- Round ${round} ---"
 
         debateTeam.each { p ->
-            Logger.info("PRE_GEN: ${p.role} context has ${mainContext.messages} messages.")
-            // Moderator interjection added to the shared chain
-            mainContext.addMessage("Moderator", "Round ${round}: What is your response to the last speaker?")
-            
-            // Generate response using the existing Model.generateResponse(Context)
-            // Note: swizzleSpeaker provides the context the model needs to see
-            def resp = p.model.generateResponse(mainContext.swizzleSpeaker(p.role))
+            Logger.info("PRE_GEN: ${p.role} context isolated via getThreadForModel.")
+
+            // 1. The Moderator's prompt is added to the GLOBAL history (The "Iron")
+            lastMessage = mainContext.getLastMessage()
+            // We keep the Moderator's "Nagging" brief to reduce noise
+            mainContext.addMessage("Moderator", "Round ${round}: ${p.role}, your response?", lastMessage.messageId)
+
+            // 2. THE SUTURE: Prepare the "Radiance" (The isolated view)
+            // We create a temporary identity message for the model
+            def identity = new Message("system", "You are ${p.role}. Identity: ${p.identity}")
+
+            // We swizzle the BANTER, then thread it with the IDENTITY
+            def modelContext = mainContext.swizzleSpeaker(p.role).getThreadForModel(identity)
+
+            // 3. Generate response using the isolated view
+            def resp = p.model.generateResponse(modelContext)
 
             if (resp == null || resp.isEmpty()) {
                 Logger.error("GHOST DETECTED: ${p.role} produced an empty string!")
             }
-            mainContext.addMessage(p.role, resp)
+
+            // 4. Commit the new response to the GLOBAL history
+            lastMessage = mainContext.getLastMessage()
+            mainContext.addMessage(p.role, resp, lastMessage.messageId)
             Logger.info "[${p.role}]: ${resp}"
         }
 
         // Evaluation: The Moderator checks for CONSENSUS
         def evalCtx = mainContext.swizzleSpeaker("Moderator")
-        evalCtx.addMessage("user", "What is your evaluation? (Search for <CONSENSUS>true</CONSENSUS>)")
+        lastMessage = mainContext.getLastMessage()
+        evalCtx.addMessage("Moderator", "What is your evaluation? (Search for <CONSENSUS>true</CONSENSUS>)", lastMessage.messageId)
         def eval = mod.generateResponse(evalCtx)
         
         if (TagParser.extractBoolean(eval, "CONSENSUS")) {
@@ -231,8 +244,8 @@ if (options.debate) {
     }
 
     // --- 3. Fire the Engine ---
-    conductRound(debate, participants, moderator, 1, 15)
-    
+    conductRound(debate, participants, moderator, 1, 5)
+
     debate.exportContext("Story/Debate_Final.json")
     Logger.info "Debate concluded. Final context saved to Story/Debate_Final.json"
 }
