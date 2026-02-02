@@ -87,6 +87,10 @@ class Context {
         return this.messages
     }
 
+    public Message getFirstMessage() {
+        return this.messages.isEmpty() ? null : this.messages.first()
+    }
+
     public Message getLastMessage() {
         if (this.messages.isEmpty()) {
             println "No messages boss"
@@ -161,63 +165,52 @@ class Context {
      * @param speaker the role that should be treated as the assistant.
      * @return a new {@link Context} instance with the transformed messages.
      */
-    // Style B: Explicit return type and parameter type
     public Context swizzleSpeaker(String speaker) {
-        // Use strong typing for local variables
         final Context newContext = new Context()
 
-        // Preserve first system message (Style B: explicit type casting for iteration)
-        if (!messages.isEmpty() && "system".equals(messages.get(0).role)) {
-            final Message systemMsg = messages.get(0)
-            newContext.messages.add(systemMsg)
-        }
+        // Process ONLY the dialogue history (filtering out any system prompts)
+        for (Message turn : this.messages) {
+            if (turn.role.equalsIgnoreCase("system")) continue
 
-        // Use standard Java/Groovy List iteration for Style B maintainability
-        for (int i = 1; i < messages.size(); i++) {
-            final Message turn = messages.get(i)
-
-            final String senderName = turn.role
             final String roleToSend
             final String contentToSend
 
-            if (senderName.equalsIgnoreCase(speaker)) {
+            if (turn.role.equalsIgnoreCase(speaker)) {
                 roleToSend = "assistant"
                 contentToSend = turn.content
             } else {
                 roleToSend = "user"
-                // Use Groovy GString interpolation for clean string formatting (acceptable in Style B)
-                contentToSend = "${senderName} says: ${turn.content}"
+                contentToSend = "${turn.role} says: ${turn.content}"
             }
-            // Note: The original implementation in your file incorrectly added turn.content 
-            // regardless of role; I have corrected it to use contentToSend for 'user' roles 
-            // to ensure the prefix is included, but I'll stick close to the original 
-            // method of adding the message to the context, which appears to be taking 
-            // the original message content, not the prefixed one, for the actual message.
-            // Keeping the original intent for message content addition:
-            newContext.addMessage(roleToSend, turn.content)
+
+            // Use the PREFIXED content to ensure identity clarity in the shared history
+            newContext.addMessage(roleToSend, contentToSend, turn.messageId)
         }
         return newContext
     }
 
     /**
-    * Creates a new Context object optimized for model generation.
-    * This object contains the provided system instruction followed by the full history.
-    * @param systemInstruction A Message object containing the speaker's system prompt.
-    * @return A new Context object ready for generation.
+    * Creates a fresh context thread with a new identity, re-parenting the history.
     */
-    public Context getThreadForModel(Message systemInstruction) {
-        // 1. Start with a fresh context
-        final Context thread = new Context()
-        
-        // 2. Add the specific system instruction first
-        thread.messages.add(systemInstruction)
-        
-        // 3. Add the entire current history
-        thread.messages.addAll(this.messages)
-        
-        // 4. Prune the context to respect token limits (leveraging existing logic)
-        thread.pruneContext() 
-        
+    public Context getThreadForModel(Message identityPrompt) {
+        // 1. Filter out all old system messages to prevent "Identity Bleed"
+        List<Message> cleanHistory = this.messages.findAll { !it.role.equalsIgnoreCase("system") }
+
+        // 2. Create the new thread
+        Context thread = new Context()
+        thread.messages.add(identityPrompt)
+
+        if (!cleanHistory.isEmpty()) {
+            // 3. THE SUTURE: Re-parent the first historical message to the new identity
+            Message firstChild = cleanHistory.first()
+            firstChild.parentId = identityPrompt.messageId
+
+            // 4. Add the rest of the chain
+            thread.messages.addAll(cleanHistory)
+        }
+
+        // 5. Prune to ensure we stay under the token ceiling
+        thread.pruneContext()
         return thread
     }
     
