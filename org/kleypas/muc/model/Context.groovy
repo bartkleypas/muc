@@ -20,8 +20,9 @@ class Context {
     public String logPath
 
     // Constant for maximum tokens to combat O(N^2) complexity
-    private static final int MAX_TOKENS = 32768
-    // private static final int MAX_TOKENS = 8192
+    // private static final int MAX_TOKENS = 32768
+    private static final int MAX_TOKENS = 8192
+
     // --- Constructors ---
 
     /**
