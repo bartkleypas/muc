@@ -115,15 +115,15 @@ class Context {
         while (currentId != null && nodeMap.containsKey(currentId)) {
             Map entry = nodeMap.get(currentId)
             branchMessages.add(0, new Message(
-                Instant.parse((String) entry.timestamp),
+                (String) entry.role,
+                (String) entry.content,
                 (String) entry.messageId,
                 (String) entry.parentId,
-                (String) entry.role,
+                Instant.parse((String) entry.timestamp),
                 (Double) entry.nurturance,
                 (Double) entry.playfulness,
                 (Double) entry.steadfastness,
-                (Double) entry.attunement,
-                (String) entry.content
+                (Double) entry.attunement
             ))
             currentId = (String) entry.parentId
         }

@@ -34,12 +34,12 @@ public class LogManager {
      */
     public List<Map<String, Object>> readAllEntries() {
         final File logFile = new File(this.logPath)
-        if (!file.exists()) {
+        if (!logFile.exists()) {
             return [] as List
         }
 
         JsonSlurper slurper = new JsonSlurper()
-        return file.readLines().collect { String line ->
+        return logFile.readLines().collect { String line ->
             (Map<String, Object>) slurper.parseText(line)
         }
     }
