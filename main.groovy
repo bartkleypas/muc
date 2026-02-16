@@ -123,19 +123,27 @@ if (options.chat) {
     def logManager = new LogManager(historyFile)
     def context = new Context().enableLogging(logManager)
 
+    def lastEntry
     if (!new File(historyFile).exists()) {
         Logger.info "## Building a new Chronicle to ${historyFile}..."
         def promptText = new File("Characters/George.md").text
 
         context.addMessage("system", promptText)
     } else {
-        def lastEntry = logManager.readAllEntries().last()
-        context.loadBranch(lastEntry.messageId)
+        lastEntry = logManager.readAllEntries().last()
+        context = context.loadBranch(lastEntry.messageId)
     }
 
     Logger.info "# Sent a chat arg."
     new TerminalBridge().withCloseable { bridge ->
         bridge.drawSignature()
+
+        if (lastEntry) {
+            bridge.printSpeaker("assistant")
+            bridge.printToken(lastEntry.content)
+            bridge.flushBuffer()
+        }
+
         def reader = org.jline.reader.LineReaderBuilder.builder()
                         .terminal(bridge.terminal)
                         .build()
