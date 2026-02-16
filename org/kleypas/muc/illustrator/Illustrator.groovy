@@ -46,23 +46,6 @@ class Illustrator {
     }
 
     /**
-     * Extracts the first <IMAGE_DESC>...</IMAGE_DESC> block from {@code input}
-     * and converts it into a ComfyUI JSON payload.
-     *
-     * @param input string containing an <IMAGE_DESC> tag
-     * @return JSON string ready for the ComfyUI API
-     * @throws AssertionError if {@code input} does not contain an <IMAGE_DESC> tag
-     */
-    String promptToJson(String input) {
-        assert input.contains("<IMAGE_DESC>")
-
-        def matcher = input =~ /<IMAGE_DESC>(.*?)<\/IMAGE_DESC>/
-        def imgDesc = matcher[0][1].trim()
-        def out = getComfyUiJson(imgDesc)
-        return out
-    }
-
-    /**
      * Builds the ComfyUI workflow JSON from a textual prompt.
      *
      * @param input prompt text for the image generation
