@@ -1,6 +1,8 @@
 #!/bin/bash
 //usr/bin/env groovy -cp lib/:lib/main.jar "$0" $@; exit $?
 
+import org.kleypas.muc.io.LogManager
+
 import org.kleypas.muc.model.Context
 import org.kleypas.muc.model.Message
 import org.kleypas.muc.model.Model
@@ -118,22 +120,17 @@ if (options.chat) {
         historyFile = options.chat
     }
 
-    def context = new Context().enableLogging(historyFile)
+    def logManager = new LogManager(historyFile)
+    def context = new Context().enableLogging(logManager)
 
-    if (new File(historyFile).exists()) {
-        Logger.info "## Resuming Chronicle from ${historyFile}..."
-        context = context.importStream(historyFile)
-        context.enableLogging(historyFile)
-    } else {
+    if (!new File(historyFile).exists()) {
         Logger.info "## Building a new Chronicle to ${historyFile}..."
         def promptText = new File("Characters/George.md").text
 
-        def characterSheet = new File("Characters/George.json").text
-        promptText = promptText + "\r### This is your json formatted character sheet:\r${characterSheet}"
-
-        def locationSheet = new File("Locations/Library.json").text
-        promptText = promptText + "\r### This is your json formatted location details:\r${locationSheet}"
         context.addMessage("system", promptText)
+    } else {
+        def lastEntry = logManager.readAllEntries().last()
+        context.loadBranch(lastEntry.messageId)
     }
 
     Logger.info "# Sent a chat arg."
@@ -143,7 +140,6 @@ if (options.chat) {
                         .terminal(bridge.terminal)
                         .build()
 
-        String prompt = "\u001B[1;32m## You\u001B[0m: "
 
         def model = new Model(model: "narrator", body: context)
 
@@ -154,8 +150,13 @@ if (options.chat) {
                 80
             )
 
+            String prompt = "\u001B[1;32m## You\u001B[0m: "
+
             def input = reader.readLine(prompt)?.trim()
             if (!input || input == "/bye" || input == "q") { break }
+
+            def parentId = context.getLastMessage()?.messageId
+            context.addMessage("user", input, parentId)
 
             bridge.terminal.writer().print("\033[1A\033[2K")
 
@@ -163,17 +164,26 @@ if (options.chat) {
             bridge.printToken(input)
             bridge.flushBuffer()
 
-            def lastMessage = context.getLastMessage()
-            def userMessage = context.addMessage("user", input, lastMessage?.messageId).getLastMessage()
-
             bridge.printSpeaker("assistant")
             StringBuilder fullOutput = new StringBuilder()
             model.streamResponse(context) { token ->
                 bridge.printToken(token)
                 fullOutput.append(token)
             }
+
+            def userResponseId = context.getLastMessage()?.messageId
+            context.addMessage("assistant", fullOutput.toString(), userResponseId)
+
+            def fullOutputString = fullOutput.toString()
+
+            def imagePrompt = TagParser.extractString(fullOutputString, "IMAGE_DESC")
+            if (imagePrompt) {
+                bridge.terminal.writer().println("\n\u001B[35m## George has sketched a vision in the margins of his journal.. \u001B[0m")
+
+                new File("Story/VisionQueue.txt") << "${context.getLastMessage()?.messageId}|${imagePrompt}\n"
+                bridge.terminal.writer().println("\u001B[34m## Vision queued for later rendering to avoid VRAM contention.\u001B[0m\n")
+            }
             bridge.flushBuffer()
-            context.addMessage("assistant", fullOutput.toString(), userMessage.messageId)
         }
     }
 }

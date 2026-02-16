@@ -1,5 +1,7 @@
 package org.kleypas.muc.model
 
+import org.kleypas.muc.io.LogManager
+
 import groovy.json.JsonOutput
 import groovy.lang.Closure
 
@@ -7,6 +9,7 @@ import java.io.File
 import java.time.Instant
 import java.util.ArrayList
 import java.util.List
+
 
 /**
  * Represents the conversational history (Context) for an LLM interaction.
@@ -17,11 +20,12 @@ class Context {
     // Style B: Explicit List type for messages and explicit access modifier
     public List<Message> messages
 
-    public String logPath
+    private LogManager logManager
 
     // Constant for maximum tokens to combat O(N^2) complexity
-    // private static final int MAX_TOKENS = 32768
-    private static final int MAX_TOKENS = 8192
+    private static final int MAX_TOKENS = 32768
+    // private static final int MAX_TOKENS = 16384
+    //private static final int MAX_TOKENS = 8192
 
     // --- Constructors ---
 
@@ -45,8 +49,15 @@ class Context {
 
     // --- Core Message Management ---
 
-    public Context enableLogging(String path) {
-        this.logPath = path
+    public Message getLastMessage() {
+        if (this.messages == null || this.messages.isEmpty()) {
+            return null
+        }
+        return this.messages.get(this.messages.size() - 1)
+    }
+
+    public Context enableLogging(LogManager manager) {
+        this.logManager = manager
         return this
     }
 
@@ -65,98 +76,83 @@ class Context {
                                Double n = 1.0, Double p = 1.0, Double s = 1.0, Double a = 1.0 ) {
         // Use concrete types within the method
         final Message newMessage = new Message(sender, content)
-        newMessage.nurturance = n
-        newMessage.playfulness = p
-        newMessage.steadfastness = s
-        newMessage.attunement = a
-        if (parentId) {
-            final Message parent = this.messages.find { it.messageId == parentId }
-            if (parent) {
-                newMessage.parentId = parent.messageId
-            }
-        }
+        newMessage.messageId = java.util.UUID.randomUUID().toString()
+        newMessage.parentId = parentId
+
         this.messages.add(newMessage)
-        appendMessageToLog(newMessage)
+
+        if (this.logManager) {
+            this.logManager.appendEntry([
+                timestamp: Instant.now().toString(),
+                messageId: newMessage.messageId,
+                parentId: newMessage.parentId,
+                role: newMessage.role,
+                nurturance: newMessage.nurturance,
+                playfulness: newMessage.playfulness,
+                steadfastness: newMessage.steadfastness,
+                attunement: newMessage.attunement,
+                content: newMessage.content
+            ])
+        }
         return this
     }
 
     /**
-     * @return the list of messages in the context.
+     * Rebuilds a specific thread by walking the DAG backwards.
+     * Uses the LogManager to retrieve the full history bank.
+     * @param leafId The ID of the leaf message
+     * @return The reconstructed Context object
      */
-    // Style B: Explicit return type
-    public List<Message> getMessages() {
-        return this.messages
-    }
+    public Context loadBranch(String leafId) {
+        if (!this.logManager) throw new IllegalStateException("LogManager not initialized")
 
-    public Message getFirstMessage() {
-        return this.messages.isEmpty() ? null : this.messages.first()
-    }
+        List<Map<String, Object>> allEntries = this.logManager.readAllEntries()
+        Map<String, Map<String, Object>> nodeMap = allEntries.collectEntries { [it.messageId, it] }
 
-    public Message getLastMessage() {
-        if (this.messages.isEmpty()) {
-            println "No messages boss"
-            return null
+        List<Message> branchMessages = []
+        String currentId = leafId
+
+        while (currentId != null && nodeMap.containsKey(currentId)) {
+            Map entry = nodeMap.get(currentId)
+            branchMessages.add(0, new Message(
+                Instant.parse((String) entry.timestamp),
+                (String) entry.messageId,
+                (String) entry.parentId,
+                (String) entry.role,
+                (Double) entry.nurturance,
+                (Double) entry.playfulness,
+                (Double) entry.steadfastness,
+                (Double) entry.attunement,
+                (String) entry.content
+            ))
+            currentId = (String) entry.parentId
         }
-        return this.messages.last()
+        this.messages = branchMessages
+        return this
     }
 
-    /**
-     * Estimates the token count for a single message based on character count.
-     * @param message The message to estimate tokens for.
-     * @return The estimated number of tokens.
-     */
-    // Style B: Explicit return type and parameter type, private access
-    private int estimateMessageTokenCount(final Message message) {
-        // Safe navigation for content in case it's null
-        final int charCount = message.content?.length() ?: 0
-        // Rough estimate: 1 token is roughly 4 characters
-        return charCount / 4
-    }
-
-    /**
-     * Estimates the current token count based on character count (a simple proxy).
-     * @return The estimated number of tokens.
-     */
-    // Style B: Explicit return type and private access
-    private int estimateTokenCount() {
-        int tokenCount = 0
-        // Use explicit types for the loop (Style B preferred)
-        for (final Message msg : this.messages) {
-            tokenCount += estimateMessageTokenCount(msg)
-        }
-        return tokenCount 
-    }
-    
     /**
      * Removes the oldest non-system messages until the token count is below the maximum.
      */
-    // Style B: Explicit return type
     public void pruneContext() {
-        int currentTokens = this.estimateTokenCount()
-
-        // While too large and there's more than one message (to preserve the initial introduction)
+        int currentTokens = estimateTokenCount()
         while (currentTokens > MAX_TOKENS && this.messages.size() > 1) {
-            int messageIndexToRemove = -1
-
-            // Iterate using standard loop (Style B) to find the first non-system message
-            for (int i = 0; i < this.messages.size(); i++) {
-                final Message msg = this.messages.get(i)
-                if (!"system".equals(msg.role.toLowerCase())) {
-                    messageIndexToRemove = i
-                    break
-                }
-            }
-
-            if (messageIndexToRemove != -1) {
-                final Message removedMsg = this.messages.get(messageIndexToRemove)
-                final int tokensToSubtract = estimateMessageTokenCount(removedMsg)
-                this.messages.remove(messageIndexToRemove)
-                currentTokens -= tokensToSubtract
+            // Remove oldest non-system message
+            int toRemove = this.messages.findIndexOf { !it.role.equalsIgnoreCase("system") }
+            if (toRemove != -1) {
+                currentTokens -= estimateMessageTokenCount(this.messages.remove(toRemove))
             } else {
-                // Only system messages remain
                 break
             }
         }
+    }
+
+    private int estimateTokenCount() {
+        return this.messages.sum { estimateMessageTokenCount(it) } as int
+    }
+
+    private int estimateMessageTokenCount(Message msg) {
+        return (msg.content?.length() ?: 0) / 4
     }
 
     // --- Transformation ---
@@ -213,120 +209,5 @@ class Context {
         // 5. Prune to ensure we stay under the token ceiling
         thread.pruneContext()
         return thread
-    }
-    
-    // --- I/O ---
-
-    /**
-     * Exports the context (excluding system messages) to a JSON file.
-     * @param filePath the file path where the context should be written.
-     * @return the {@link File} object pointing to the exported file.
-     */
-    // Style B: Explicit return type and parameter type
-    public File exportContext(String filePath) {
-        final File outFile = new File(filePath)
-        outFile.parentFile?.mkdirs()
-
-        // Use Groovy idiomatic closure for finding messages (acceptable for small utility functions)
-        final List<Message> filteredHistory = this.messages.findAll {
-            final Message msg = it
-            !msg.role.equalsIgnoreCase("system") 
-        }
-
-        final List<Map> serializedMessages = filteredHistory.collect { Message msg ->
-            final Map msgMap = [
-                role: msg.role,
-                content: msg.content,
-                messageId: msg.messageId,
-                parentId: msg.parentId,
-                timestamp: msg.timestamp.toString(),
-            ]
-            return msgMap
-        }
-
-        final Map historyMap = [messages: serializedMessages]
-
-        // Use strong typing and explicit method calls for JSON
-        outFile.text = JsonOutput.prettyPrint(JsonOutput.toJson(historyMap))
-        return outFile
-    }
-
-    private void appendMessageToLog(Message msg) {
-        if (this.logPath) {
-            def entry = [
-                timestamp: Instant.now().toString(),
-                messageId: msg.messageId,
-                parentId: msg.parentId,
-                role: msg.role,
-                nurturance: msg.nurturance,
-                playfulness: msg.playfulness,
-                steadfastness: msg.steadfastness,
-                attunement: msg.attunement,
-                content: msg.content
-            ]
-            new File(this.logPath) << groovy.json.JsonOutput.toJson(entry) + "\n"
-        }
-    }
-
-    /**
-     * Imports a context from a JSON file.
-     * @param filePath the file path to read.
-     * @return a new {@link Context} instance populated with the file contents.
-     */
-    // Style B: Explicit return type and parameter type. Requires groovy.json.JsonSlurper
-    public Context importContext(String filePath) {
-        final File inFile = new File(filePath)
-        assert inFile.exists()
-
-        // Use strong typing for local variables
-        final groovy.json.JsonSlurper jsonSlurper = new groovy.json.JsonSlurper()
-        final Map json = jsonSlurper.parse(inFile) as Map
-
-        // Use Groovy idiomatic 'collect' for transformation (acceptable in Style B for mapping)
-        final List<Message> msgs = json.messages.collect {
-            final Map msgMap = it as Map
-            final String role = msgMap.role as String
-            final String content = msgMap.content as String
-            final String messageId = msgMap.messageId as String ?: UUID.randomUUID().toString()
-            final String parentId = msgMap.parentId as String
-            final Instant timestamp = msgMap.timestamp ? Instant.parse(msgMap.timestamp as String) : Instant.now()
-            def msg = new Message(role, content, messageId, parentId, timestamp)
-            return msg
-        }
-        return new Context(msgs)
-    }
-
-    public Context importStream(String filePath) {
-        if (!filePath.startsWith("Story/")) {
-            throw new SecurityException("The Strix is not permitted to look into: ${filePath}")
-        }
-        final File inFile = new File(filePath)
-        assert inFile.exists()
-
-        final List<Message> msgs = []
-        final groovy.json.JsonSlurper jsonSlurper = new groovy.json.JsonSlurper()
-
-        inFile.eachLine { line ->
-            if (line.trim()) {
-                final Map msgMap = jsonSlurper.parseText(line) as Map
-
-                final String tsStr = msgMap.timestamp as String
-
-                final Instant timestamp = tsStr ? Instant.parse(tsStr) : Instant.now()
-                final String messageId = msgMap.messageId as String ?: UUID.randomUUID().toString()
-                final String parentId = msgMap.parentId as String
-                final String role = msgMap.role as String
-                final String content = msgMap.content as String
-
-                // Radiance values set to 1.0 for legacy compat
-                final Double n = msgMap.nurturance ?: 1.0
-                final Double p = msgMap.playfulness ?: 1.0
-                final Double s = msgMap.steadfastness ?: 1.0
-                final Double a = msgMap.attunement ?: 1.0
-
-                msgs << new Message(role, content, messageId, parentId, timestamp, n, p, s, a)
-            }
-        }
-        return new Context(msgs)
     }
 }

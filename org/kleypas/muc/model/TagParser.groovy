@@ -4,7 +4,7 @@ import java.util.regex.Pattern
 import java.util.regex.Matcher
 
 /**
- * What if we want to grab a tagged thing from the thing? Eh? 
+ * What if we want to grab a tagged thing from the thing? Eh?
  *
  * <p>Honestly, i had no idea where to put this functionality, but you might
  * "want" something like this if you are dealing with a model and want to parse
@@ -29,7 +29,9 @@ class TagParser {
     }
 
     public static String extractString(String line, String tagName) {
-        final String regex = "<${Pattern.quote(tagName)}\\s*>(.*?)</${Pattern.quote(tagName)}>"
+        if (! line) return null
+
+        final String regex = "<\\s*${Pattern.quote(tagName)}\\s*>(.*?)</\\s*${Pattern.quote(tagName)}\\s*>"
         final Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE | Pattern.DOTALL)
 
         final Matcher matcher = pattern.matcher(line)
