@@ -20,7 +20,8 @@ public class Cli {
         "PASSWORD",
         "AUTH_TOKEN",
         "BEARER",
-        "CLIENT_SECRET",
+        "ENCRYPTION_KEY",
+        "CLIENT_SECRET"
     ].asImmutable()
 
     private final CliBuilder cliBuilder

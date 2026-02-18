@@ -61,40 +61,18 @@ class Context {
         return this
     }
 
-    public Context addMessage(String sender, String content) {
-        return addMessage(sender, content, null)
-    }
-
     /**
      * Adds a new message to the context.
      * @param sender  the role of the sender (e.g., "user" or "assistant").
      * @param content the message content.
      * @return the Context instance for chaining.
      */
-    // Style B: Explicit return type (Context for chaining) and parameter types
-    public Context addMessage(String sender, String content, String parentId,
-                               Double n = 1.0, Double p = 1.0, Double s = 1.0, Double a = 1.0 ) {
+    // Style B: Explicit return type (Message type for chaining) and parameter types
+    public Message addMessage(String sender, String content, String parentId = null) {
         // Use concrete types within the method
-        final Message newMessage = new Message(sender, content)
-        newMessage.messageId = java.util.UUID.randomUUID().toString()
-        newMessage.parentId = parentId
-
+        Message newMessage = new Message(sender, content, parentId)
         this.messages.add(newMessage)
-
-        if (this.logManager) {
-            this.logManager.appendEntry([
-                timestamp: Instant.now().toString(),
-                messageId: newMessage.messageId,
-                parentId: newMessage.parentId,
-                role: newMessage.role,
-                nurturance: newMessage.nurturance,
-                playfulness: newMessage.playfulness,
-                steadfastness: newMessage.steadfastness,
-                attunement: newMessage.attunement,
-                content: newMessage.content
-            ])
-        }
-        return this
+        return newMessage
     }
 
     /**
