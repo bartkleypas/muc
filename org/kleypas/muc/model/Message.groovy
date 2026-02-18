@@ -11,6 +11,7 @@ import java.util.UUID
  */
 class Message {
     String role
+    Boolean encrypted
     String content
     String messageId
     String parentId
@@ -24,6 +25,7 @@ class Message {
 
     Message(String role, String content, String parentId = null) {
         this.role = role
+        this.encrypted = encrypted
         this.content = content
         this.parentId = parentId
         this.messageId = UUID.randomUUID().toString()
@@ -33,6 +35,7 @@ class Message {
     Message(String role, String content, String messageId, String parentId, Instant timestamp,
             Double n, Double p, Double s, Double a) {
         this.role = role
+        this.encrypted = encrypted
         this.content = content
         this.parentId = parentId
         this.messageId = messageId
