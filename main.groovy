@@ -119,34 +119,20 @@ if (options.chat) {
         historyFile = options.chat
     }
 
-    def logManager = new LogManager(historyFile)
+    def logManager = new LogManager(historyFile, cli.envVars.ENCRYPTION_KEY.getBytes())
     def context = new Context().enableLogging(logManager)
+    def model = new Model(model: "smallfry")
 
-    def lastEntry
     if (!new File(historyFile).exists()) {
         Logger.info "## Building a new Chronicle to ${historyFile}..."
         def promptText = new File("Characters/George.md").text
 
-        def systemPrompt = context.addMessage("system", promptText)
-        Map<String, Object> logEntry = [
-            timestamp: systemPrompt.timestamp.toString(),
-            messageId: systemPrompt.messageId,
-            parentId: null,
-            nurturance: systemPrompt.nurturance,
-            playfulness: systemPrompt.playfulness,
-            steadfastness: systemPrompt.steadfastness,
-            attunement: systemPrompt.attunement,
-            role: systemPrompt.role,
-            encrypted: false, // Will be swapped to true when we send to logManager
-            content: systemPrompt.content
-        ]
-        logManager.appendEntry(logEntry, cli.envVars.ENCRYPTION_KEY)
+        def systemMsg = context.addMessage("system", promptText)
+
+        logManager.appendEntry(systemMsg)
     } else {
-        def entries = logManager.readAllEntries(cli.envVars.ENCRYPTION_KEY)
-        lastEntry = entries.last()
-        context.messages.clear()
-        entries.each { entry ->
-            def msg = new Message(
+        logManager.readAllEntries().each { entry ->
+            context.messages.add(new Message(
                 entry.role as String,
                 entry.content as String,
                 entry.messageId as String,
@@ -156,8 +142,7 @@ if (options.chat) {
                 entry.playfulness as Double ?: 1.0,
                 entry.steadfastness as Double ?: 1.0,
                 entry.attunement as Double ?: 1.0,
-            )
-            context.messages.add(msg)
+            ))
         }
     }
 
@@ -165,20 +150,16 @@ if (options.chat) {
     new TerminalBridge().withCloseable { bridge ->
         bridge.drawSignature()
 
-        // Either we have a lastEntry to echo from above, or we need to figure
-        // one out from the current branch.
-        if (lastEntry) {
-            bridge.printSpeaker("assistant")
-            bridge.printToken(lastEntry.content)
+        def lastMessage = context.messages.last()
+        if (lastMessage.role != "system") {
+            bridge.printSpeaker(lastMessage.role)
+            bridge.printToken(lastMessage.content)
             bridge.flushBuffer()
         }
 
         def reader = org.jline.reader.LineReaderBuilder.builder()
                         .terminal(bridge.terminal)
                         .build()
-
-
-        def model = new Model(model: "narrator", body: context)
 
         while (true) {
             bridge.updateHUD(
@@ -195,21 +176,9 @@ if (options.chat) {
             if (!input || input == "/bye" || input == "q") { break }
 
             def currentTip = context.getLastMessage()
-            def userResponse = context.addMessage("user", input, currentTip?.messageId)
+            def userResponse = context.addMessage("user", input, currentTip.messageId)
 
-            Map<String, Object> userLog = [
-                timestamp: userResponse.timestamp.toString(),
-                messageId: userResponse.messageId,
-                parentId: userResponse.parentId,
-                nurturance: userResponse.nurturance,
-                playfulness: userResponse.playfulness,
-                steadfastness: userResponse.steadfastness,
-                attunement: userResponse.attunement,
-                role: userResponse.role,
-                encrypted: false, // Will be swapped to true when we send to logManager
-                content: userResponse.content
-            ]
-            logManager.appendEntry(userLog, cli.envVars.ENCRYPTION_KEY)
+            logManager.appendEntry(userResponse)
 
             bridge.terminal.writer().print("\033[1A\033[2K")
 
@@ -228,19 +197,7 @@ if (options.chat) {
 
             context.addMessage("assistant", fullOutputString, userResponse.messageId)
             def assistantResponse = context.getLastMessage()
-            Map<String, Object> assistantLog = [
-                timestamp: assistantResponse.timestamp.toString(),
-                messageId: assistantResponse.messageId,
-                parentId: assistantResponse.parentId,
-                nurturance: assistantResponse.nurturance,
-                playfulness: assistantResponse.playfulness,
-                steadfastness: assistantResponse.steadfastness,
-                attunement: assistantResponse.attunement,
-                role: assistantResponse.role,
-                encrypted: false, // Will be swapped to true when we send to logManager
-                content: assistantResponse.content
-            ]
-            logManager.appendEntry(assistantLog, cli.envVars.ENCRYPTION_KEY)
+            logManager.appendEntry(assistantResponse)
 
             def imagePrompt = TagParser.extractString(fullOutputString, "IMAGE_DESC")
             if (imagePrompt) {

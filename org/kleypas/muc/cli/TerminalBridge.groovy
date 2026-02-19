@@ -74,7 +74,7 @@ class TerminalBridge implements AutoCloseable {
     }
 
     void printToken(String token) {
-        terminal.writer()print(token)
+        terminal.writer().print(token)
         terminal.flush()
     }
 

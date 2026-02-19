@@ -4,6 +4,8 @@ import org.kleypas.muc.cli.Logger
 import org.kleypas.muc.cli.LogLevel
 import org.kleypas.muc.cli.TerminalBridge
 
+import org.kleypas.muc.io.LogManager
+
 import org.kleypas.muc.rng.Coin
 import org.kleypas.muc.rng.Dice
 import org.kleypas.muc.rng.DiceType
@@ -154,33 +156,39 @@ class Test {
         try {
             Logger.info "## Running Unified Narrator Test"
 
-            // 2. Prep the State
+            // Init a model
+            Model model = new Model(model: "smallfry")
+
+            // clear out our old unit test results and start a new one.
+            File logFile = new File("Story/UnitTests.jsonl")
+            logFile.delete()
+            logFile.createNewFile()
+
+            // We need a jsonl logger!
+            LogManager logManager = new LogManager("Story/UnitTests.jsonl")
+
+            // Initialize Context
+            Context context = new Context().enableLogging(logManager)
             String georgePrompt = new File("Characters/George.md").text
-            String georgeSheet = new File("Characters/George.json").text
-            String locationSheet = new File("Locations/Library.json").text
-            def defaultHarmony = [nurturance: 0.90, playfulness: 1.10, steadfastness: 1.70, attunement: 1.85]
+            Message systemPrompt = context.addMessage("system", georgePrompt)
 
-            // Build the System Anchor
-            String fullSystemPrompt = "${georgePrompt}\n### Character Sheet:\n${georgeSheet}\n### Location:\n${locationSheet}"
+            logManager.appendEntry(systemPrompt)
 
-            // 3. Initialize Context with Streaming
-            Context context = new Context().enableLogging("Story/Narrator.jsonl")
-            Model model = new Model(model: "biggun", body: context)
-            model.body.addMessage("system", fullSystemPrompt)
-
-            // 4. The Interaction
-            String input = "Describe the Scriptorium, George."
+            // The Interaction
+            String input = "Please describe yourself George."
             Logger.info "### user says: ${input}"
 
-            def systemMessage = model.body.getLastMessage()
-            def userMessage = model.body.addMessage("user", input, systemMessage.messageId).getLastMessage()
+            context.addMessage("user", input, systemPrompt.messageId)
+            Message userMessage = context.getLastMessage()
+            logManager.appendEntry(userMessage)
 
             // Generate and Log
-            def output = model.generateResponse(context.swizzleSpeaker("George"))
+            String output = model.generateResponse(context)
             Logger.info "### George says: ${output}"
+            context.addMessage("assistant", output, userMessage.messageId)
 
-            def modelMessage = model.body.addMessage("assistant", output, userMessage.messageId).getLastMessage()
-            model.body.exportContext("Story/Chapter_0.json")
+            Message modelMessage = context.getLastMessage()
+            logManager.appendEntry(modelMessage)
 
         } finally {
             Logger.info "Test done."
@@ -221,28 +229,43 @@ class Test {
     }
 
     void story() {
-        Logger.info "## Running Story tests"
+        Logger.info "## Running Story tests, resuming from the UnitTests.jsonl file we crafted in the Narrator testing above."
 
-        Context context = new Context().enableLogging("Story/Story_test.jsonl")
-        String georgePrompt = new File("Characters/George.md").text
-        context.addMessage("system", georgePrompt)
+        LogManager logManager = new LogManager("Story/UnitTests.jsonl")
+        Context context = new Context().enableLogging(logManager)
 
-        Logger.info "### Loading story from:\r\nStory/Chapter_0.json"
-        def storyContext = new Context().importContext("Story/Chapter_0.json")
+        Logger.info "### Loading story from:\r\nStory/UnitTests.jsonl"
+        def entries = logManager.readAllEntries("Story/UnitTests.jsonl")
+        def lastMessage = entries.last()
+        context.messages.clear()
 
-        context.messages.addAll(storyContext.messages)
+        entries.each { entry ->
+            def msg = new Message(
+                entry.role as String,
+                entry.content as String,
+                entry.messageId as String,
+                entry.parentId as String,
+                java.time.Instant.parse(entry.timestamp as String),
+                entry.nurturance as Double ?: 1.0,
+                entry.playfulness as Double ?: 1.0,
+                entry.steadfastness as Double ?: 1.0,
+                entry.attunement as Double ?: 1.0
+            )
+            context.messages.add(msg)
+        }
 
-        def lastMessage = context.getLastMessage()
-        Model narrator = new Model(model: "narrator")
+        Model narrator = new Model(model: "smallfry")
 
         def input = "I think I would like to pick up the electric bass and strike up a relaxed and groovy bassline. Currently it is sitting in its stand by the hearth."
         Logger.info "### user says:\r\n${input}"
-        def userMessage = context.addMessage("user", input, lastMessage.messageId).getLastMessage()
+        context.addMessage("user", input, lastMessage.messageId)
+        Message userMessage = context.getLastMessage()
+        logManager.addMessage(userMessage)
 
-        def output = narrator.generateResponse(context.swizzleSpeaker("George"))
+        def output = narrator.generateResponse(context)
         Logger.info "### George says:\r\n${output}"
-        def modelMessage = context.addMessage("George", output, userMessage.messageId).getLastMessage()
-        context.exportContext("Story/Chapter_0.json")
+        def modelMessage = context.addMessage("assistant", output, userMessage.messageId)
+        logManager.addMessage(modelMessage)
     }
 
     // NOTE: Will break test execution waiting for input.
