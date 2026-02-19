@@ -32,10 +32,6 @@ public class LogManager {
 
         byte[] encryptionKey = key ?: this.persistentKey
 
-        if (!encryptionKey) {
-            throw new IllegalStateException("Attempted to write to encrypted logs without a key.")
-        }
-
         Map logMap = [
             timestamp: entry.timestamp.toString(),
             messageId: entry.messageId,
