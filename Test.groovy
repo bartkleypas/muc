@@ -235,7 +235,7 @@ class Test {
         Context context = new Context().enableLogging(logManager)
 
         Logger.info "### Loading story from:\r\nStory/UnitTests.jsonl"
-        def entries = logManager.readAllEntries("Story/UnitTests.jsonl")
+        def entries = logManager.readAllEntries()
         def lastMessage = entries.last()
         context.messages.clear()
 
@@ -260,12 +260,12 @@ class Test {
         Logger.info "### user says:\r\n${input}"
         context.addMessage("user", input, lastMessage.messageId)
         Message userMessage = context.getLastMessage()
-        logManager.addMessage(userMessage)
+        logManager.appendEntry(userMessage)
 
         def output = narrator.generateResponse(context)
         Logger.info "### George says:\r\n${output}"
         def modelMessage = context.addMessage("assistant", output, userMessage.messageId)
-        logManager.addMessage(modelMessage)
+        logManager.appendEntry(modelMessage)
     }
 
     // NOTE: Will break test execution waiting for input.
