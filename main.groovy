@@ -113,6 +113,7 @@ if (options.image) {
 // Get directly to a chat.
 if (options.chat) {
     Logger.setLevel(LogLevel.INFO)
+    Logger.info "# Sent a chat arg."
 
     def historyFile = "Story/Narrator.jsonl"
     if (options.chat instanceof String) {
@@ -146,7 +147,6 @@ if (options.chat) {
         }
     }
 
-    Logger.info "# Sent a chat arg."
     new TerminalBridge().withCloseable { bridge ->
         bridge.drawSignature()
 
@@ -162,28 +162,29 @@ if (options.chat) {
                         .build()
 
         while (true) {
+            def last = context.messages.last()
             bridge.updateHUD(
-                "The Library of George",
-                "George (Strix Varia)",
-                80
+                "The Library",
+                "Navigator",
+                [nurturance: last.nurturance, playfulness: last.playfulness, steadfastness: last.steadfastness, attunement: last.attunement]
             )
 
             bridge.flushBuffer()
 
-            String prompt = "\u001B[1;32m## You\u001B[0m: "
+            String prompt = "\u001B[1;32m[You]\u001B[0m: "
 
             def input = reader.readLine(prompt)?.trim()
             if (!input || input == "/bye" || input == "q") { break }
+
+            bridge.terminal.writer().print("\033[1A\033[2K")
 
             def currentTip = context.getLastMessage()
             def userResponse = context.addMessage("user", input, currentTip.messageId)
 
             logManager.appendEntry(userResponse)
 
-            bridge.terminal.writer().print("\033[1A\033[2K")
-
             bridge.printSpeaker("user")
-            bridge.printToken(input)
+            bridge.terminal.writer().print("${input}")
             bridge.flushBuffer()
 
             bridge.printSpeaker("assistant")
