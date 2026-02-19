@@ -10,12 +10,12 @@ import java.util.UUID
  * content of the message.</p>
  */
 class Message {
+    String timestamp
+    String messageId
+    String parentId
     String role
     Boolean encrypted
     String content
-    String messageId
-    String parentId
-    Instant timestamp
 
     // Harmony Markers: The resonance signaling tags
     Double nurturance = 1.0
@@ -24,25 +24,25 @@ class Message {
     Double attunement = 1.0
 
     Message(String role, String content, String parentId = null) {
+        this.timestamp = Instant.now().toString()
+        this.parentId = parentId
+        this.messageId = UUID.randomUUID().toString()
         this.role = role
         this.encrypted = encrypted
         this.content = content
-        this.parentId = parentId
-        this.messageId = UUID.randomUUID().toString()
-        this.timestamp = Instant.now()
     }
     
     Message(String role, String content, String messageId, String parentId, Instant timestamp,
             Double n, Double p, Double s, Double a) {
-        this.role = role
-        this.encrypted = encrypted
-        this.content = content
-        this.parentId = parentId
-        this.messageId = messageId
         this.timestamp = timestamp
+        this.messageId = messageId
+        this.parentId = parentId
         this.nurturance = n
         this.playfulness = p
         this.steadfastness = s
         this.attunement = a
+        this.role = role
+        this.encrypted = encrypted
+        this.content = content
     }
 }

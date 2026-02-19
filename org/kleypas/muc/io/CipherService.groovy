@@ -10,12 +10,14 @@ class CipherService {
     private static final int TAG_BIT_LENGTH = 128
     private static final int IV_SIZE = 12
 
-    static String encrypt(String plainText, String key) {
+    static String encrypt(String plainText, Object key) {
         byte[] iv = new byte[IV_SIZE]
         new SecureRandom().nextBytes(iv)
 
+        byte[] rawKey = (key instanceof String) ? key.getBytes("UTF-8") : (byte[]) key
+
         // GRIND THE KEY: Hash the user string to get exactly 32 bytes
-        byte[] keyBytes = java.security.MessageDigest.getInstance("SHA-256").digest(key.getBytes("UTF-8"))
+        byte[] keyBytes = java.security.MessageDigest.getInstance("SHA-256").digest(rawKey)
         SecretKeySpec keySpec = new SecretKeySpec(keyBytes, "AES")
 
         Cipher cipher = Cipher.getInstance(ALGO)
@@ -27,13 +29,14 @@ class CipherService {
         return combined.encodeBase64().toString()
     }
 
-    static String decrypt(String base64Payload, String key) {
+    static String decrypt(String base64Payload, Object key) {
         byte[] decoded = base64Payload.decodeBase64()
         byte[] iv = decoded[0..IV_SIZE-1]
         byte[] cipherText = decoded[IV_SIZE..-1]
 
+        byte[] rawKey = (key instanceof String) ? key.getBytes("UTF-8") : (byte[]) key
         // GRIND THE KEY: Same hash logic for decryption
-        byte[] keyBytes = java.security.MessageDigest.getInstance("SHA-256").digest(key.getBytes("UTF-8"))
+        byte[] keyBytes = java.security.MessageDigest.getInstance("SHA-256").digest(rawKey)
         SecretKeySpec keySpec = new SecretKeySpec(keyBytes, "AES")
 
         Cipher cipher = Cipher.getInstance(ALGO)
