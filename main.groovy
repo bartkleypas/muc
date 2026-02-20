@@ -176,6 +176,14 @@ if (options.chat) {
             def input = reader.readLine(prompt)?.trim()
             if (!input || input == "/bye" || input == "q") { break }
 
+            if (input == "/map") {
+                Map<String, List<Map>> tree = logManager.buildHistoryTree()
+                bridge.terminal.writer().println("\n\u001B[33m## THE CHRONICLE TAPESTRY ##\u001B[0m")
+                bridge.drawChronicleMap(null, tree) // Start from the root
+                bridge.terminal.writer().println()
+                continue // Jump back to prompt
+            }
+
             bridge.terminal.writer().print("\033[1A\033[2K")
 
             def currentTip = context.getLastMessage()

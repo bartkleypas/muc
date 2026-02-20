@@ -1,5 +1,7 @@
 package org.kleypas.muc.cli
 
+import org.kleypas.muc.model.Message
+
 import org.jline.terminal.*
 import org.jline.utils.*
 
@@ -25,7 +27,7 @@ class TerminalBridge implements AutoCloseable {
      */
     void drawSignature() {
         String owl = """\u001B[37m  ,_,   
-\u001B[37m (O\u001B[33m,\u001B[37mO)  \u001B[36m<-- "The Bridge is established, Navigator. Type /bye or /q to quit."\u001B[0m
+\u001B[37m (O\u001B[33m,\u001B[37mO)  \u001B[36m<-- "The Bridge is established, Navigator. Type /bye or /q to quit, and /map to show the conversation tree."\u001B[0m
 \u001B[37m (###)  
 \u001B[37m  " "   \u001B[0m"""
         terminal.writer().println(owl)
@@ -33,6 +35,27 @@ class TerminalBridge implements AutoCloseable {
         terminal.flush()
     }
 
+    /**
+     * Draws an ASCII representation of the conversation branches.
+     */
+    void drawChronicleMap(String parentId, Map<String, List<Message>> tree, String prefix = "", boolean isLast = true) {
+        List<Message> children = tree[parentId] ?: []
+
+        children.eachWithIndex { msg, idx ->
+            boolean lastChild = (idx == children.size() - 1)
+
+            // Format the line: [ID] Role: Snippet
+            String color = (msg.role == "assistant") ? "\u001B[36m" : "\u001B[32m"
+            String snippet = msg.content.take(40).replaceAll("\n", " ")
+            String line = "${prefix}${lastChild ? '└── ' : '├── '}${color}[${msg.messageId.take(8)}] ${msg.role.toUpperCase()}: ${snippet}...\u001B[0m"
+            terminal.writer().println(line)
+
+            // Recurse into children of this message
+            String newPrefix = prefix + (lastChild ? "    " : "|   ")
+            drawChronicleMap(msg.messageId, tree, newPrefix, lastChild)
+        }
+        terminal.flush()
+    }
     /**
      * Updates the pinned HUD with current world state.
      */
