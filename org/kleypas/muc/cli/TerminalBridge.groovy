@@ -25,7 +25,7 @@ class TerminalBridge implements AutoCloseable {
      */
     void drawSignature() {
         String owl = """\u001B[37m  ,_,   
-\u001B[37m (O\u001B[33m,\u001B[37mO)  \u001B[36m<-- "The Bridge is established, Navigator. Trim Radiance with r/e, and q for quit."\u001B[0m
+\u001B[37m (O\u001B[33m,\u001B[37mO)  \u001B[36m<-- "The Bridge is established, Navigator. Type /bye or /q to quit."\u001B[0m
 \u001B[37m (###)  
 \u001B[37m  " "   \u001B[0m"""
         terminal.writer().println(owl)
@@ -36,11 +36,24 @@ class TerminalBridge implements AutoCloseable {
     /**
      * Updates the pinned HUD with current world state.
      */
-    void updateHUD(String location, String hero, int radiance) {
+    void updateHUD(String location, String hero, Map<String, Double> resonance) {
         if (!statusLine) return
 
-        String text = " [ LOC: $location ] | [ HERO: $hero ] | [ MIXER: RAD ${radiance}% ] "
-        AttributedString coloredStatus = new AttributedString(text, 
+        String left = " [ LOC:${location.toUpperCase()} ] | [ HERO:${hero.toUpperCase()} ]"
+        String right = String.format(
+            "[ N:%.1f P:%.1f S:%.1f A:%.1f ]",
+            resonance.nurturance ?: 1.0,
+            resonance.playfulness ?: 1.0,
+            resonance.steadfastness ?: 1.0,
+            resonance.attunement ?: 1.0
+        )
+
+        int width = terminal.getWidth()
+        int paddingSize = Math.max(1, width - (left.length() + right.length()))
+        String padding = " ".multiply(paddingSize)
+
+        String fullText = left + padding + right
+        AttributedString coloredStatus = new AttributedString(fullText,
             AttributedStyle.DEFAULT.foreground(AttributedStyle.YELLOW).background(AttributedStyle.BLUE))
         
         statusLine.update([coloredStatus])
@@ -74,8 +87,25 @@ class TerminalBridge implements AutoCloseable {
     }
 
     void printToken(String token) {
-        terminal.writer().print(token)
-        terminal.flush()
+        if (!token) return
+
+        for (char c in token.toCharArray()) {
+            terminal.writer().print(c)
+            terminal.flush()
+
+            // Slight random delay to feel more organic (15-40ms)
+            long delay = 10 + new Random().nextInt(20)
+
+            // Punctuation gets a lil' longer delay for dramatic impact
+            if (c == '.' || c == '?' || c == '!') delay += 250
+            if (c == ',') delay += 40
+
+            try {
+                Thread.sleep(delay)
+            } catch (InterruptedException e) {
+                Thread.currentThread().intuerrupt()
+            }
+        }
     }
 
     void flushBuffer() {
