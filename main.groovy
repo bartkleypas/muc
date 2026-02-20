@@ -184,6 +184,26 @@ if (options.chat) {
                 continue // Jump back to prompt
             }
 
+            if (input.startsWith("/jump ")) {
+                String targetId = input.split(" ")[1]
+                Map targetEntry = logManager.findEntryByPartialId(targetId)
+                if (targetEntry && targetEntry.role == "assistant") {
+                    context.loadBranch(targetEntry.messageId)
+
+                    bridge.replayLastTurn(context)
+
+                    bridge.updateHUD("The Library", "Navigator", [
+                        nurturance: targetEntry.nurturance,
+                        playfulness: targetEntry.playfulness,
+                        steadfastness: targetEntry.steadfastness,
+                        attunement: targetEntry.attunement
+                    ])
+                } else {
+                    bridge.terminal.writer().println("\u001B[31m[ERROR]\u001B[0m: Cannot pivot to a user node or invalid ID.")
+                }
+                continue
+            }
+
             bridge.terminal.writer().print("\033[1A\033[2K")
 
             def currentTip = context.getLastMessage()

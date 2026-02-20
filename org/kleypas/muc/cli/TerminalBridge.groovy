@@ -59,12 +59,12 @@ class TerminalBridge implements AutoCloseable {
     /**
      * Updates the pinned HUD with current world state.
      */
-    void updateHUD(String location, String hero, Map<String, Double> resonance) {
+    void updateHUD(String location, String hero, Map resonance) {
         if (!statusLine) return
 
         String left = " [ LOC:${location.toUpperCase()} ] | [ HERO:${hero.toUpperCase()} ]"
         String right = String.format(
-            "[ N:%.1f P:%.1f S:%.1f A:%.1f ]",
+            " [ N:%.1f P:%.1f S:%.1f A:%.1f ] ",
             resonance.nurturance ?: 1.0,
             resonance.playfulness ?: 1.0,
             resonance.steadfastness ?: 1.0,
@@ -75,11 +75,36 @@ class TerminalBridge implements AutoCloseable {
         int paddingSize = Math.max(1, width - (left.length() + right.length()))
         String padding = " ".multiply(paddingSize)
 
-        String fullText = left + padding + right
-        AttributedString coloredStatus = new AttributedString(fullText,
+        AttributedString coloredStatus = new AttributedString(left + padding + right,
             AttributedStyle.DEFAULT.foreground(AttributedStyle.YELLOW).background(AttributedStyle.BLUE))
         
         statusLine.update([coloredStatus])
+        terminal.flush()
+    }
+
+    /**
+     * Re-prints the final turn of a loaded branch to ground the user after a jump
+     */
+    void replayLastTurn(Object context) {
+
+        def lastAsst = context.getLastMessage()
+        def messages = context.messages
+        // Get the last user message and the last assistant response
+        def lastUser = (messages.size() >= 2) ? messages[messages.size() - 2] : null
+
+        terminal.writer().println("\n\u001B[33m-- REWEAVING TIMELINE --\u001B[0m")
+
+        if (lastUser && lastUser.role == "user") {
+            printSpeaker("user")
+            printToken(lastUser.content)
+        }
+
+        if (lastAsst && lastAsst.role == "assistant") {
+            printSpeaker("assistant")
+            printToken(lastAsst.content)
+        }
+
+        terminal.writer().println()
         terminal.flush()
     }
 

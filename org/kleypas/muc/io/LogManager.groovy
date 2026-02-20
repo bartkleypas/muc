@@ -88,4 +88,13 @@ public class LogManager {
 
         return allEntries.groupBy { it.parentId as String }
     }
+
+    /**
+     * Finds a specific message entry py a partial ID match
+     * Useful for jumping to branches identified in the TUI map.
+     */
+    Map findEntryByPartialId(String partialId) {
+        List<Map> allEntries = readAllEntries()
+        return allEntries.find { it.messageId.startsWith(partialId) }
+    }
 }
