@@ -233,7 +233,7 @@ if (options.chat) {
             if (imagePrompt) {
                 bridge.terminal.writer().println("\n\u001B[35m## George has sketched a vision in the margins of his journal.. \u001B[0m")
 
-                new File("Story/VisionQueue.txt") << "${userResponse.messageId}|${imagePrompt}\n"
+                new File("Story/VisionQueue.txt") << "${assistantResponse.messageId}|${imagePrompt}\n"
                 bridge.terminal.writer().println("\u001B[34m## Vision queued for later rendering to avoid VRAM contention.\u001B[0m\n")
             }
             bridge.flushBuffer()

@@ -102,12 +102,15 @@ public class LogManager {
      * Get some stats about our conversation
      */
     Map getChronicleStats() {
-        def allEntries = readAllEntries()
-        def branches = allEntries.groupBy { it.parentId }.size()
+        def allEntries = readAllEntries() ?: []
+        int total = allEntries.size()
+        def uniqueParents = allEntries.findAll { it.parentId != null }.collect { it.parentId }.unique()
+        int branches = uniqueParents.size()
+        String lastId = allEntries.isEmpty() ? "NONE" : allEntries.last().messageId?.take(8)
         return [
-            totalMessage: allEntries.size(),
+            totalMessages: total,
             branchCount: branches,
-            lastJumpId: allEntries.last()?.messageId?.take(8) ?: "NONE"
+            lastJumpId: lastId
         ]
     }
 }
