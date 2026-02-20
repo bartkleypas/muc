@@ -82,4 +82,10 @@ public class LogManager {
             return entry
         }
     }
+
+    Map<String, List<Map>> buildHistoryTree() {
+        List<Map> allEntries = readAllEntries()
+
+        return allEntries.groupBy { it.parentId as String }
+    }
 }
