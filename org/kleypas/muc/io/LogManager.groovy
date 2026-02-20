@@ -97,4 +97,17 @@ public class LogManager {
         List<Map> allEntries = readAllEntries()
         return allEntries.find { it.messageId.startsWith(partialId) }
     }
+
+    /**
+     * Get some stats about our conversation
+     */
+    Map getChronicleStats() {
+        def allEntries = readAllEntries()
+        def branches = allEntries.groupBy { it.parentId }.size()
+        return [
+            totalMessage: allEntries.size(),
+            branchCount: branches,
+            lastJumpId: allEntries.last()?.messageId?.take(8) ?: "NONE"
+        ]
+    }
 }

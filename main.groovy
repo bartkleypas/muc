@@ -122,11 +122,11 @@ if (options.chat) {
 
     def logManager = new LogManager(historyFile, cli.envVars.ENCRYPTION_KEY.getBytes())
     def context = new Context().enableLogging(logManager)
-    def model = new Model(model: "smallfry")
+    def model = new Model(model: "biggun")
 
     if (!new File(historyFile).exists()) {
         Logger.info "## Building a new Chronicle to ${historyFile}..."
-        def promptText = new File("Characters/George.md").text
+        def promptText = new File("Characters/Hypatia.md").text
 
         def systemMsg = context.addMessage("system", promptText)
 
@@ -148,7 +148,8 @@ if (options.chat) {
     }
 
     new TerminalBridge().withCloseable { bridge ->
-        bridge.drawSignature()
+        def stats = logManager.getChronicleStats()
+        bridge.drawSignature(stats)
 
         def lastMessage = context.messages.last()
         if (lastMessage.role != "system") {

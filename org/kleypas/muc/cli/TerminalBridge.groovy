@@ -25,6 +25,24 @@ class TerminalBridge implements AutoCloseable {
     /**
      * Draws the "Radiant Strix" signature and initial header.
      */
+    void drawSignature(Map stats) {
+        String version = "v1.2.0-nav"
+        String engine  = "GROOVY-DAG-ENGINE"
+
+        // Magenta for the owl, Cyan for the telemetry
+        terminal.writer().println("""
+\u001B[35m    ,-.
+   (0,0)  \u001B[0m<-- "The Bridge is established, Navigator."
+\u001B[35m   {###}      \u001B[36m[ $engine | $version ]
+\u001B[35m    " "       \u001B[34m[ MESSAGES: ${stats.totalMessages} | BRANCHES: ${stats.branchCount} ]
+              \u001B[34m[ LAST_LEAF: ${stats.lastJumpId} ]\u001B[0m
+        """)
+        
+        terminal.writer().println("\u001B[32m[SYSTEM]: TerminalBridge online. Type /map to see the tapestry.\u001B[0m\n")
+        terminal.flush()
+    }
+
+    /*
     void drawSignature() {
         String owl = """\u001B[37m  ,_,   
 \u001B[37m (O\u001B[33m,\u001B[37mO)  \u001B[36m<-- "The Bridge is established, Navigator. Type /bye or /q to quit, and /map to show the conversation tree."\u001B[0m
@@ -34,6 +52,7 @@ class TerminalBridge implements AutoCloseable {
         terminal.writer().println("\u001B[32m[SYSTEM]\u001B[0m: TerminalBridge online.\n")
         terminal.flush()
     }
+    */
 
     /**
      * Draws an ASCII representation of the conversation branches.
