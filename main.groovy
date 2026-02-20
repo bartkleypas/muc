@@ -126,7 +126,7 @@ if (options.chat) {
 
     if (!new File(historyFile).exists()) {
         Logger.info "## Building a new Chronicle to ${historyFile}..."
-        def promptText = new File("Characters/Hypatia.md").text
+        def promptText = new File("Characters/George.md").text
 
         def systemMsg = context.addMessage("system", promptText)
 
