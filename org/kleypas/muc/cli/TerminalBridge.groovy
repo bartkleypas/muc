@@ -15,6 +15,7 @@ class TerminalBridge implements AutoCloseable {
     private Attributes originalAttributes
     private int currentLinePos = 0
     private StringBuilder wordBuffer = new StringBuilder()
+    private boolean inImageTag = false
 
     TerminalBridge() {
         this.terminal = TerminalBuilder.builder().system(true).build()
@@ -140,7 +141,7 @@ class TerminalBridge implements AutoCloseable {
     void printSpeaker(String role) {
         String color = (role.equalsIgnoreCase("assistant")) ? "\u001B[1;36m" : "\u001B[1;32m"
         String name = (role.equalsIgnoreCase("assistant")) ? "[George]" : "[You]"
-        terminal.writer().print("\n${color}${name}\u001b[0m: ")
+        terminal.writer().print("\n${color}${name}\u001B[0m: ")
         terminal.flush()
     }
 
@@ -148,22 +149,57 @@ class TerminalBridge implements AutoCloseable {
         if (!token) return
 
         for (char c in token.toCharArray()) {
-            terminal.writer().print(c)
-            terminal.flush()
+            wordBuffer.append(c)
+            String currentBuffer = wordBuffer.toString()
 
-            // Slight random delay to feel more organic (15-40ms)
-            long delay = 10 + new Random().nextInt(20)
+            // Detect opening image tag
+            if (!inImageTag && currentBuffer.endsWith("<IMAGE_DESC>")) {
+                inImageTag = true
+                terminal.writer().print("\n\n\u001B[3;2;38;5;244m[SKETCH]: ")
+                wordBuffer.setLength(0) // clears buffer so we don't print the tag
+                continue
+            }
 
-            // Punctuation gets a lil' longer delay for dramatic impact
-            if (c == '.' || c == '?' || c == '!') delay += 250
-            if (c == ',') delay += 40
+            // Detect closing image tag
+            if (inImageTag && currentBuffer.endsWith("</IMAGE_DESC>")) {
+                inImageTag = false
+                terminal.writer().print("\u001B[0m\n\n") // reset style
+                wordBuffer.setLength(0)
+                continue
+            }
 
-            try {
-                Thread.sleep(delay)
-            } catch (InterruptedException e) {
-                Thread.currentThread().intuerrupt()
+            // Print character if it isn't part of a partial tag we're parsing
+            // we only want to print if the buffer doesn't look like its currently
+            // building a tag.
+            if (!isPossiblyBuildingTag(currentBuffer)) {
+                // flush buffer to screen
+                String toPrint = wordBuffer.toString()
+                for (char bC in toPrint.toCharArray()) {
+                    realTypewriterPrint(bC)
+                }
+                wordBuffer.setLength(0)
             }
         }
+    }
+
+    /**
+     * Prevents the typewriter from printing characters that are currently forming
+     * a tag
+     */
+    private boolean isPossiblyBuildingTag(String buffer) {
+        return "<IMAGE_DESC>".startsWith(buffer) || "</IMAGE_DESC>".startsWith(buffer)
+    }
+
+    private void realTypewriterPrint(char c) {
+        terminal.writer().print(c)
+        terminal.flush()
+        
+        long delay = 10 + new Random().nextInt(20)
+        if (c == '.' || c == '?' || c == '!') delay += 250
+        if (c == ',') delay += 40
+
+        try { Thread.sleep(delay)}
+        catch (InterruptedException e) { Thread.currentThread().interrupt}
     }
 
     void flushBuffer() {
