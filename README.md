@@ -1,10 +1,10 @@
-# MUC (Multi-Universe Chat) 🤖
+# 🦉 MUC (Multi-Universe Chat)
 
 `MUC` is a lightweight, command-line interface (CLI) application designed for fast, dynamic interaction with Large Language Models (LLMs). Built entirely on the Groovy runtime, `MUC` adheres to a strict "no-build" architecture, prioritizing portability, immediate execution, and rapid iteration.
 
 Unlike linear chat applications, `MUC` treats conversations as a Directed Acyclic Graph (DAG), allowing you to branch reality, jump between timelines, and maintain a persistent and optionally encrypted history, stored in a JSONL file in the `Story/` directory.
 
-Note: Coded and maintained with guidance from a friendly and patient AI assistant. Please see ***`CONTRIBUTING.md`** for details including assistant instructions.
+Note: Coded and maintained with guidance from a friendly and patient AI assistant. Please see **`CONTRIBUTING.md`** for details including assistant instructions.
 
 ---
 
@@ -23,16 +23,16 @@ Note: Coded and maintained with guidance from a friendly and patient AI assistan
 
 Since MUC is a single-file runtime application, setup is minimal.
 
-### Prerequisites
+### 🛠️ Prerequisites
 
 1.  **Java Runtime:** Ensure you have a recent Java Development Kit (JDK) installed, with version 21 or higher recommended.
 2.  **Groovy Runtime:** Install the Groovy runtime environment, with version 4 supported, but 5 or higher recommended.
-3.  **ENV VARS:** Set up environment variables for any necessary configurations:
-    1. `OLLAMA_API_URL`: Set this environment variable to the URL of your OLLAMA instance. eg: `http://localhost:11434/api/v1`
+3.  **ENV VARS:** Set up environment variables for any necessary configurations (or set them in `Secrets/.env`):
+    1. `OLLAMA_API_URL`: Set this environment variable to the URL of your OLLAMA instance. eg: `OLLAMA_API_URL=http://localhost:11434/api/v1`
     2. `OLLAMA_API_KEY`: Set this environment variable if you need authentication for your API provider. eg: `OLLAMA_API_KEY=sk-your-api-key`
-    3. `ENCRYPTION_KEY`: Set this environment variable if you want to encrypt the user and model messages to the JSONL file on disk. (AES-256)
+    3. `ENCRYPTION_KEY`: Set this environment variable if you want to encrypt the user and model messages writen to the JSONL file on disk (AES-256). eg: `ENCRYPTION_KEY=SuperSecretKey`
 
-### Running the Application
+### 🤖 Running the Application
 
 All application modes are invoked directly via the `groovy` command pointing to the entry point, `main.groovy`.
 
@@ -44,26 +44,29 @@ All application modes are invoked directly via the `groovy` command pointing to 
 | `groovy main.groovy -v` | **Verbose Mode:** Adds verbose output to the console for debugging (can be combined with other commands, e.g., `groovy main.groovy -c -v`). |
 | `groovy main.groovy --debate` | **Debate:** Starts a debate. Put in a `-v` to get the output on the command line. |
 
-The runtime commands available in Chat mode (`-c`) are:
-* `/map` - View the current conversation map.
-* `/jump <id>` - Jump to a specific message in the conversation map (must target assistant entry)
-* `/bye` `/q` - Gracefully close the app and restore your terminal.
+The runtime commands available while in Chat mode (`-c`) are as follows.
+
+| Command | Description |
+| :--- | :--- |
+| `/map` | View the current conversation map. |
+| `/jump <id>` | Jump to a specific message in the conversation map (must target assistant entry) |
+| `/bye` & `/q` | Gracefully close the app and restore your terminal. |
 
 ---
 
-## 🛠️ Project Structure
+## 📁 Project Structure
 
-The project follows the standard Java/Groovy packaging and file location conventions (`org.kleypas.muc`) while maintaining the "no-build" mandate.
+The project follows the standard Java/Groovy packaging and file location conventions (`org.kleypas.muc` = `org/kleypas/muc/`) while maintaining the "no-build" mandate.
 
-* **`main.groovy`:** The single application entry point (uses Groovy Scripting Style).
-* **`Test.groovy`:** The runnable test harness (uses Groovy Scripting Style).
-* **`org.kleypas.muc.cli`:** Command-line argument parsing and the TUI interface.
-* **`org.kleypas.muc.model`:** Model handling routines, such as API provider, message definition, context management, and output tagging.
-* **`org.kleypas.muc.io`:** JSONL logging and encryption routines.
+* `main.groovy` - The single application entry point (uses Groovy Scripting Style).
+* `Test.groovy` - The runnable test harness (uses Groovy Scripting Style).
+* `org.kleypas.muc.cli` - Command-line argument parsing and the TUI interface.
+* `org.kleypas.muc.model` - Model handling routines, such as API provider, message definition, context management, and output tagging.
+* `org.kleypas.muc.io` - JSONL logging and encryption routines.
 
-In addition, the following folders are intentionally git-ignored, but used at runtime:
+In addition, the following folders are intentionally git-ignored, but used at runtime.
 
-* **`Secrets/`:** Configuration files for encryption keys and other sensitive data. Shove your `.env` in here.
-* **`Characters/`:** Custom character definitions in markdown. Basically the models system prompts. You can find an example `George.md` in here to test out.
-* **`Story/`:** The narrative story files.
-* **`build/` & `lib/`:** Ouptuts of the build process.
+* `Secrets/` - Configuration files for encryption keys and other sensitive data. Shove your `.env` in here.
+* `Characters/` - Custom character definitions in markdown. Basically the models system prompts. You can find an example `George.md` in here to test out.
+* `Story/` - The narrative story files.
+* `build/` & `lib/` - Ouptuts of the build process.
