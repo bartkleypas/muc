@@ -2,10 +2,9 @@
 
 `MUC` is a lightweight, command-line interface (CLI) application designed for fast, dynamic interaction with Large Language Models (LLMs). Built entirely on the Groovy runtime, `MUC` adheres to a strict "no-build" architecture, prioritizing portability, immediate execution, and rapid iteration.
 
-
 Unlike linear chat applications, `MUC` treats conversations as a Directed Acyclic Graph (DAG), allowing you to branch reality, jump between timelines, and maintain a persistent and optionally encrypted history, stored in a JSONL file in the `Story/` directory.
 
-Note: Coded and maintained with guidance from a friendly and patient AI assistant.
+Note: Coded and maintained with guidance from a friendly and patient AI assistant. Please see ***`CONTRIBUTING.md`** for details including assistant instructions.
 
 ---
 
@@ -45,7 +44,7 @@ All application modes are invoked directly via the `groovy` command pointing to 
 | `groovy main.groovy -v` | **Verbose Mode:** Adds verbose output to the console for debugging (can be combined with other commands, e.g., `groovy main.groovy -c -v`). |
 | `groovy main.groovy --debate` | **Debate:** Starts a debate. Put in a `-v` to get the output on the command line. |
 
-The runtime commands available in the chat mode are:
+The runtime commands available in Chat mode (`-c`) are:
 * `/map` - View the current conversation map.
 * `/jump <id>` - Jump to a specific message in the conversation map (must target assistant entry)
 * `/bye` `/q` - Gracefully close the app and restore your terminal.
@@ -68,5 +67,3 @@ In addition, the following folders are intentionally git-ignored, but used at ru
 * **`Characters/`:** Custom character definitions in markdown. Basically the models system prompts. You can find an example `George.md` in here to test out.
 * **`Story/`:** The narrative story files.
 * **`build/` & `lib/`:** Ouptuts of the build process.
-
-For details on code style and architectural mandates, including assistant instructions, please see **`CONTRIBUTING.md`**.
