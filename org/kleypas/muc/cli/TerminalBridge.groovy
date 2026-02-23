@@ -35,14 +35,14 @@ class TerminalBridge implements AutoCloseable {
         def lastLeaf = stats.lastJumpId ?: "UNKNOWN"
         // Cyan for the owl and the telemetry
         terminal.writer().println("""
-\u001B[36m    ,-.
-   (0,0)  \u001B[0m<-- "The Bridge is established, Navigator."
-\u001B[36m   {###}      \u001B[36m[ $engine | $version ]
-\u001B[36m    " "       \u001B[34m[ MESSAGES: ${msgCount} | BRANCHES: ${branchCount} ]
-              \u001B[34m[ LAST_LEAF: ${lastLeaf} ]\u001B[0m
-        """)
-        
-        terminal.writer().println("\u001B[32m[SYSTEM]: TerminalBridge online. Type /map to see the tapestry, and /jump <str> to branch the universe.\u001B[0m\n")
+\u001B[36m    ,-.  \u001B[0m-----< The Bridge is established, Navigator >
+\u001B[36m   (O\u001B[33m,\u001B[36mO)\u001B[0m/     \u001B[36m[ ${engine} | ${version} ]
+\u001B[36m   {###}      \u001B[34m[ MESSAGES: ${msgCount} | BRANCHES: ${branchCount} ]
+\u001B[33m----"-"-      \u001B[34m[ LAST_LEAF: ${lastLeaf} ]\u001B[0m
+
+""")
+
+        terminal.writer().println("\u001B[1;32m[SYSTEM]\u001B[0m: TerminalBridge online. Type /map to see the tapestry, and /jump <id> to branch the universe.\u001B[0m\n")
         terminal.flush()
     }
 
@@ -134,7 +134,7 @@ class TerminalBridge implements AutoCloseable {
     void close() {
         if (statusLine) statusLine.update([])
         if (originalAttributes) terminal.setAttributes(originalAttributes)
-        terminal.writer().println("\n\u001B[32m[SYSTEM]\u001B[0m: Bridge offline. Terminal restored.")
+        terminal.writer().println("\n\u001B[1;32m[SYSTEM]\u001B[0m: Bridge offline. Terminal restored.")
         terminal.flush()
     }
 
