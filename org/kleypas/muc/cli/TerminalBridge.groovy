@@ -49,24 +49,31 @@ class TerminalBridge implements AutoCloseable {
     /**
      * Draws an ASCII representation of the conversation branches.
      */
-    void drawChronicleMap(String parentId, Map<String, List<Message>> tree, String prefix = "", boolean isLast = true) {
+    void drawChronicleMap(String parentId, Map<String, List<Message>> tree, String currentId, String prefix = "", boolean isLast = true) {
         List<Message> children = tree[parentId] ?: []
 
         children.eachWithIndex { msg, idx ->
             boolean lastChild = (idx == children.size() - 1)
 
+            boolean isCurrent = (msg.messageId == currentId)
+            String marker = isCurrent ? " \u001B[1;33m<-- You are here\u001B[0m" : ""
+            String bold = isCurrent ? "\u001B[1m" : ""
+
+            String bookmarkTag = msg.bookmark ? " \u001B[1;35m[🔖 ${msg.bookmark}]\u001B[0m" : ""
+
             // Format the line: [ID] Role: Snippet
             String color = (msg.role == "assistant") ? "\u001B[36m" : "\u001B[32m"
             String snippet = msg.content.take(40).replaceAll("\n", " ")
-            String line = "${prefix}${lastChild ? '└── ' : '├── '}${color}[${msg.messageId.take(8)}] ${msg.role.toUpperCase()}: ${snippet}...\u001B[0m"
+            String line = "${prefix}${lastChild ? '└── ' : '├── '}${bold}${color}[${msg.messageId.take(8)}] ${msg.role.toUpperCase()}: ${snippet}...\u001B[0m${marker}${bookmarkTag}"
             terminal.writer().println(line)
 
             // Recurse into children of this message
             String newPrefix = prefix + (lastChild ? "    " : "|   ")
-            drawChronicleMap(msg.messageId, tree, newPrefix, lastChild)
+            drawChronicleMap(msg.messageId, tree, currentId, newPrefix, lastChild)
         }
         terminal.flush()
     }
+
     /**
      * Updates the pinned HUD with current world state.
      */
@@ -88,7 +95,7 @@ class TerminalBridge implements AutoCloseable {
 
         AttributedString coloredStatus = new AttributedString(left + padding + right,
             AttributedStyle.DEFAULT.foreground(AttributedStyle.YELLOW).background(AttributedStyle.BLUE))
-        
+
         statusLine.update([coloredStatus])
         terminal.flush()
     }

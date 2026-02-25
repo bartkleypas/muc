@@ -15,6 +15,8 @@ class Message {
     String parentId
     String role
     Boolean encrypted
+    Boolean isCurrent = false // Marker for current navigation
+    String bookmark = null // User defined bookmark for navigation
     String content
 
     // Harmony Markers: The resonance signaling tags
@@ -30,10 +32,11 @@ class Message {
         this.role = role
         this.encrypted = encrypted
         this.content = content
+        this.isCurrent = false
     }
     
     Message(String role, String content, String messageId, String parentId, Instant timestamp,
-            Double n, Double p, Double s, Double a) {
+            Double n, Double p, Double s, Double a, String bookmark = null) {
         this.timestamp = timestamp
         this.messageId = messageId
         this.parentId = parentId
@@ -44,5 +47,7 @@ class Message {
         this.role = role
         this.encrypted = encrypted
         this.content = content
+        this.bookmark = bookmark
+        this.isCurrent = false
     }
 }

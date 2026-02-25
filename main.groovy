@@ -124,6 +124,7 @@ if (options.chat) {
     def context = new Context().enableLogging(logManager)
     def model = new Model(model: "biggun")
 
+    // Create a new chat, or load up the message stream from an existing one if it exists.
     if (!new File(historyFile).exists()) {
         Logger.info "## Building a new Chronicle to ${historyFile}..."
         def promptText = new File("Characters/George.md").text
@@ -143,6 +144,7 @@ if (options.chat) {
                 entry.playfulness as Double ?: 1.0,
                 entry.steadfastness as Double ?: 1.0,
                 entry.attunement as Double ?: 1.0,
+                entry.bookmark as String ?: null
             ))
         }
     }
@@ -152,7 +154,12 @@ if (options.chat) {
         bridge.drawSignature(stats)
 
         def lastMessage = context.messages.last()
-        if (lastMessage.role != "system") {
+
+        if (lastMessage.role == "system") {
+            birdge.printSpeaker("assistant")
+            bridge.printToken("Welcome to the Library, traveler. My name is George. And to *Hoo-hoo** whom am I speaking? Please introduce yourself, as a great adventure awaits.")
+            bridge.flushBuffer()
+        } else {
             bridge.printSpeaker(lastMessage.role)
             bridge.printToken(lastMessage.content)
             bridge.flushBuffer()
@@ -174,17 +181,25 @@ if (options.chat) {
 
             String prompt = "\u001B[1;32m[You]\u001B[0m: "
 
+            // Handle inputs and commands
             def input = reader.readLine(prompt)?.trim()
             if (!input || input == "/bye" || input == "q") { break }
 
+            // Draws a map of the history
             if (input == "/map") {
+
+                def currentTip = context.messages.reverse().find { it.role == "assistant" }
+                String currentId = currentTip?.messageId ?: ""
+
                 Map<String, List<Map>> tree = logManager.buildHistoryTree()
                 bridge.terminal.writer().println("\n\u001B[33m## THE CHRONICLE TAPESTRY ##\u001B[0m")
-                bridge.drawChronicleMap(null, tree) // Start from the root
+                bridge.drawChronicleMap(null, tree, currentId) // Start from the root
+
                 bridge.terminal.writer().println()
                 continue // Jump back to prompt
             }
 
+            // Jumps directly to an assistant turn to resume (forks history)
             if (input.startsWith("/jump ")) {
                 String targetId = input.split(" ")[1]
                 Map targetEntry = logManager.findEntryByPartialId(targetId)
@@ -201,6 +216,27 @@ if (options.chat) {
                     ])
                 } else {
                     bridge.terminal.writer().println("\u001B[31m[ERROR]\u001B[0m: Cannot pivot to a user node or invalid ID.")
+                }
+                continue
+            }
+
+            // Shoves a short bookmark into the message for navigation
+            if (input.startsWith("/mark ")) {
+                String label = input.substring(6).trim()
+                def lastAsst = context.messages.reverse().find { it.role == "assistant"}
+                if (lastAsst) {
+                    lastAsst.bookmark = label
+                    logManager.updateEntry(lastAsst)
+                    bridge.terminal.writer().println("\u001B[35m## George marks the page: \"${label}\"\u001B[0m")
+                }
+                continue
+            }
+
+            // Displays our saved bookmarks
+            if (input.startsWith("/bookmarks")) {
+                bridge.terminal.writer().println("\n\u001B[35m## The navigator's current bookmarks ##\u001b[0m")
+                context.message.findAll { it.bookmark }.each { bm ->
+                    bridge.terminal.writer().println("\u001B[1;35m[${bm.messageId.take(8)}]\u001B[0m ${bm.bookmark.padRight(20)} | ${bm.content.take(30)}...")
                 }
                 continue
             }
