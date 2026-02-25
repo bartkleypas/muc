@@ -156,7 +156,7 @@ if (options.chat) {
         def lastMessage = context.messages.last()
 
         if (lastMessage.role == "system") {
-            birdge.printSpeaker("assistant")
+            bridge.printSpeaker("assistant")
             bridge.printToken("Welcome to the Library, traveler. My name is George. And to *Hoo-hoo** whom am I speaking? Please introduce yourself, as a great adventure awaits.")
             bridge.flushBuffer()
         } else {
@@ -223,10 +223,10 @@ if (options.chat) {
             // Shoves a short bookmark into the message for navigation
             if (input.startsWith("/mark ")) {
                 String label = input.substring(6).trim()
-                def lastAsst = context.messages.reverse().find { it.role == "assistant"}
-                if (lastAsst) {
-                    lastAsst.bookmark = label
-                    logManager.updateEntry(lastAsst)
+                def target = context.messages.reverse().find { it.role == "assistant"}
+                if (target) {
+                    target.bookmark = label
+                    logManager.updateEntry(target)
                     bridge.terminal.writer().println("\u001B[35m## George marks the page: \"${label}\"\u001B[0m")
                 }
                 continue
@@ -235,7 +235,7 @@ if (options.chat) {
             // Displays our saved bookmarks
             if (input.startsWith("/bookmarks")) {
                 bridge.terminal.writer().println("\n\u001B[35m## The navigator's current bookmarks ##\u001b[0m")
-                context.message.findAll { it.bookmark }.each { bm ->
+                context.messages.findAll { it.bookmark }.each { bm ->
                     bridge.terminal.writer().println("\u001B[1;35m[${bm.messageId.take(8)}]\u001B[0m ${bm.bookmark.padRight(20)} | ${bm.content.take(30)}...")
                 }
                 continue

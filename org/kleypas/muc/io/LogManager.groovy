@@ -58,6 +58,37 @@ public class LogManager {
     }
 
     /**
+     * Finds an existing entry by ID and updates its metadata (such as bookmarking)
+     * while preserving the rest of the message integrity
+     */
+    void updateEntry(Message updatedMsg, byte[] key = null) {
+        byte[] encryptionKey = key ?: this.persistentKey
+        File file = new File(this.logPath)
+        if (!file.exists()) return
+
+        // Read all lines and parse them
+        List<String> lines = file.readLines()
+        List<String> updatedLines = lines.collect { line ->
+            def entry = new JsonSlurper().parseText(line)
+
+            // Update our targetted message
+            if (entry.messageId == updatedMsg.messageId) {
+                if (encryptionKey && updatedMsg.bookmark) {
+                    entry.bookmark = CipherService.encrypt(updatedMsg.bookmark, encryptionKey)
+                    entry.encrypted = true
+                } else {
+                    entry.bookmark = updatedMsg.bookmark
+                }
+                return JsonOutput.toJson(entry)
+            }
+            return line
+        }
+
+        file.withWriter { writer ->
+            updatedLines.each { writer.println(it) }
+        }
+    }
+    /**
      * Reads the entire log file and returns a list of Maps.
      * @param key (Optional) The key used for decryption if present (or re-use the persistent key)
      * @return List of message nodes.
@@ -79,6 +110,13 @@ public class LogManager {
                     entry.content = "[DECRYPTION_FAILED: Ghost in the machine]"
                 }
             }
+            if (entry.encrypted == true && activeKey && entry.bookmark) {
+                try {
+                    entry.bookmark = CipherService.decrypt(entry.bookmark as String, activeKey)
+                } catch (Exception e) {
+                    entry.content = "[DECRYPTION_FAILED: Ghost in the machine]"
+                }
+            }
             return entry
         }
     }
@@ -90,7 +128,7 @@ public class LogManager {
     }
 
     /**
-     * Finds a specific message entry py a partial ID match
+     * Finds a specific message entry by a partial ID match
      * Useful for jumping to branches identified in the TUI map.
      */
     Map findEntryByPartialId(String partialId) {
