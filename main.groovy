@@ -12,6 +12,7 @@ import org.kleypas.muc.illustrator.Illustrator
 import org.kleypas.muc.illustrator.ImageType
 
 import org.kleypas.muc.cli.Cli
+import org.kleypas.muc.cli.CommandProcessor
 import org.kleypas.muc.cli.Logger
 import org.kleypas.muc.cli.LogLevel
 import org.kleypas.muc.cli.TerminalBridge
@@ -153,6 +154,8 @@ if (options.chat) {
         def stats = logManager.getChronicleStats()
         bridge.drawSignature(stats)
 
+        def processor = new CommandProcessor(bridge, logManager, context)
+
         def lastMessage = context.messages.last()
 
         if (lastMessage.role == "system") {
@@ -184,62 +187,7 @@ if (options.chat) {
             // Handle inputs and commands
             def input = reader.readLine(prompt)?.trim()
             if (!input || input == "/bye" || input == "q") { break }
-
-            // Draws a map of the history
-            if (input == "/map") {
-
-                def currentTip = context.messages.reverse().find { it.role == "assistant" }
-                String currentId = currentTip?.messageId ?: ""
-
-                Map<String, List<Map>> tree = logManager.buildHistoryTree()
-                bridge.terminal.writer().println("\n\u001B[33m## THE CHRONICLE TAPESTRY ##\u001B[0m")
-                bridge.drawChronicleMap(null, tree, currentId) // Start from the root
-
-                bridge.terminal.writer().println()
-                continue // Jump back to prompt
-            }
-
-            // Jumps directly to an assistant turn to resume (forks history)
-            if (input.startsWith("/jump ")) {
-                String targetId = input.split(" ")[1]
-                Map targetEntry = logManager.findEntryByPartialId(targetId)
-                if (targetEntry && targetEntry.role == "assistant") {
-                    context.loadBranch(targetEntry.messageId)
-
-                    bridge.replayLastTurn(context)
-
-                    bridge.updateHUD("The Library", "Navigator", [
-                        nurturance: targetEntry.nurturance,
-                        playfulness: targetEntry.playfulness,
-                        steadfastness: targetEntry.steadfastness,
-                        attunement: targetEntry.attunement
-                    ])
-                } else {
-                    bridge.terminal.writer().println("\u001B[31m[ERROR]\u001B[0m: Cannot pivot to a user node or invalid ID.")
-                }
-                continue
-            }
-
-            // Shoves a short bookmark into the message for navigation
-            if (input.startsWith("/mark ")) {
-                String label = input.substring(6).trim()
-                def target = context.messages.reverse().find { it.role == "assistant"}
-                if (target) {
-                    target.bookmark = label
-                    logManager.updateEntry(target)
-                    bridge.terminal.writer().println("\u001B[35m## George marks the page: \"${label}\"\u001B[0m")
-                }
-                continue
-            }
-
-            // Displays our saved bookmarks
-            if (input.startsWith("/bookmarks")) {
-                bridge.terminal.writer().println("\n\u001B[35m## The navigator's current bookmarks ##\u001b[0m")
-                context.messages.findAll { it.bookmark }.each { bm ->
-                    bridge.terminal.writer().println("\u001B[1;35m[${bm.messageId.take(8)}]\u001B[0m ${bm.bookmark.padRight(20)} | ${bm.content.take(30)}...")
-                }
-                continue
-            }
+            if (processor.process(input)) continue
 
             bridge.terminal.writer().print("\033[1A\033[2K")
 
