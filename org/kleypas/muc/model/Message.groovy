@@ -25,7 +25,7 @@ class Message {
     Double steadfastness = 1.0
     Double attunement = 1.0
 
-    Message(String role, String content, String parentId = null) {
+    Message(String role, String content, String parentId = null, Map inheritedStats = [:]) {
         this.timestamp = Instant.now().toString()
         this.parentId = parentId
         this.messageId = UUID.randomUUID().toString()
@@ -33,6 +33,12 @@ class Message {
         this.encrypted = encrypted
         this.content = content
         this.isCurrent = false
+
+        // Inherit from parent stats if provided
+        this.nurturance = inheritedStats.nurturance ?: 1.0
+        this.playfulness = inheritedStats.playfulness ?: 1.0
+        this.steadfastness = inheritedStats.steadfastness ?: 1.0
+        this.attunement = inheritedStats.attunement ?: 1.0
     }
     
     Message(String role, String content, String messageId, String parentId, Instant timestamp,
@@ -49,5 +55,14 @@ class Message {
         this.content = content
         this.bookmark = bookmark
         this.isCurrent = false
+    }
+
+    public Map getStats() {
+        return [
+            nurturance: this.nurturance,
+            playfulness: this.playfulness,
+            steadfastness: this.steadfastness,
+            attunement: this.attunement
+        ]
     }
 }
