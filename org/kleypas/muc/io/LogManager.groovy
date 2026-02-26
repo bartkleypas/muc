@@ -1,6 +1,7 @@
 package org.kleypas.muc.io
 
 import org.kleypas.muc.model.Message
+import org.kleypas.muc.model.Resonance
 
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
@@ -33,17 +34,14 @@ public class LogManager {
         byte[] encryptionKey = key ?: this.persistentKey
 
         Map logMap = [
-            timestamp: entry.timestamp.toString(),
+            timestamp: entry.timestamp,
             messageId: entry.messageId,
             parentId: entry.parentId,
             role: entry.role,
-            nurturance: entry.nurturance,
-            playfulness: entry.playfulness,
-            steadfastness: entry.steadfastness,
-            attunement: entry.attunement,
+            bookmark: entry.bookmark,
             encrypted: false,
             content: entry.content
-        ]
+        ] + entry.getStats()
 
         // If an encryption key is provided, wrap the contents in the CipherService
         if (encryptionKey && entry.content) {

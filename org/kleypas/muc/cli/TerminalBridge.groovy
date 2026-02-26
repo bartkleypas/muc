@@ -42,7 +42,7 @@ class TerminalBridge implements AutoCloseable {
 
 """)
 
-        terminal.writer().println("\u001B[1;32m[SYSTEM]\u001B[0m: TerminalBridge online. Type /map to see the tapestry, and /jump <id> to branch the universe.\u001B[0m\n")
+        terminal.writer().println("\u001B[1;32m[SYSTEM]\u001B[0m: TerminalBridge online. Type /bye or q to quit, and /help for other commands available.\u001B[0m\n")
         terminal.flush()
     }
 
