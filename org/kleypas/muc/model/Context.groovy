@@ -68,9 +68,14 @@ class Context {
      * @return the Context instance for chaining.
      */
     // Style B: Explicit return type (Message type for chaining) and parameter types
-    public Message addMessage(String sender, String content, String parentId = null) {
+    public Message addMessage(Message message) {
+        this.messages.add(message)
+        return
+    }
+
+    public Message addMessage(String sender, String content, String parentId = null, Map stats = [:]) {
         // Use concrete types within the method
-        Message newMessage = new Message(sender, content, parentId)
+        Message newMessage = new Message(sender, content, parentId, stats)
         this.messages.add(newMessage)
         return newMessage
     }

@@ -6,6 +6,7 @@ import org.kleypas.muc.io.LogManager
 import org.kleypas.muc.model.Context
 import org.kleypas.muc.model.Message
 import org.kleypas.muc.model.Model
+import org.kleypas.muc.model.ResonanceEngine
 import org.kleypas.muc.model.TagParser
 
 import org.kleypas.muc.illustrator.Illustrator
@@ -124,6 +125,7 @@ if (options.chat) {
     def logManager = new LogManager(historyFile, cli.envVars.ENCRYPTION_KEY.getBytes())
     def context = new Context().enableLogging(logManager)
     def model = new Model(model: "biggun")
+    def resonanceEngine = new ResonanceEngine()
 
     // Create a new chat, or load up the message stream from an existing one if it exists.
     if (!new File(historyFile).exists()) {
@@ -158,6 +160,8 @@ if (options.chat) {
 
         def lastMessage = context.messages.last()
 
+        // Don't echo out the system prompt.
+        // Instead, give a nice lil' hint to the user for a first prompt
         if (lastMessage.role == "system") {
             bridge.printSpeaker("assistant")
             bridge.printToken("Welcome to the Library, traveler. My name is George. And to *Hoo-hoo** whom am I speaking? Please introduce yourself, as a great adventure awaits.")
@@ -172,14 +176,10 @@ if (options.chat) {
                         .terminal(bridge.terminal)
                         .build()
 
+        // The main loop of our chat TUI.
         while (true) {
             def last = context.messages.last()
-            bridge.updateHUD(
-                "The Library",
-                "Navigator",
-                [nurturance: last.nurturance, playfulness: last.playfulness, steadfastness: last.steadfastness, attunement: last.attunement]
-            )
-
+            bridge.updateHUD("The Library", "Navigator", last.getStats())
             bridge.flushBuffer()
 
             String prompt = "\u001B[1;32m[You]\u001B[0m: "
@@ -192,7 +192,7 @@ if (options.chat) {
             bridge.terminal.writer().print("\033[1A\033[2K")
 
             def currentTip = context.getLastMessage()
-            def userResponse = context.addMessage("user", input, currentTip.messageId)
+            def userResponse = context.addMessage("user", input, currentTip.messageId, currentTip.getStats())
 
             logManager.appendEntry(userResponse)
 
@@ -200,19 +200,24 @@ if (options.chat) {
             bridge.terminal.writer().print("${input}")
             bridge.flushBuffer()
 
+            // George speaks!
             bridge.printSpeaker("assistant")
             StringBuilder fullOutput = new StringBuilder()
             model.streamResponse(context) { token ->
                 bridge.printToken(token)
                 fullOutput.append(token)
             }
-
             def fullOutputString = fullOutput.toString()
 
-            context.addMessage("assistant", fullOutputString, userResponse.messageId)
-            def assistantResponse = context.getLastMessage()
+            def assistantResponse = context.addMessage("assistant", fullOutputString, userResponse.messageId, userResponse.getStats())
+
+            def deltas = resonanceEngine.calculate(fullOutputString)
+            resonanceEngine.applyResonance(assistantResponse, deltas)
+
+            // Put that stuff on paper (jsonl log)
             logManager.appendEntry(assistantResponse)
 
+            // Look for George's image output, and put it into a new queue file
             def imagePrompt = TagParser.extractString(fullOutputString, "IMAGE_DESC")
             if (imagePrompt) {
                 bridge.terminal.writer().println("\n\u001B[35m## George has sketched a vision in the margins of his journal.. \u001B[0m")
