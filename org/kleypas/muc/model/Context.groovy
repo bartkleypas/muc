@@ -18,7 +18,7 @@ import java.util.List
 class Context {
 
     // Style B: Explicit List type for messages and explicit access modifier
-    public List<Message> messages
+    public List<Message> messages = []
 
     private LogManager logManager
 
@@ -27,57 +27,26 @@ class Context {
     // private static final int MAX_TOKENS = 16384
     //private static final int MAX_TOKENS = 8192
 
-    // --- Constructors ---
-
-    /**
-     * Creates an empty context.
-     */
-    // Style B: Explicit constructor
     public Context() {
-        this.messages = new ArrayList<>()
+        this.messages = []
     }
 
-    /**
-     * Creates a context with an initial list of messages.
-     * @param messages the initial list of messages.
-     */
-    // Style B: Explicit constructor and parameter type
     public Context(List<Message> messages) {
-        // Use type-safe copying
         this.messages = new ArrayList<>(messages)
     }
 
-    // --- Core Message Management ---
-
-    public Message getLastMessage() {
-        if (this.messages == null || this.messages.isEmpty()) {
-            return null
-        }
-        return this.messages.get(this.messages.size() - 1)
+    /**
+     * Adds a new message to the context.
+     */
+    public Message addMessage(Map args) {
+        Message newMessage = new Message(args)
+        this.messages.add(newMessage)
+        return newMessage
     }
 
     public Context enableLogging(LogManager manager) {
         this.logManager = manager
         return this
-    }
-
-    /**
-     * Adds a new message to the context.
-     * @param sender  the role of the sender (e.g., "user" or "assistant").
-     * @param content the message content.
-     * @return the Context instance for chaining.
-     */
-    // Style B: Explicit return type (Message type for chaining) and parameter types
-    public Message addMessage(Message message) {
-        this.messages.add(message)
-        return
-    }
-
-    public Message addMessage(String sender, String content, String parentId = null, Map stats = [:]) {
-        // Use concrete types within the method
-        Message newMessage = new Message(sender, content, parentId, stats)
-        this.messages.add(newMessage)
-        return newMessage
     }
 
     /**
@@ -89,26 +58,14 @@ class Context {
     public Context loadBranch(String leafId) {
         if (!this.logManager) throw new IllegalStateException("LogManager not initialized")
 
-        List<Map<String, Object>> allEntries = this.logManager.readAllEntries()
-        Map<String, Map<String, Object>> nodeMap = allEntries.collectEntries { [it.messageId, it] }
-
+        Map<String, Map<String, Object>> nodeMap = this.logManager.readAllEntries().collectEntries { [it.messageId, it] }
         List<Message> branchMessages = []
         String currentId = leafId
 
-        while (currentId != null && nodeMap.containsKey(currentId)) {
+        while (currentId && nodeMap.containsKey(currentId)) {
             Map entry = nodeMap.get(currentId)
-            branchMessages.add(0, new Message(
-                (String) entry.role,
-                (String) entry.content,
-                (String) entry.messageId,
-                (String) entry.parentId,
-                Instant.parse((String) entry.timestamp),
-                (Double) entry.nurturance,
-                (Double) entry.playfulness,
-                (Double) entry.steadfastness,
-                (Double) entry.attunement
-            ))
-            currentId = (String) entry.parentId
+            branchMessages.add(0, new Message(entry))
+            currentId = entry.parentId
         }
         this.messages = branchMessages
         return this
@@ -146,25 +103,17 @@ class Context {
      * @return a new {@link Context} instance with the transformed messages.
      */
     public Context swizzleSpeaker(String speaker) {
-        final Context newContext = new Context()
+        Context newContext = new Context()
 
-        // Process ONLY the dialogue history (filtering out any system prompts)
-        for (Message turn : this.messages) {
-            if (turn.role.equalsIgnoreCase("system")) continue
+        this.messages.findAll { !it.role.equalsIgnoreCase("system") }.each { turn ->
+            boolean isAssistant = turn.role.equalsIgnoreCase(speaker)
 
-            final String roleToSend
-            final String contentToSend
-
-            if (turn.role.equalsIgnoreCase(speaker)) {
-                roleToSend = "assistant"
-                contentToSend = turn.content
-            } else {
-                roleToSend = "user"
-                contentToSend = "${turn.role} says: ${turn.content}"
-            }
-
-            // Use the PREFIXED content to ensure identity clarity in the shared history
-            newContext.addMessage(roleToSend, contentToSend, turn.messageId)
+            newContext.addMessage(
+                role: isAssistant ? "assistant" : "user",
+                content: isAssistant ? turn.content : "${turn.role} says: ${turn.content}",
+                parentId: turn.messageId,
+                stats: turn.getStats()
+            )
         }
         return newContext
     }

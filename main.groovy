@@ -6,6 +6,8 @@ import org.kleypas.muc.io.LogManager
 import org.kleypas.muc.model.Context
 import org.kleypas.muc.model.Message
 import org.kleypas.muc.model.Model
+import org.kleypas.muc.model.PersonaMapper
+import org.kleypas.muc.model.Resonance
 import org.kleypas.muc.model.ResonanceEngine
 import org.kleypas.muc.model.TagParser
 
@@ -126,29 +128,18 @@ if (options.chat) {
     def context = new Context().enableLogging(logManager)
     def model = new Model(model: "biggun")
     def resonanceEngine = new ResonanceEngine()
+    def personaMapper = new PersonaMapper()
 
     // Create a new chat, or load up the message stream from an existing one if it exists.
     if (!new File(historyFile).exists()) {
         Logger.info "## Building a new Chronicle to ${historyFile}..."
         def promptText = new File("Characters/George.md").text
 
-        def systemMsg = context.addMessage("system", promptText)
-
+        def systemMsg = context.addMessage(role: "system", content: promptText)
         logManager.appendEntry(systemMsg)
     } else {
         logManager.readAllEntries().each { entry ->
-            context.messages.add(new Message(
-                entry.role as String,
-                entry.content as String,
-                entry.messageId as String,
-                entry.parentId as String,
-                java.time.Instant.parse(entry.timestamp as String),
-                entry.nurturance as Double ?: 1.0,
-                entry.playfulness as Double ?: 1.0,
-                entry.steadfastness as Double ?: 1.0,
-                entry.attunement as Double ?: 1.0,
-                entry.bookmark as String ?: null
-            ))
+            context.messages.add(new Message(entry))
         }
     }
 
@@ -191,8 +182,12 @@ if (options.chat) {
 
             bridge.terminal.writer().print("\033[1A\033[2K")
 
-            def currentTip = context.getLastMessage()
-            def userResponse = context.addMessage("user", input, currentTip.messageId, currentTip.getStats())
+            def userResponse = context.addMessage(
+                role: "user",
+                content: input,
+                parentId: last.messageId,
+                stats: last.getStats()
+            )
 
             logManager.appendEntry(userResponse)
 
@@ -200,25 +195,49 @@ if (options.chat) {
             bridge.terminal.writer().print("${input}")
             bridge.flushBuffer()
 
-            // George speaks!
+            // Generate the vibe; get the overlay based on the user turn's state
+            def moodOverlay = personaMapper.getInstructions(userResponse.getStats())
+
+            // Shallow clone of the context object, so we can swap around the
+            // system prompt at runtime without mucking up the global context.
+            def virtualContext = new Context(context.messages)
+            if (virtualContext.messages[0].role == "system" ) {
+                def base = virtualContext.messages[0]
+                virtualContext.messages[0] = new Message(
+                    role: "system",
+                    content: base.content + moodOverlay,
+                    messageId: base.messageId,
+                    parentId: base.parentId,
+                    stats: base.getStats()
+                )
+            }
+
+            // George speaks! Uses the virtualContext shallow clone from above
+            // so we get a nice "new" system prompt to generate a response from.
             bridge.printSpeaker("assistant")
             StringBuilder fullOutput = new StringBuilder()
-            model.streamResponse(context) { token ->
+            model.streamResponse(virtualContext) { token ->
                 bridge.printToken(token)
                 fullOutput.append(token)
             }
-            def fullOutputString = fullOutput.toString()
 
-            def assistantResponse = context.addMessage("assistant", fullOutputString, userResponse.messageId, userResponse.getStats())
+            def fullContent = fullOutput.toString()
 
-            def deltas = resonanceEngine.calculate(fullOutputString)
+            def assistantResponse = context.addMessage(
+                role: "assistant",
+                content: fullContent,
+                parentId: userResponse.messageId,
+                stats: userResponse.getStats()
+            )
+
+            def deltas = resonanceEngine.calculate(fullContent)
             resonanceEngine.applyResonance(assistantResponse, deltas)
 
             // Put that stuff on paper (jsonl log)
             logManager.appendEntry(assistantResponse)
 
             // Look for George's image output, and put it into a new queue file
-            def imagePrompt = TagParser.extractString(fullOutputString, "IMAGE_DESC")
+            def imagePrompt = TagParser.extractString(fullContent, "IMAGE_DESC")
             if (imagePrompt) {
                 bridge.terminal.writer().println("\n\u001B[35m## George has sketched a vision in the margins of his journal.. \u001B[0m")
 
@@ -257,7 +276,7 @@ if (options.debate) {
             Logger.info("PRE_GEN: ${p.role} context isolated via getThreadForModel.")
 
             // 1. The Moderator's prompt is added to the GLOBAL history (The "Iron")
-            lastMessage = mainContext.getLastMessage()
+            lastMessage = mainContext.messages.last()
             // We keep the Moderator's "Nagging" brief to reduce noise
             mainContext.addMessage("Moderator", "Round ${round}: ${p.role}, your response?", lastMessage.messageId)
 
@@ -276,7 +295,7 @@ if (options.debate) {
             }
 
             // 4. Commit the new response to the GLOBAL history
-            lastMessage = mainContext.getLastMessage()
+            lastMessage = mainContext.messages.last()
             mainContext.addMessage(p.role, resp, lastMessage.messageId)
             Logger.info "[${p.role}]: ${resp}"
         }
