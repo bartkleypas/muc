@@ -51,7 +51,7 @@ class CommandProcessor {
 
     // Display a nice lil' help message
     private void handleHelp() {
-        def w = bridge.terminal.writer()
+        PrintWriter w = bridge.terminal.writer()
         w.println("\n\u001B[1;33m--- SCRIPTORIUM COMMAND MANUAL ---\u001B[0m")
         w.println("\u001B[32m/map\u001B[0m          : View the Chronicle Tapestry (DAG tree).")
         w.println("\u001B[32m/jump <id>\u001B[0m    : Leap to a specific (assistant) message ID in the timeline.")
@@ -76,7 +76,7 @@ class CommandProcessor {
     // Jump somewhere else in the graph
     private void handleJump(String input) {
         // Basic safety check for the input
-        def parts = input.split(" ")
+        String[] parts = input.split(" ")
         if (parts.size() < 2) {
             bridge.terminal.writer().println("\u001B[31m[ERROR]\u001B[0m: Usage: /jump <partial_id>")
             return
@@ -99,7 +99,7 @@ class CommandProcessor {
     // Bookmark an entry in the graph with the given input string
     private void handleMark(String input) {
         String label = input.substring(6).trim()
-        def target = context.messages.reverse().find { it.role == "assistant"}
+        Message target = context.messages.reverse().find { it.role == "assistant"}
         if (target) {
             target.bookmark = label
             logManager.updateEntry(target)
@@ -117,9 +117,9 @@ class CommandProcessor {
 
     // Handle some faders, ya dig?
     private void handleFaders(String input) {
-        def w = bridge.terminal.writer()
-        def lastMessage = context.messages.last()
-        def parts = input.split(" ")
+        PrintWriter w = bridge.terminal.writer()
+        Message lastMessage = context.messages.last()
+        String[] parts = input.split(" ")
 
         // If we just get "/faders" -> List the current values
         if (parts.size() == 1) {
