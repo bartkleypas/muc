@@ -186,7 +186,7 @@ if (options.chat) {
                 role: "user",
                 content: input,
                 parentId: last.messageId,
-                stats: last.getStats()
+                stats: processor.getStats()
             )
 
             logManager.appendEntry(userResponse)
@@ -195,17 +195,28 @@ if (options.chat) {
             bridge.terminal.writer().print("${input}")
             bridge.flushBuffer()
 
+
+            // Get some telemetry so we know what we are dealing with
+            def currentStats = userResponse.getStats()
+            println "DEBUG [Current Stats (map)]: ${currentStats}"
+
             // Generate the vibe; get the overlay based on the user turn's state
-            def moodOverlay = personaMapper.getInstructions(userResponse.getStats())
+            def moodOverlay = personaMapper.getInstructions(currentStats)
+
+            // Grab the original prompt to fiddle with and stuff back into the messages
+            // list at the top of the list.
+            String basePrompt = new File("Characters/George.md").text
+            def lines = basePrompt.readLines()
+            String finalPrompt = lines[0] + "\n" + moodOverlay + "\n" + lines.drop(1).join("\n")
 
             // Shallow clone of the context object, so we can swap around the
             // system prompt at runtime without mucking up the global context.
             def virtualContext = new Context(context.messages)
-            if (virtualContext.messages[0].role == "system" ) {
+            if (virtualContext.messages[0].role == "system") {
                 def base = virtualContext.messages[0]
                 virtualContext.messages[0] = new Message(
                     role: "system",
-                    content: base.content + moodOverlay,
+                    content: finalPrompt,
                     messageId: base.messageId,
                     parentId: base.parentId,
                     stats: base.getStats()

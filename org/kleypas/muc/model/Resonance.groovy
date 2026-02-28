@@ -8,7 +8,11 @@ class Resonance {
     Double sarcasm = 1.0
 
     Resonance(Map stats = [:]) {
-        stats.each { k, v -> if (this.hasProperty(k)) this."$k" = v ?: 1.0 }
+        stats.each { k, v ->
+            if (this.hasProperty(k)) {
+                this."$k" = (v != null) ? v : 1.0
+            }
+        }
     }
 
     Map asMap() {

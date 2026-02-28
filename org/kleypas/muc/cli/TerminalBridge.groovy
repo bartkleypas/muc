@@ -82,11 +82,12 @@ class TerminalBridge implements AutoCloseable {
 
         String left = " [ LOC:${location.toUpperCase()} ] | [ HERO:${hero.toUpperCase()} ]"
         String right = String.format(
-            " [ N:%.1f P:%.1f S:%.1f A:%.1f ] ",
+            " [ N:%.1f P:%.1f S:%.1f A:%.1f J:%.1f ] ",
             resonance.nurturance ?: 1.0,
             resonance.playfulness ?: 1.0,
             resonance.steadfastness ?: 1.0,
-            resonance.attunement ?: 1.0
+            resonance.attunement ?: 1.0,
+            resonance.sarcasm ?: 1.0
         )
 
         int width = terminal.getWidth()
@@ -105,7 +106,7 @@ class TerminalBridge implements AutoCloseable {
      */
     void replayLastTurn(Object context) {
 
-        def lastAsst = context.getLastMessage()
+        def lastAsst = context.messages.last()
         def messages = context.messages
         // Get the last user message and the last assistant response
         def lastUser = (messages.size() >= 2) ? messages[messages.size() - 2] : null
