@@ -2,55 +2,55 @@
 
 `MUC` is a lightweight, command-line interface (CLI) application designed for fast, dynamic interaction with Large Language Models (LLMs). Built entirely on the Groovy runtime, `MUC` adheres to a strict "no-build" architecture, prioritizing portability, immediate execution, and rapid iteration.
 
-Unlike linear chat applications, `MUC` treats conversations as a Directed Acyclic Graph (DAG), allowing you to branch reality, jump between timelines, and maintain a persistent and optionally encrypted history, stored in a JSONL file in the `Story/` directory.
+Unlike linear chat applications, `MUC` treats conversations as a Directed Acyclic Graph (DAG), allowing you to branch reality, jump between timelines, and maintain a persistent history stored in JSONL format. The CLI provides a robust navigation suite: use `/map` to visualize the branching paths of your story, `/jump <id>` to teleport to specific nodes in the timeline, and `/bookmarks` to manage saved "anchors" in the narrative tapestry.
 
-Note: Coded and maintained with guidance from a friendly and patient AI assistant. Please see **`CONTRIBUTING.md`** for details including assistant instructions.
+The core of the interaction experience is the **Resonance Engine**, a method of real-time behavior modulation. This allows the Navigator to dynamically adjust the emotional and cognitive "faders" of the AI—such as `nurturance`, `playfulness`, or `sarcasm`—on the fly. By adjusting these scalar values (0.0 to 2.0), you can shift the AI's tone from a cold, clinical archivist to a manic, whimsical companion without losing the thread of the conversation.
+
+Note: Coded and maintained with guidance from a friendly and patient AI assistant. Please see **`CONTRIBUTING.md`** for details.
 
 ---
 
 ## ✨ Features
 
-* **CLI Focused:** All functionality, from chatting to testing, is driven by command-line arguments.
-* **Context Management:** Implements robust message pruning logic to manage conversation history, preventing context window bloat, and maintaining API cost efficiency.
-* **API Integration:** Supports attaching to a local or hosted LLM API for seamless interaction.
-* **Tag Parsing:** Supports parsing tags produced by the LLM, such as `<IMAGE_DESC>`.
-* **Hybrid Vault:** Writes messages in an optionally encrypted JSONL file.
-* **DAG based navigation:** Supports a DAG-based navigation system for easy exploration of alternative paths through the narrative.
+### 🏗️ Engine Architecture
+* **"No-Build" Portability:** Runs directly from source via the Groovy interpreter; no compilation step required.
+* **DAG-Based Navigation:** Breaks the linear chat mold by allowing users to branch, prune, and jump across multiple conversation timelines.
+* **Context Efficiency:** Implements intelligent message pruning to maintain API performance and stay within model context windows.
+* **Hybrid Vault:** Secure, optionally encrypted (AES-256) storage of narrative history in a local JSONL format.
+
+### 🎭 Narrative Interaction
+* **Resonance Faders:** Real-time personality modulation via scalar weights, injecting raw emotional parameters directly into the model's instructions.
+* **Semantic Tag Parsing:** Supports advanced output rendering, including `<IMAGE_DESC>` parsing for on-demand "visual margin sketches."
+* **TUI Interface:** A rich, CLI-focused terminal experience with color-coded feedback and intuitive command handling.
 
 ---
 
 ## 🚀 Getting Started
 
-Since MUC is a single-file runtime application, setup is minimal.
+Since `MUC` is a single-file runtime application, setup is minimal.
 
 ### 🛠️ Prerequisites
+* **Java Runtime:** Ensure you have a recent Java Development Kit (JDK) installed, with version 21 or higher recommended.
+* **Groovy Runtime:** Install the Groovy runtime environment, with version 4 supported, but 5 or higher recommended.
+* **ENV VARS:** Set up environment variables for any necessary configurations (or set them in `Secrets/.env`):
+    * `OLLAMA_API_URL`: Set this environment variable to the URL of your OLLAMA instance. eg: `OLLAMA_API_URL=http://localhost:11434/api/v1`
+    * `OLLAMA_API_KEY`: Set this environment variable if you need authentication for your API provider. eg: `OLLAMA_API_KEY=sk-your-api-key`
+    * `ENCRYPTION_KEY`: Set this environment variable if you want to encrypt the user and model messages writen to the JSONL file on disk (AES-256). eg: `ENCRYPTION_KEY=SuperSecretKey`
 
-1.  **Java Runtime:** Ensure you have a recent Java Development Kit (JDK) installed, with version 21 or higher recommended.
-2.  **Groovy Runtime:** Install the Groovy runtime environment, with version 4 supported, but 5 or higher recommended.
-3.  **ENV VARS:** Set up environment variables for any necessary configurations (or set them in `Secrets/.env`):
-    1. `OLLAMA_API_URL`: Set this environment variable to the URL of your OLLAMA instance. eg: `OLLAMA_API_URL=http://localhost:11434/api/v1`
-    2. `OLLAMA_API_KEY`: Set this environment variable if you need authentication for your API provider. eg: `OLLAMA_API_KEY=sk-your-api-key`
-    3. `ENCRYPTION_KEY`: Set this environment variable if you want to encrypt the user and model messages writen to the JSONL file on disk (AES-256). eg: `ENCRYPTION_KEY=SuperSecretKey`
+## 🤖 Runtime Commands
 
-### 🤖 Running the Application
+While in Chat Mode (`-c`), the following commands allow you to manipulate the "Soul" and "Structure" of the experience:
 
-All application modes are invoked directly via the `groovy` command pointing to the entry point, `main.groovy`.
-
-| Command | Description |
-| :--- | :--- |
-| `groovy main.groovy -c` | **Chat Mode:** Starts a direct, interactive, multi-turn chat session in a TUI, leveraging tags to flavor the output rendering. (see details below for runtime usage) |
-| `groovy main.groovy -i` | **Image Mode:** Prompts the model to generate an image based on your text input (requires relevant API configuration). |
-| `groovy main.groovy -t` | **Test Mode:** Runs the integrated test harness defined in `Test.groovy`. |
-| `groovy main.groovy -v` | **Verbose Mode:** Adds verbose output to the console for debugging (can be combined with other commands, e.g., `groovy main.groovy -c -v`). |
-| `groovy main.groovy --debate` | **Debate:** Starts a debate. Put in a `-v` to get the output on the command line. |
-
-The runtime commands available while in Chat mode (`-c`) are as follows.
-
-| Command | Description |
-| :--- | :--- |
-| `/map` | View the current conversation map. |
-| `/jump <id>` | Jump to a specific message in the conversation map (must target assistant entry) |
-| `/bye` & `/q` | Gracefully close the app and restore your terminal. |
+| Command | Category | Description |
+| :--- | :--- | :--- |
+| `/help` | System | View the command grimoire. |
+| `/faders` | Resonance | View the current personality mixing board settings. |
+| `/faders <t> <v>` | Resonance | Set a trait (e.g., `sarcasm`) to a value between `0.0` and `2.0`. |
+| `/map` | Navigation | Display the visual tree of the current universe. |
+| `/jump <id>` | Navigation | Pivot to a specific node ID in the narrative graph. |
+| `/mark <str>` | Navigation | Place a bookmark at your current location. |
+| `/bookmarks` | Navigation | List all saved anchors in the Scriptorium. |
+| `q` or `/bye` | System | Gracefully exit and restore terminal state. |
 
 ---
 
