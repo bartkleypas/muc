@@ -1,6 +1,7 @@
 package org.kleypas.muc.cli
 
 import org.kleypas.muc.model.Context
+import org.kleypas.muc.model.Message
 import org.kleypas.muc.io.LogManager
 
 class CommandProcessor {
