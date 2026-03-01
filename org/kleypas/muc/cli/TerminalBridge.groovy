@@ -81,14 +81,14 @@ class TerminalBridge implements AutoCloseable {
         if (!statusLine) return
 
         String left = " [ LOC:${location.toUpperCase()} ] | [ HERO:${hero.toUpperCase()} ]"
-        String right = String.format(
-            " [ N:%.1f P:%.1f S:%.1f A:%.1f J:%.1f ] ",
-            resonance.nurturance ?: 1.0,
-            resonance.playfulness ?: 1.0,
-            resonance.steadfastness ?: 1.0,
-            resonance.attunement ?: 1.0,
-            resonance.sarcasm ?: 1.0
-        )
+        
+        StringBuilder resBuilder = new StringBuilder(" [")
+        resonance.each { trait, value ->
+            String valStr = String.format("%.1f", (value != null) ? value : 1.0)
+            resBuilder.append(" ${trait[0].toUpperCase()}:${valStr}")
+        }
+        resBuilder.append(" ]")
+        String right = resBuilder.toString()
 
         int width = terminal.getWidth()
         int paddingSize = Math.max(1, width - (left.length() + right.length()))
