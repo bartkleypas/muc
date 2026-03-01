@@ -139,7 +139,7 @@ if (options.chat) {
         logManager.appendEntry(systemMsg)
     } else {
         logManager.readAllEntries().each { entry ->
-            context.messages.add(new Message(entry))
+            context.messages.add(entry)
         }
     }
 

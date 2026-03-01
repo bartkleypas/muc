@@ -11,7 +11,6 @@ import java.util.Map
 
 /**
  * Handles all File I/O for the Narrator.jsonl persistence layer.
- * Adheres to Style B mandates: Explicit typing and strict access modifiers.
  */
 public class LogManager {
 
@@ -25,8 +24,75 @@ public class LogManager {
     }
 
     /**
+     * Reads the entire log file and returns a list of Maps.
+     * @param key (Optional) The key used for decryption if present (or re-use the persistent key)
+     * @return List of formal Message objects.
+     */
+    public List<Message> readAllEntries(byte[] key = null) {
+        byte[] activeKey = key ?: this.persistentKey
+        final File logFile = new File(this.logPath)
+        if (!logFile.exists()) return [] as List<Message>
+
+        JsonSlurper slurper = new JsonSlurper()
+
+        return logFile.readLines().collect { String line ->
+            Map<String, Object> raw = (Map<String, Object>) slurper.parseText(line)
+
+            // Hard gate our decription logics.
+            if (raw.encrypted == true) {
+                if (!activeKey) {
+                    // Hard-gate: If encrypted but no key, we provide the 'Ghost' content
+                    raw.content = "[DECRYPTION_FAILED: Missing Key]"
+                } else {
+                    try {
+                        raw.content = CipherService.decrypt(raw.content as String, activeKey)
+                        if (raw.bookmark) {
+                            raw.bookmark = CipherService.decrypt(raw.bookmark as String, activeKey)
+                        }
+                    } catch (Exception e) {
+                        raw.content = "[DECRYPTION_FAILED: Invalid Key]"
+                    }
+                }
+            }
+
+            // Re-hydrate a message object to return.
+            Message msg = new Message(
+                messageId: raw.messageId as String,
+                parentId: raw.parentId as String,
+                role: raw.role as String,
+                content: raw.content as String,
+                timestamp: raw.timestamp as String
+            )
+            msg.bookmark = raw.bookmark as String
+
+            // Reconstructs the resonance state from the raw map.
+            msg.resonance = new Resonance(raw)
+
+            return msg
+        } as List<Message> // Give back a list of (decrypted) messages.
+    }
+
+    public Map<String, List<Message>> buildHistoryTree() {
+        return readAllEntries().groupBy { it.parentId as String }
+    }
+
+    public Message findEntryByPartialId(String partialId) {
+        return readAllEntries().find { it.messageId.startsWith(partialId) }
+    }
+
+    public Map getChronicleStats() {
+        List<Message> allEntries = readAllEntries() ?: []
+        return [
+            totalMessages: allEntries.size(),
+            branchCount: allEntries.findAll { it.parentId != null}.collect { it.parentId }.unique().size(),
+            lastJumpId: allEntries.isEmpty() ? "NONE" : allEntries.last().messageId?.take(8)
+        ]
+    }
+
+    /**
      * Appends a single node to the JSONL log.
-     * @param entry The Map containing messageId, parentId, role, and content.
+     * @param entry The Map containing messageId, parentId, role, content, etc.
+     * @param key (Optional) The byte array representing the encryption key.
      */
     public void appendEntry(Message entry, byte[] key = null) {
         final File logFile = new File(this.logPath)
@@ -57,7 +123,9 @@ public class LogManager {
 
     /**
      * Finds an existing entry by ID and updates its metadata (such as bookmarking)
-     * while preserving the rest of the message integrity
+     * while preserving the rest of the message integrity.
+     * @param updatedMsg The new message to update.
+     * @param key (Optional) The byte array representing the encryption key.
      */
     void updateEntry(Message updatedMsg, byte[] key = null) {
         byte[] encryptionKey = key ?: this.persistentKey
@@ -85,68 +153,5 @@ public class LogManager {
         file.withWriter { writer ->
             updatedLines.each { writer.println(it) }
         }
-    }
-    /**
-     * Reads the entire log file and returns a list of Maps.
-     * @param key (Optional) The key used for decryption if present (or re-use the persistent key)
-     * @return List of message nodes.
-     */
-    public List<Map<String, Object>> readAllEntries(byte[] key = null) {
-        byte[] activeKey = key ?: this.persistentKey
-        final File logFile = new File(this.logPath)
-        if (!logFile.exists()) {
-            return [] as List
-        }
-
-        JsonSlurper slurper = new JsonSlurper()
-        return logFile.readLines().collect { String line ->
-            Map<String, Object> entry = (Map<String, Object>) slurper.parseText(line)
-            if (entry.encrypted == true && activeKey) {
-                try {
-                    entry.content = CipherService.decrypt(entry.content as String, activeKey)
-                } catch (Exception e) {
-                    entry.content = "[DECRYPTION_FAILED: Ghost in the machine]"
-                }
-            }
-            if (entry.encrypted == true && activeKey && entry.bookmark) {
-                try {
-                    entry.bookmark = CipherService.decrypt(entry.bookmark as String, activeKey)
-                } catch (Exception e) {
-                    entry.content = "[DECRYPTION_FAILED: Ghost in the machine]"
-                }
-            }
-            return entry
-        }
-    }
-
-    Map<String, List<Map>> buildHistoryTree() {
-        List<Map> allEntries = readAllEntries()
-
-        return allEntries.groupBy { it.parentId as String }
-    }
-
-    /**
-     * Finds a specific message entry by a partial ID match
-     * Useful for jumping to branches identified in the TUI map.
-     */
-    Map findEntryByPartialId(String partialId) {
-        List<Map> allEntries = readAllEntries()
-        return allEntries.find { it.messageId.startsWith(partialId) }
-    }
-
-    /**
-     * Get some stats about our conversation
-     */
-    Map getChronicleStats() {
-        def allEntries = readAllEntries() ?: []
-        int total = allEntries.size()
-        def uniqueParents = allEntries.findAll { it.parentId != null }.collect { it.parentId }.unique()
-        int branches = uniqueParents.size()
-        String lastId = allEntries.isEmpty() ? "NONE" : allEntries.last().messageId?.take(8)
-        return [
-            totalMessages: total,
-            branchCount: branches,
-            lastJumpId: lastId
-        ]
     }
 }
