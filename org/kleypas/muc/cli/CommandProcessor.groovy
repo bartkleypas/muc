@@ -90,7 +90,7 @@ class CommandProcessor {
         String targetId = parts[1]
         Message targetEntry = logManager.findEntryByPartialId(targetId)
 
-        if (targetEntry && targetEntry.role == "assistant") {
+        if (targetEntry && targetEntry.role in ["assistant", "system"]) {
             // The core "Iron" of the jump
             context.loadBranch(targetEntry.messageId)
             bridge.replayLastTurn(context)
