@@ -83,5 +83,6 @@ In addition, the following folders are intentionally git-ignored, but used at ru
 
 * `Secrets/` - Configuration files for encryption keys and other sensitive data. Shove your `.env` in here.
 * `Characters/` - Custom character definitions in markdown. Basically the models system prompts. You can find an example `George.md` in here to test out.
-* `Story/` - The narrative story files.
+* `Story/` - The narrative story files and image queue.
+* `Exports/` - Where training data goes.
 * `build/` & `lib/` - Ouptuts of the build process.
