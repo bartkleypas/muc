@@ -48,9 +48,24 @@ While in Chat Mode (`-c`), the following commands allow you to manipulate the "S
 | `/faders <t> <v>` | Resonance | Set a trait (e.g., `sarcasm`) to a value between `0.0` and `2.0`. |
 | `/map` | Navigation | Display the visual tree of the current universe. |
 | `/jump <id>` | Navigation | Pivot to a specific node ID in the narrative graph. |
-| `/mark <str>` | Navigation | Place a bookmark at your current location. |
+| `/mark <str>` | Navigation | Place a bookmark at your current location, and queue an image for generation. |
 | `/bookmarks` | Navigation | List all saved anchors in the Scriptorium. |
+| `/export <fileName>.jsonl` | System | Append the (decrypted) current conversation to the targetted JSONL training file. |
 | `q` or `/bye` | System | Gracefully exit and restore terminal state. |
+
+---
+
+## 🦎 The Refinery: From Dialog to LoRA
+
+The `MUC` app is designed not just for play, but for the deliberate cultivation of a Sovereign Persona. By utilizing the apps built in features, the user can "harvest" specific conversations from the narrative graph into a dataset useful in fine-tuning via something like Axolotl.
+
+1. **Image curation via `/mark`:** To prevent storage and computational overhead while ensuring high-signal data capture, the apps `LogManager` functionality uses an intentional gating system allowing the user to:
+   * **Action:** Use `/mark <Label>` to distinguish a specific node in the graph.
+   * **Result:** The specific `IMAGE_DESC` from the assistants message is sent to the `VisionQueue.txt`, and the message is bookmarked in the persistent DAG.
+2. **Harvesting via `/export`:** When a narrative branch demonstrates a specific "High resonance" quality, it can be flattened into a **ChatML** multi-turn training example.
+   * **Command:** `/export <fileName>.jsonl`
+   * **Injection:** The `LogManager` automatically injects the current **Resonance Faders** as control tokens (e.g., `[SARCASM:1.7]`) into the assistant's response. This teaches the model the direct relationship between the "Maths" and the "Iron" of its personality.
+3. **Dataset Stacking:** The `/export` command will append the current conversation to the targetted file. This allows the user to stack multiple distinct timelines into a single training file, creating a robust dataset of diverse reactions and emotional states, perfect for feeding into Axolotl training pipelines.
 
 ---
 

@@ -74,7 +74,7 @@ public class LogManager {
 
     /**
      * Exports a specific branch in the ChatML format for Axolotl training.
-     * Each file contains a single JSON line representing the full multi-turn conversation.
+     * Each file contains a series of JSON lines representing a full multi-turn conversation.
      */
     public void exportBranchToChatML(String fileName, List<Message> branch) {
         // Transform the branch into the ChatML 'messages' structure
