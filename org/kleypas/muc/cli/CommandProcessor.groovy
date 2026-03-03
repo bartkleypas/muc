@@ -2,6 +2,7 @@ package org.kleypas.muc.cli
 
 import org.kleypas.muc.model.Context
 import org.kleypas.muc.model.Message
+import org.kleypas.muc.model.TagParser
 import org.kleypas.muc.io.LogManager
 
 class CommandProcessor {
@@ -44,6 +45,9 @@ class CommandProcessor {
             case "/faders":
                 handleFaders(input)
                 return true
+            case "/export":
+                handleExport(input)
+                return true
             default:
                 bridge.terminal.writer().println("\u001B[31m[UNKNOWN COMMAND]\u001B[0m")
                 return true
@@ -84,20 +88,21 @@ class CommandProcessor {
         }
 
         String targetId = parts[1]
-        Map targetEntry = logManager.findEntryByPartialId(targetId)
+        Message targetEntry = logManager.findEntryByPartialId(targetId)
 
         if (targetEntry && targetEntry.role == "assistant") {
             // The core "Iron" of the jump
             context.loadBranch(targetEntry.messageId)
             bridge.replayLastTurn(context)
-            bridge.updateHUD("The Library", "Navigator", targetEntry)
+            bridge.updateHUD("The Library", "Navigator", targetEntry.getStats())
             bridge.terminal.writer().println("\u001B[35m## Timeline shifted to [${targetEntry.messageId.take(8)}]\u001B[0m")
         } else {
             bridge.terminal.writer().println("\u001B[31m[ERROR]\u001B[0m: Cannot pivot to a user node or invalid ID.")
         }
     }
 
-    // Bookmark an entry in the graph with the given input string
+    // Bookmark an entry in the graph with the given input string, and kick any
+    // image prompts from the message into the queue for generation.
     private void handleMark(String input) {
         String label = input.substring(6).trim()
         Message target = context.messages.reverse().find { it.role == "assistant"}
@@ -105,6 +110,13 @@ class CommandProcessor {
             target.bookmark = label
             logManager.updateEntry(target)
             bridge.terminal.writer().println("\u001B[35m## George marks the page: \"${label}\"\u001B[0m")
+
+            String imagePrompt = TagParser.extractString(target.content, "IMAGE_DESC")
+            if (imagePrompt) {
+                bridge.terminal.writer().println("\n\u001B[35m## George has sketched a vision in the margins... \u001B[0m")
+                new File("Story/VisionQueue.txt") << "${target.messageId}|${imagePrompt}\n"
+                bridge.terminal.writer().println("\u001B[34m## Vision queued for later rendering.\u001B[0m\n")
+            }
         }
     }
 
@@ -149,6 +161,23 @@ class CommandProcessor {
             }
         }
         bridge.terminal.flush()
+    }
+
+    private void handleExport(String input) {
+        String[] parts = input.split(" ")
+        if (parts.size() < 2) {
+            bridge.terminal.writer().println("\u001B[31m[ERROR]\u001B[0m: Usage: /export <filename.jsonl>")
+            return
+        }
+
+        // Reconstruct the branch using the Context's back-walking logic
+        String tailId = context.messages.last().messageId
+        List<Message> currentBranch = new Context()
+            .enableLogging(logManager)
+            .loadBranch(tailId).messages
+
+        logManager.exportBranchToChatML("Exports/${parts[1]}", currentBranch)
+        bridge.terminal.writer().println("\u001B[32m[SUCCESS]\u001B[0m: ChatML refinery file created: Exports/${parts[1]}")
     }
 
     Map getStats() {

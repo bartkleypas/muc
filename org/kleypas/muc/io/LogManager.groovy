@@ -72,6 +72,32 @@ public class LogManager {
         } as List<Message> // Give back a list of (decrypted) messages.
     }
 
+    /**
+     * Exports a specific branch in the ChatML format for Axolotl training.
+     * Each file contains a series of JSON lines representing a full multi-turn conversation.
+     */
+    public void exportBranchToChatML(String fileName, List<Message> branch) {
+        // Transform the branch into the ChatML 'messages' structure
+        List massagedMessages = branch.collect { msg ->
+            String finalContent = msg.content
+
+            // If it's an assistant response, we can prepend the fader 'Control Tokens'
+            // to the assistant's output to teach the model the association.
+            if (msg.role == "assistant") {
+                String faderTokens = msg.getStats().collect { k, v -> "[${k.toUpperCase()}:${v}]" }.join(" ")
+                finalContent = "${faderTokens} ${finalContent}"
+            }
+
+            return [role: msg.role, content: finalContent]
+        }
+
+        // Wrap the list in the 'messages' key for Axolotl/ChatML compliance
+        Map conversation = [messages: massagedMessages]
+ 
+        File exportFile = new File(fileName)
+        exportFile.append(JsonOutput.toJson(conversation) + "\n")
+    }
+
     public Map<String, List<Message>> buildHistoryTree() {
         return readAllEntries().groupBy { it.parentId as String }
     }

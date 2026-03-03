@@ -195,7 +195,6 @@ if (options.chat) {
             bridge.terminal.writer().print("${input}")
             bridge.flushBuffer()
 
-
             // Get some telemetry so we know what we are dealing with
             def currentStats = userResponse.getStats()
             println "DEBUG [Current Stats (map)]: ${currentStats}"
@@ -246,16 +245,6 @@ if (options.chat) {
 
             // Put that stuff on paper (jsonl log)
             logManager.appendEntry(assistantResponse)
-
-            // Look for George's image output, and put it into a new queue file
-            def imagePrompt = TagParser.extractString(fullContent, "IMAGE_DESC")
-            if (imagePrompt) {
-                bridge.terminal.writer().println("\n\u001B[35m## George has sketched a vision in the margins of his journal.. \u001B[0m")
-
-                new File("Story/VisionQueue.txt") << "${assistantResponse.messageId}|${imagePrompt}\n"
-                bridge.terminal.writer().println("\u001B[34m## Vision queued for later rendering to avoid VRAM contention.\u001B[0m\n")
-            }
-            bridge.flushBuffer()
         }
     }
 }
