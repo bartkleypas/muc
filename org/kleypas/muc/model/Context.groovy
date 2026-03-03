@@ -58,14 +58,14 @@ class Context {
     public Context loadBranch(String leafId) {
         if (!this.logManager) throw new IllegalStateException("LogManager not initialized")
 
-        Map<String, Map<String, Object>> nodeMap = this.logManager.readAllEntries().collectEntries { [it.messageId, it] }
+        Map<String, Message> nodeMap = this.logManager.readAllEntries().collectEntries { [it.messageId, it] }
         List<Message> branchMessages = []
         String currentId = leafId
 
         while (currentId && nodeMap.containsKey(currentId)) {
-            Map entry = nodeMap.get(currentId)
-            branchMessages.add(0, new Message(entry))
-            currentId = entry.parentId
+            Message msg = nodeMap.get(currentId)
+            branchMessages.add(0, msg)
+            currentId = msg.parentId
         }
         this.messages = branchMessages
         return this
