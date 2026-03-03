@@ -62,7 +62,7 @@ The `MUC` app is designed not just for play, but for the deliberate cultivation 
 1. **Image curation via `/mark`:** To prevent storage and computational overhead while ensuring high-signal data capture, the apps `LogManager` functionality uses an intentional gating system allowing the user to:
    * **Action:** Use `/mark <Label>` to distinguish a specific node in the graph.
    * **Result:** The specific `IMAGE_DESC` from the assistants message is sent to the `VisionQueue.txt`, and the message is bookmarked in the persistent DAG.
-2. **Harvesting via `/export`:** When a narrative branch demonstrates a specific "High resonance" quality, it can be flattened into a **ChatML** multi-turn training example.
+2. **Harvesting via `/export`:** When a narrative branch demonstrates a specific "High resonance" quality, it can be flattened into a **ChatML** multi-turn training sample.
    * **Command:** `/export <fileName>.jsonl`
    * **Injection:** The `LogManager` automatically injects the current **Resonance Faders** as control tokens (e.g., `[SARCASM:1.7]`) into the assistant's response. This teaches the model the direct relationship between the "Maths" and the "Iron" of its personality.
 3. **Dataset Stacking:** The `/export` command will append the current conversation to the targetted file. This allows the user to stack multiple distinct timelines into a single training file, creating a robust dataset of diverse reactions and emotional states, perfect for feeding into Axolotl training pipelines.
