@@ -50,28 +50,6 @@ class Context {
     }
 
     /**
-     * Rebuilds a specific thread by walking the DAG backwards.
-     * Uses the LogManager to retrieve the full history bank.
-     * @param leafId The ID of the leaf message
-     * @return The reconstructed Context object
-     */
-    public Context loadBranch(String leafId) {
-        if (!this.logManager) throw new IllegalStateException("LogManager not initialized")
-
-        Map<String, Message> nodeMap = this.logManager.readAllEntries().collectEntries { [it.messageId, it] }
-        List<Message> branchMessages = []
-        String currentId = leafId
-
-        while (currentId && nodeMap.containsKey(currentId)) {
-            Message msg = nodeMap.get(currentId)
-            branchMessages.add(0, msg)
-            currentId = msg.parentId
-        }
-        this.messages = branchMessages
-        return this
-    }
-
-    /**
      * Removes the oldest non-system messages until the token count is below the maximum.
      */
     public void pruneContext() {
@@ -96,6 +74,27 @@ class Context {
     }
 
     // --- Transformation ---
+
+    /**
+     * Rebuilds a specific thread by walking the DAG backwards.
+     * Uses the LogManager to retrieve the full history bank.
+     * @param leafId The ID of the leaf message
+     * @return The reconstructed Context object
+     */
+    public Context loadBranch(String leafId) {
+        if (!this.logManager) throw new IllegalStateException("LogManager not initialized")
+
+        Map<String, Message> nodeMap = this.logManager.readAllEntries().collectEntries { [it.messageId, it] }
+        List<Message> branchMessages = []
+        String currentId = leafId
+
+        while (currentId && nodeMap.containsKey(currentId)) {
+            Message msg = nodeMap.get(currentId)
+            branchMessages.add(0, msg)
+            currentId = msg.parentId
+        }
+        return new Context(branchMessages).enableLogging(this.logManager)
+    }
 
     /**
      * Transforms the context for a specific speaker.
