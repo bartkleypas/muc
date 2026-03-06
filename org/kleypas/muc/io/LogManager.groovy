@@ -24,7 +24,7 @@ public class LogManager {
     }
 
     /**
-     * Reads the entire log file and returns a list of Maps.
+     * Reads the entire log file and returns a list of Message objects.
      * @param key (Optional) The key used for decryption if present (or re-use the persistent key)
      * @return List of formal Message objects.
      */
@@ -77,23 +77,34 @@ public class LogManager {
      * Each file contains a series of JSON lines representing a full multi-turn conversation.
      */
     public void exportBranchToChatML(String fileName, List<Message> branch) {
-        // Transform the branch into the ChatML 'messages' structure
-        List massagedMessages = branch.collect { msg ->
+        if (!branch) return
+
+        List massagedMessages = []
+        int startIndex = 0
+
+        // If the first two messages are a system -> user handshake, merge the two
+        // into one user interaction. This is a common pattern in Axolotl.
+        if (branch.size() >= 2 && branch[0].role == "system" && branch[1].role == "user") {
+            String mergedContent = "${branch[0].content}\n\n${branch[1].content}"
+            massagedMessages << [role: "user", content: mergedContent]
+            startIndex = 2
+        }
+
+        // Process the rest of the branch (or the whole thing if no handshake was found)
+        branch.subList(startIndex, branch.size()).each { msg ->
             String finalContent = msg.content
 
-            // If it's an assistant response, we can prepend the fader 'Control Tokens'
-            // to the assistant's output to teach the model the association.
+            // Keep George's resonance stats attached to assistant responses
             if (msg.role == "assistant") {
                 String faderTokens = msg.getStats().collect { k, v -> "[${k.toUpperCase()}:${v}]" }.join(" ")
                 finalContent = "${faderTokens} ${finalContent}"
             }
 
-            return [role: msg.role, content: finalContent]
+            massagedMessages << [role: msg.role, content: finalContent]
         }
 
         // Wrap the list in the 'messages' key for Axolotl/ChatML compliance
         Map conversation = [messages: massagedMessages]
- 
         File exportFile = new File(fileName)
         exportFile.append(JsonOutput.toJson(conversation) + "\n")
     }

@@ -48,6 +48,9 @@ class CommandProcessor {
             case "/export":
                 handleExport(input)
                 return true
+            case "/export-all":
+                handleExportAll(input)
+                return true
             default:
                 bridge.terminal.writer().println("\u001B[31m[UNKNOWN COMMAND]\u001B[0m")
                 return true
@@ -71,7 +74,7 @@ class CommandProcessor {
 
     // Display the narrative graph
     private void handleMap() {
-        def currentTip = context.messages.reverse().find { it.role == "assistant" }
+        def currentTip = context.messages.reverse().find { it.role == "assistant" || it.role == "system" }
         String currentId = currentTip?.messageId ?: ""
         Map tree = logManager.buildHistoryTree()
         bridge.terminal.writer().println("\n\u001B[33m## THE CHRONICLE TAPESTRY ##\u001B[0m")
@@ -92,7 +95,7 @@ class CommandProcessor {
 
         if (targetEntry && targetEntry.role in ["assistant", "system"]) {
             // The core "Iron" of the jump
-            context.loadBranch(targetEntry.messageId)
+            this.context = context.loadBranch(targetEntry.messageId)
             bridge.replayLastTurn(context)
             bridge.updateHUD("The Library", "Navigator", targetEntry.getStats())
             bridge.terminal.writer().println("\u001B[35m## Timeline shifted to [${targetEntry.messageId.take(8)}]\u001B[0m")
@@ -163,6 +166,7 @@ class CommandProcessor {
         bridge.terminal.flush()
     }
 
+    // Handle exporting the current branch to a JSONL file.
     private void handleExport(String input) {
         String[] parts = input.split(" ")
         if (parts.size() < 2) {
@@ -178,6 +182,37 @@ class CommandProcessor {
 
         logManager.exportBranchToChatML("Exports/${parts[1]}", currentBranch)
         bridge.terminal.writer().println("\u001B[32m[SUCCESS]\u001B[0m: ChatML refinery file created: Exports/${parts[1]}")
+    }
+
+    private void handleExportAll(String input) {
+        String[] parts = input.split(" ")
+        String fileName = parts.size() > 1 ? parts[1] : "master_george.jsonl"
+        String fullPath = "Exports/${fileName}"
+
+        // 1. Wipe the file so we start fresh for this batch
+        new File(fullPath).delete()
+
+        // 2. Identify all messages in the total history that have a bookmark label
+        // We read from logManager directly to ensure we see every bookmark in the DAG
+        List<Message> bookmarks = logManager.readAllEntries().findAll { it.bookmark != null }
+
+        if (bookmarks.isEmpty()) {
+            bridge.terminal.writer().println("\u001B[31m[ERROR]\u001B[0m: No bookmarks found to export.")
+            return
+        }
+
+        bridge.terminal.writer().println("\u001B[35m## George is gathering ${bookmarks.size()} threads from the Archive... \u001B[0m")
+
+        bookmarks.each { bm ->
+            // 3. Use the PURE loadBranch to get a fresh context for this specific bookmark
+            // This doesn't affect the user's current 'live' context!
+            List<Message> branch = context.loadBranch(bm.messageId).messages
+
+            // 4. Send this specific branch to the refinery
+            logManager.exportBranchToChatML(fullPath, branch)
+        }
+
+        bridge.terminal.writer().println("\u001B[32m[SUCCESS]\u001B[0m: Master George refinery file updated: ${fullPath}")
     }
 
     Map getStats() {
