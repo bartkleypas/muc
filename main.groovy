@@ -195,53 +195,44 @@ if (options.chat) {
             bridge.terminal.writer().print("${input}")
             bridge.flushBuffer()
 
-            // Get some telemetry so we know what we are dealing with
-            def currentStats = userResponse.getStats()
-            println "DEBUG [Current Stats (map)]: ${currentStats}"
-
-            // Generate the vibe; get the overlay based on the user turn's state
-            def moodOverlay = personaMapper.getInstructions(currentStats)
-
-            // Grab the original prompt to fiddle with and stuff back into the messages
-            // list at the top of the list.
-            String basePrompt = new File("Characters/George.md").text
-            def lines = basePrompt.readLines()
-            String finalPrompt = lines[0] + "\n" + moodOverlay + "\n" + lines.drop(1).join("\n")
-
-            // Shallow clone of the context object, so we can swap around the
-            // system prompt at runtime without mucking up the global context.
+            // Shallow clone of the context object, so we can add the resonance
+            // Ensures our live context remains clean of the adjustments.
             def virtualContext = new Context(context.messages)
-            if (virtualContext.messages[0].role == "system") {
-                def base = virtualContext.messages[0]
-                virtualContext.messages[0] = new Message(
-                    role: "system",
-                    content: finalPrompt,
-                    messageId: base.messageId,
-                    parentId: base.parentId,
-                    stats: base.getStats()
-                )
-            }
+
+            // 2. Format the resonance faders into a conditioning string.
+            // This matches the format George learned in the Refinery.
+            def currentStats = userResponse.getStats()
+            String faderPrefix = currentStats.collect { k, v -> "[${k.toUpperCase()}:${v}]" }.join(" ")
 
             // George speaks! Uses the virtualContext shallow clone from above
-            // so we get a nice "new" system prompt to generate a response from.
             bridge.printSpeaker("assistant")
+
+            bridge.terminal.writer().print("\u001B[30;1m${faderPrefix} \u001B[0m") 
+            bridge.flushBuffer()
+
             StringBuilder fullOutput = new StringBuilder()
-            model.streamResponse(virtualContext) { token ->
+            model.streamResponseWithPrefix(virtualContext, faderPrefix) { token ->
                 bridge.printToken(token)
                 fullOutput.append(token)
             }
 
+            // Clean content from the models stream
             def fullContent = fullOutput.toString()
 
             def assistantResponse = context.addMessage(
                 role: "assistant",
                 content: fullContent,
                 parentId: userResponse.messageId,
-                stats: userResponse.getStats()
+                stats: currentStats
             )
 
+            // Commenting out, but not getting rid of this. We might want to pick
+            // up some feedback from what George just said, but at the moment,
+            // I don't think it is adding much value to the conversation train.
+            /*
             def deltas = resonanceEngine.calculate(fullContent)
             resonanceEngine.applyResonance(assistantResponse, deltas)
+            */
 
             // Put that stuff on paper (jsonl log)
             logManager.appendEntry(assistantResponse)

@@ -128,4 +128,60 @@ class Model {
             throw new RuntimeException("Stream failed: " + post.getErrorStream().getText())
         }
     }
+
+    /**
+     * Streams the response, but primes the assistant with fader tokens first.
+     * This preserves the KV cache of the history while ensuring the model generates
+     * text in the correct "mood".
+     */
+    void streamResponseWithPrefix(Context body, String assistnatPrefix, Closure onToken) {
+        URL url = new URL(provider.apiUrl)
+        def post = url.openConnection()
+
+        // Temp version of messages list
+        def messages = body.messages.collect { [role: it.role, content: it.content]}
+
+        // Suture the faders into the beginning of an "open" assistant response
+        def postData = [
+            messages: messages,
+            model: this.model,
+            stream: true,
+            temperature: this.temperature
+        ]
+
+        def json = JsonOutput.toJson(postData)
+
+        post.setRequestMethod("POST")
+        post.setDoOutput(true)
+        post.setRequestProperty("Authorization", "Bearer ${provider.apiKey}")
+        post.setRequestProperty("Content-Type", "application/json")
+        post.getOutputStream().write(json.getBytes("UTF-8"))
+
+        if (post.getResponseCode() == 200) {
+            // Use a reader to process the stream line-by-line
+            post.getInputStream().withReader { reader ->
+                String line
+                while ((line = reader.readLine()) != null) {
+                    line = line.trim()
+                    if (!line || line == "data: [DONE]") continue
+
+                    if (line.startsWith("data: ")) {
+                        line = line.substring(6).trim()
+                    }
+
+                    try {
+                        def data = new JsonSlurper().parseText(line)
+                        def token = data.choices ? data.choices[0]?.delta?.content : data.message?.content
+                        if (token) {
+                            onToken(token)
+                        }
+                    } catch (Exception e) {
+                        println "\r\n[DEBUG] Failed to parse line: ${line}"
+                    }
+                }
+            }
+        } else {
+            throw new RuntimeException("Stream failed: " + post.getErrorStream().getText())
+        }
+    }
 }
