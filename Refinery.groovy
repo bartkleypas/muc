@@ -6,8 +6,8 @@ import org.kleypas.muc.io.*
 
 // 1. Setup the heavy-duty Teacher
 def teacher = new Model(model: "gemma3:27b", temperature: 0.8)
-def trainingFile = "Exports/george_goldilocks.jsonl"
-def persona = new File("Characters/George.md").text
+def trainingFile = "Exports/george.v2_goldilocks.jsonl"
+def persona = new File("Characters/George.v2.md").text
 def logManager = new LogManager("Exports/fake.jsonl") // We don't actually write to this
 
 // 1.5 Set how many total branches we want to create.
@@ -34,14 +34,7 @@ loopSize.times { i ->
     def seed = seeds[i % seeds.size()]
 
     // Generate a random "Impulse"
-    def stats = [
-        nurturance: Resonance.randomValue(),
-        playfulness: Resonance.randomValue(),
-        steadfastness: Resonance.randomValue(),
-        attunement: Resonance.randomValue(),
-        sarcasm: Resonance.randomValue()
-    ]
-    def resonance = new Resonance(stats)
+    def resonance = new Resonance().randomize()
 
     // Add the user turn to the context
     context.addMessage(role: "user", content: seed, resonance: resonance)
