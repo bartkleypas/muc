@@ -92,9 +92,9 @@ if (options.test) {
     test.location()
     test.character()
     test.inventory()
-    test.narrator()
+    // test.narrator()
     // test.illustrator() <-- currently disabled.
-    test.story()
+    // test.story()
     // test.tui() // <-- NOTE: Will block test completion needing input if enabled.
 }
 

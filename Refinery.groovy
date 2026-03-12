@@ -4,24 +4,22 @@ package org.kleypas.muc
 import org.kleypas.muc.model.*
 import org.kleypas.muc.io.*
 
-// 1. Setup the heavy-duty Teacher
+// Setup the heavy-duty persona teacher.
 def teacher = new Model(model: "gemma3:27b", temperature: 0.8)
-def trainingFile = "Exports/george.v2_goldilocks.jsonl"
-def persona = new File("Characters/George.v2.md").text
-def logManager = new LogManager("Exports/fake.jsonl") // We don't actually write to this
+def persona = new File("Characters/George.md").text
+def logManager = new LogManager("Story/fake.jsonl") // We don't actually write to this
+def trainingFile = "Exports/George.trainingSet.jsonl" // We DO write to this one though
 
-// 1.5 Set how many total branches we want to create.
-// Target ~100 for a "quick" verification pass to verify that we're generating good
-// response vibes for our faders, and 500-1000 for a goldilocks run.
-int loopSize = 1000
-
-// 2. The Seed Bank. Currently has around 30 user turns to start the ball rolling.
-def seeds = new File("handshakeSeeds.txt").readLines().findAll { it.trim() }
+// The conversation handshake seeds, and the number of times we iterate on each.
+def seeds = new File("Characters/George.handshakeSeeds.txt").readLines().findAll { it.trim() }
+int iterations = 10
 
 println "🌿 [SCRIPTORIUM REFINERY] Starting synthetic generation..."
 long totalStartTime = System.currentTimeMillis()
 
-// 3. The Extraction Loop
+// The inference loop. We iterate over each conversation seed and generate a synthetic
+// response, in tune with a random resonance setting.
+int loopSize = seeds.size() * iterations
 loopSize.times { i ->
 
     long branchStartTime = System.currentTimeMillis()
@@ -52,14 +50,14 @@ loopSize.times { i ->
 
     // Add the models turn to the loops context.
     context.addMessage(
-        role: "assistant", 
+        role: "assistant",
         content: responseBuffer.toString(),
         resonance: resonance
     )
 
     // Finally write the context out in a format that can be used for training.
     logManager.exportBranchToChatML(trainingFile, context.messages)
-    
+
     long branchElapsed = (System.currentTimeMillis() - branchStartTime) / 1000
     println "Success (${branchElapsed}s)."
 }

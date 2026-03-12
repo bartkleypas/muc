@@ -96,6 +96,11 @@ public class LogManager {
 
             // Keep George's resonance stats attached to assistant responses
             if (msg.role == "assistant") {
+                // trims any newlines from the end of the response
+                finalContent = msg.content.trim()
+
+                finalContent = finalContent.replaceAll(/\n{3,}/, "\n\n")
+
                 String faderTokens = msg.getStats().collect { k, v -> "[${k.toUpperCase()}:${v}]" }.join(" ")
                 finalContent = "${faderTokens} ${finalContent}"
             }
