@@ -23,8 +23,8 @@ class TerminalBridge implements AutoCloseable {
         this.statusLine = Status.getStatus(terminal)
     }
 
-    /**
-     * Draws the "Radiant Strix" signature and initial header.
+/**
+     * Draws the "Mainframe Heuristic" signature and initial header.
      */
     void drawSignature(Map stats) {
         String version = "v1.2.0-nav"
@@ -33,12 +33,14 @@ class TerminalBridge implements AutoCloseable {
         def msgCount = stats.totalMessages ?: 0
         def branchCount = stats.branchCount ?: 0
         def lastLeaf = stats.lastJumpId ?: "UNKNOWN"
-        // Cyan for the owl and the telemetry
+        
+        // Cyan for the ship and the telemetry
         terminal.writer().println("""
-\u001B[36m    ,-.  \u001B[0m-----< The Bridge is established, Navigator >
-\u001B[36m   (O\u001B[33m,\u001B[36mO)\u001B[0m/     \u001B[36m[ ${engine} | ${version} ]
-\u001B[36m   {###}      \u001B[34m[ MESSAGES: ${msgCount} | BRANCHES: ${branchCount} ]
-\u001B[33m----"-"-      \u001B[34m[ LAST_LEAF: ${lastLeaf} ]\u001B[0m
+\u001B[36m             _
+\u001B[36m      __  _//_  __  \u001B[0m-----< The Bridge is established, Navigator >
+\u001B[36m     / _\\/_--_\\/_ \\ \u001B[36m[ ${engine} | ${version} ]
+\u001B[36m     \\__/[_||_]\\__/ \u001B[34m[ MESSAGES: ${msgCount} | BRANCHES: ${branchCount} ]
+\u001B[33m      --  '--'  --  \u001B[34m[ LAST_LEAF: ${lastLeaf} ]\u001B[0m
 
 """)
 
@@ -85,7 +87,7 @@ class TerminalBridge implements AutoCloseable {
         StringBuilder resBuilder = new StringBuilder(" [")
         resonance.each { trait, value ->
             String valStr = String.format("%.1f", (value != null) ? value : 1.0)
-            resBuilder.append(" ${trait[0].toUpperCase()}:${valStr}")
+            resBuilder.append(" ${trait}:${valStr}")
         }
         resBuilder.append(" ]")
         String right = resBuilder.toString()
@@ -114,12 +116,12 @@ class TerminalBridge implements AutoCloseable {
         terminal.writer().println("\n\u001B[33m-- REWEAVING TIMELINE --\u001B[0m")
 
         if (lastUser && lastUser.role == "user") {
-            printSpeaker("user")
+            printSpeaker(lastUser)
             printToken(lastUser.content)
         }
 
         if (lastAsst && lastAsst.role == "assistant") {
-            printSpeaker("assistant")
+            printSpeaker(lastAsst)
             printToken(lastAsst.content)
         }
 
@@ -146,9 +148,9 @@ class TerminalBridge implements AutoCloseable {
         terminal.flush()
     }
 
-    void printSpeaker(String role) {
-        String color = (role.equalsIgnoreCase("assistant")) ? "\u001B[1;36m" : "\u001B[1;32m"
-        String name = (role.equalsIgnoreCase("assistant")) ? "[George]" : "[You]"
+    void printSpeaker(Message msg) {
+        String color = (msg.role == "assistant") ? "\u001B[1;36m" : "\u001B[1;32m"
+        String name = msg.author ?: (msg.role == "assistant" ? "Assistant": "You")
         terminal.writer().print("\n${color}${name}\u001B[0m: ")
         terminal.flush()
     }

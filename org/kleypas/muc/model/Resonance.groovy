@@ -15,7 +15,7 @@ class Resonance {
 
     Double warmth = DEFAULT
     Double cynicism = DEFAULT
-    Double whimsy = DEFAULT
+    Double efficiency = DEFAULT
     Double resonance = DEFAULT
     Double gravity = DEFAULT
 

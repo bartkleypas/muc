@@ -11,6 +11,7 @@ class Message {
     String parentId
     String timestamp = Instant.now().toString()
     String role
+    String author
     String content
 
     Resonance resonance = new Resonance()

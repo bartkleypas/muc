@@ -60,6 +60,7 @@ public class LogManager {
                 messageId: raw.messageId as String,
                 parentId: raw.parentId as String,
                 role: raw.role as String,
+                author: raw.author as String,
                 content: raw.content as String,
                 timestamp: raw.timestamp as String
             )
@@ -146,6 +147,7 @@ public class LogManager {
             messageId: entry.messageId,
             parentId: entry.parentId,
             role: entry.role,
+            author: entry.author,
             bookmark: entry.bookmark,
             encrypted: false,
             content: entry.content

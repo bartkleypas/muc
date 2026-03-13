@@ -6,7 +6,6 @@ import org.kleypas.muc.io.LogManager
 import org.kleypas.muc.model.Context
 import org.kleypas.muc.model.Message
 import org.kleypas.muc.model.Model
-import org.kleypas.muc.model.PersonaMapper
 import org.kleypas.muc.model.Resonance
 import org.kleypas.muc.model.ResonanceEngine
 import org.kleypas.muc.model.TagParser
@@ -119,7 +118,7 @@ if (options.chat) {
     Logger.setLevel(LogLevel.INFO)
     Logger.info "# Sent a chat arg."
 
-    def historyFile = "Story/Narrator.jsonl"
+    def historyFile = "Story/Majel.jsonl"
     if (options.chat instanceof String) {
         historyFile = options.chat
     }
@@ -128,14 +127,18 @@ if (options.chat) {
     def context = new Context().enableLogging(logManager)
     def model = new Model(model: "biggun")
     def resonanceEngine = new ResonanceEngine()
-    def personaMapper = new PersonaMapper()
 
     // Create a new chat, or load up the message stream from an existing one if it exists.
     if (!new File(historyFile).exists()) {
         Logger.info "## Building a new Chronicle to ${historyFile}..."
-        def promptText = new File("Characters/George.md").text
+        def promptText = new File("Characters/Majel.md").text
 
-        def systemMsg = context.addMessage(role: "system", content: promptText)
+        def systemMsg = context.addMessage(
+            role: "system",
+            author: "Majel",
+            content: promptText
+        )
+
         logManager.appendEntry(systemMsg)
     } else {
         logManager.readAllEntries().each { entry ->
@@ -154,12 +157,10 @@ if (options.chat) {
         // Don't echo out the system prompt.
         // Instead, give a nice lil' hint to the user for a first prompt
         if (lastMessage.role == "system") {
-            bridge.printSpeaker("assistant")
-            bridge.printToken("Welcome to the Library, traveler. My name is George. And to *Hoo-hoo** whom am I speaking? Please introduce yourself, as a great adventure awaits.")
+            bridge.printToken("Welcome to the Starship Majel. I am its AI assistant, but you can call me Majal too. Welcome to the crew. What can I help you with today?")
             bridge.flushBuffer()
         } else {
-            bridge.printSpeaker(lastMessage.role)
-            bridge.printToken(lastMessage.content)
+            bridge.replayLastTurn(context)
             bridge.flushBuffer()
         }
 
@@ -170,10 +171,10 @@ if (options.chat) {
         // The main loop of our chat TUI.
         while (true) {
             def last = context.messages.last()
-            bridge.updateHUD("The Library", "Navigator", last.getStats())
+            bridge.updateHUD("The Starship Majel", "Crew", last.getStats())
             bridge.flushBuffer()
 
-            String prompt = "\u001B[1;32m[You]\u001B[0m: "
+            String prompt = "\u001B[1;32mYou\u001B[0m: "
 
             // Handle inputs and commands
             def input = reader.readLine(prompt)?.trim()
@@ -184,6 +185,7 @@ if (options.chat) {
 
             def userResponse = context.addMessage(
                 role: "user",
+                author: "You",
                 content: input,
                 parentId: last.messageId,
                 stats: processor.getStats()
@@ -191,7 +193,7 @@ if (options.chat) {
 
             logManager.appendEntry(userResponse)
 
-            bridge.printSpeaker("user")
+            bridge.printSpeaker(userResponse)
             bridge.terminal.writer().print("${input}")
             bridge.flushBuffer()
 
@@ -203,13 +205,14 @@ if (options.chat) {
             // This matches the format George learned in the Refinery.
             def currentStats = userResponse.getStats()
             String faderPrefix = currentStats.collect { k, v -> "[${k.toUpperCase()}:${v}]" }.join(" ")
+            bridge.terminal.writer().print("\u001B[30;1m${faderPrefix} \u001B[0m\n") 
 
-            // George speaks! Uses the virtualContext shallow clone from above
-            bridge.printSpeaker("assistant")
-
-            bridge.terminal.writer().print("\u001B[30;1m${faderPrefix} \u001B[0m") 
             bridge.flushBuffer()
 
+            // echo's the "last" (ie the models) author.
+            bridge.printSpeaker(last)
+
+            // George speaks! Uses the virtualContext shallow clone from above
             StringBuilder fullOutput = new StringBuilder()
             model.streamResponseWithPrefix(virtualContext, faderPrefix) { token ->
                 bridge.printToken(token)
@@ -221,6 +224,7 @@ if (options.chat) {
 
             def assistantResponse = context.addMessage(
                 role: "assistant",
+                author: last.author,
                 content: fullContent,
                 parentId: userResponse.messageId,
                 stats: currentStats
