@@ -11,6 +11,7 @@ class Message {
     String parentId
     String timestamp = Instant.now().toString()
     String role
+    String author
     String content
 
     Resonance resonance = new Resonance()
@@ -23,7 +24,7 @@ class Message {
         args.each { k, v ->
             if (k == 'stats' || k == 'inheritedStats') {
                 this.resonance = new Resonance(v)
-            } else if (this.hasProperty(k)) {
+            } else if (k != 'resonance' && this.hasProperty(k)) {
                 this."$k" = v
             }
         }
