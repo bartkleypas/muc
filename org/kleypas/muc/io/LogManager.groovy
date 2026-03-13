@@ -56,18 +56,10 @@ public class LogManager {
             }
 
             // Re-hydrate a message object to return.
-            Message msg = new Message(
-                messageId: raw.messageId as String,
-                parentId: raw.parentId as String,
-                role: raw.role as String,
-                author: raw.author as String,
-                content: raw.content as String,
-                timestamp: raw.timestamp as String
-            )
-            msg.bookmark = raw.bookmark as String
+            Message msg = new Message(raw)
 
             // Reconstructs the resonance state from the raw map.
-            msg.resonance = new Resonance(raw)
+            // msg.resonance = new Resonance(raw)
 
             return msg
         } as List<Message> // Give back a list of (decrypted) messages.

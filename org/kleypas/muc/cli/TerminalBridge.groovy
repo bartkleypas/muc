@@ -113,7 +113,7 @@ class TerminalBridge implements AutoCloseable {
         // Get the last user message and the last assistant response
         def lastUser = (messages.size() >= 2) ? messages[messages.size() - 2] : null
 
-        terminal.writer().println("\n\u001B[33m-- REWEAVING TIMELINE --\u001B[0m")
+        terminal.writer().println("\n\u001B[33m-- REPLAYING TIMELINE --\u001B[0m")
 
         if (lastUser && lastUser.role == "user") {
             printSpeaker(lastUser)

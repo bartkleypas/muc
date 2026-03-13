@@ -24,7 +24,7 @@ class Message {
         args.each { k, v ->
             if (k == 'stats' || k == 'inheritedStats') {
                 this.resonance = new Resonance(v)
-            } else if (this.hasProperty(k)) {
+            } else if (k != 'resonance' && this.hasProperty(k)) {
                 this."$k" = v
             }
         }

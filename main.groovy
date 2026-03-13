@@ -171,21 +171,24 @@ if (options.chat) {
         // The main loop of our chat TUI.
         while (true) {
             def last = context.messages.last()
-            bridge.updateHUD("The Starship Majel", "Crew", last.getStats())
+            bridge.updateHUD("The Starship Majel", "Navigator", last.getStats())
             bridge.flushBuffer()
 
-            String prompt = "\u001B[1;32mYou\u001B[0m: "
+            String prompt = "\u001B[1;32mNavigator\u001B[0m: "
 
             // Handle inputs and commands
             def input = reader.readLine(prompt)?.trim()
             if (!input || input == "/bye" || input == "q") { break }
-            if (processor.process(input)) continue
+            if (processor.process(input)) {
+                context = processor.context
+                continue
+            }
 
             bridge.terminal.writer().print("\033[1A\033[2K")
 
             def userResponse = context.addMessage(
                 role: "user",
-                author: "You",
+                author: "Navigator",
                 content: input,
                 parentId: last.messageId,
                 stats: processor.getStats()
@@ -193,26 +196,21 @@ if (options.chat) {
 
             logManager.appendEntry(userResponse)
 
-            bridge.printSpeaker(userResponse)
-            bridge.terminal.writer().print("${input}")
-            bridge.flushBuffer()
-
             // Shallow clone of the context object, so we can add the resonance
             // Ensures our live context remains clean of the adjustments.
             def virtualContext = new Context(context.messages)
 
-            // 2. Format the resonance faders into a conditioning string.
-            // This matches the format George learned in the Refinery.
+            // echo's the "last" (ie the models) author.
+            bridge.printSpeaker(last)
+
+            // Take the resonance marks, and print a lil' debugger line with them
+            // into the bridge output stream.
             def currentStats = userResponse.getStats()
             String faderPrefix = currentStats.collect { k, v -> "[${k.toUpperCase()}:${v}]" }.join(" ")
             bridge.terminal.writer().print("\u001B[30;1m${faderPrefix} \u001B[0m\n") 
 
-            bridge.flushBuffer()
-
-            // echo's the "last" (ie the models) author.
-            bridge.printSpeaker(last)
-
-            // George speaks! Uses the virtualContext shallow clone from above
+            // The Model speaks! Uses the virtualContext shallow clone from above
+            // and prefix the models output with the faders.
             StringBuilder fullOutput = new StringBuilder()
             model.streamResponseWithPrefix(virtualContext, faderPrefix) { token ->
                 bridge.printToken(token)
@@ -220,7 +218,7 @@ if (options.chat) {
             }
 
             // Clean content from the models stream
-            def fullContent = fullOutput.toString()
+            def fullContent = fullOutput.toString().trim()
 
             def assistantResponse = context.addMessage(
                 role: "assistant",
