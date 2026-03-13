@@ -66,11 +66,11 @@ class TerminalBridge implements AutoCloseable {
             // Format the line: [ID] Role: Snippet
             String color = (msg.role == "assistant") ? "\u001B[36m" : "\u001B[32m"
             String snippet = msg.content.take(40).replaceAll("\n", " ")
-            String line = "${prefix}${lastChild ? '└── ' : '├── '}${bold}${color}[${msg.messageId.take(8)}] ${msg.role.toUpperCase()}: ${snippet}...\u001B[0m${marker}${bookmarkTag}"
+            String line = "${prefix}${lastChild ? '└' : '├'}${bold}${color}[${msg.messageId.take(8)}] ${msg.role.toUpperCase()}: ${snippet}...\u001B[0m${marker}${bookmarkTag}"
             terminal.writer().println(line)
 
             // Recurse into children of this message
-            String newPrefix = prefix + (lastChild ? "    " : "|   ")
+            String newPrefix = prefix + (lastChild ? " " : "|")
             drawChronicleMap(msg.messageId, tree, currentId, newPrefix, lastChild)
         }
         terminal.flush()

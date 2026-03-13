@@ -60,13 +60,15 @@ class CommandProcessor {
     // Display a nice lil' help message
     private void handleHelp() {
         PrintWriter w = bridge.terminal.writer()
-        w.println("\n\u001B[1;33m--- SCRIPTORIUM COMMAND MANUAL ---\u001B[0m")
+        w.println("\n\u001B[1;33m------- AVAILABLE COMMANDS -------\u001B[0m")
         w.println("\u001B[32m/map\u001B[0m          : View the Chronicle Tapestry (DAG tree).")
         w.println("\u001B[32m/jump <id>\u001B[0m    : Leap to a specific (assistant) message ID in the timeline.")
         w.println("\u001B[32m/mark <text>\u001B[0m  : Create a bookmark at the current (assistant) turn.")
         w.println("\u001B[32m/bookmarks\u001B[0m    : List all saved points of interest.")
-        w.println("\u001B[32m/faders\u001B[0m     : Show current resonance values.")
-        w.println("\u001B[32m/faders <trait> <value>\u001B[0m : Set a new resonance value for one of the traits, in range (0.0..2.0).")
+        w.println("\u001B[32m/export <file>\u001B[0m: Export the current timeline to a file.")
+        w.println("\u001B[32m/export-all <file>\u001B[0m: Export all bookmarks to a file")
+        w.println("\u001B[32m/faders\u001B[0m       : Show current resonance values.")
+        w.println("\u001B[32m/faders <trait> <value>\u001B[0m: Set a new resonance value for one of the traits, in range (0.0..2.0).")
         w.println("\u001B[32m/bye\u001B[0m or \u001B[32mq\u001B[0m     : Save and exit the chronicle.")
         w.println("\u001B[1;33m----------------------------------\u001B[0m\n")
         bridge.terminal.flush()
@@ -77,7 +79,7 @@ class CommandProcessor {
         def currentTip = context.messages.reverse().find { it.role == "assistant" || it.role == "system" }
         String currentId = currentTip?.messageId ?: ""
         Map tree = logManager.buildHistoryTree()
-        bridge.terminal.writer().println("\n\u001B[33m## THE CHRONICLE TAPESTRY ##\u001B[0m")
+        bridge.terminal.writer().println("\n\u001B[33m## THE MULTIVERSE ##\u001B[0m")
         bridge.drawChronicleMap(null, tree, currentId)
     }
 
@@ -183,12 +185,12 @@ class CommandProcessor {
             .loadBranch(tailId).messages
 
         logManager.exportBranchToChatML("Exports/${parts[1]}", currentBranch)
-        bridge.terminal.writer().println("\u001B[32m[SUCCESS]\u001B[0m: ChatML refinery file created: Exports/${parts[1]}")
+        bridge.terminal.writer().println("\u001B[32m[SUCCESS]\u001B[0m: Dataset saved to: Exports/${parts[1]}")
     }
 
     private void handleExportAll(String input) {
         String[] parts = input.split(" ")
-        String fileName = parts.size() > 1 ? parts[1] : "master_george.jsonl"
+        String fileName = parts.size() > 1 ? parts[1] : "Majel.jsonl"
         String fullPath = "Exports/${fileName}"
 
         // 1. Wipe the file so we start fresh for this batch
@@ -203,7 +205,7 @@ class CommandProcessor {
             return
         }
 
-        bridge.terminal.writer().println("\u001B[35m## George is gathering ${bookmarks.size()} threads from the Archive... \u001B[0m")
+        bridge.terminal.writer().println("\u001B[35m## Exporting bookmarks... \u001B Compiling ${bookmarks.size()} branches from the time stream... \u001B[0m")
 
         bookmarks.each { bm ->
             // 3. Use the PURE loadBranch to get a fresh context for this specific bookmark
@@ -214,7 +216,7 @@ class CommandProcessor {
             logManager.exportBranchToChatML(fullPath, branch)
         }
 
-        bridge.terminal.writer().println("\u001B[32m[SUCCESS]\u001B[0m: Master George refinery file updated: ${fullPath}")
+        bridge.terminal.writer().println("\u001B[32m[SUCCESS]\u001B[0m: Refinery file updated: ${fullPath}")
     }
 
     Map getStats() {
