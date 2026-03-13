@@ -30,6 +30,9 @@ class CommandProcessor {
             case "/h":
                 handleHelp()
                 return true
+            case "/replay":
+                handleReplay()
+                return true
             case "/map":
                 handleMap()
                 return true
@@ -61,6 +64,7 @@ class CommandProcessor {
     private void handleHelp() {
         PrintWriter w = bridge.terminal.writer()
         w.println("\n\u001B[1;33m------- AVAILABLE COMMANDS -------\u001B[0m")
+        w.println("\u001B[32m/replay\u001B[0m       : Replay the last user and assistant turns.")
         w.println("\u001B[32m/map\u001B[0m          : View the Chronicle Tapestry (DAG tree).")
         w.println("\u001B[32m/jump <id>\u001B[0m    : Leap to a specific (assistant) message ID in the timeline.")
         w.println("\u001B[32m/mark <text>\u001B[0m  : Create a bookmark at the current (assistant) turn.")
@@ -72,6 +76,11 @@ class CommandProcessor {
         w.println("\u001B[32m/bye\u001B[0m or \u001B[32mq\u001B[0m     : Save and exit the chronicle.")
         w.println("\u001B[1;33m----------------------------------\u001B[0m\n")
         bridge.terminal.flush()
+    }
+
+    // Replay the last two turns
+    private void handleReplay() {
+        bridge.replayLastTurn(context)
     }
 
     // Display the narrative graph
@@ -205,7 +214,7 @@ class CommandProcessor {
             return
         }
 
-        bridge.terminal.writer().println("\u001B[35m## Exporting bookmarks... \u001B Compiling ${bookmarks.size()} branches from the time stream... \u001B[0m")
+        bridge.terminal.writer().println("\u001B[35m## Exporting bookmarks.\u001B[0m Compiling ${bookmarks.size()} branches from the multiverse.\u001B[0m")
 
         bookmarks.each { bm ->
             // 3. Use the PURE loadBranch to get a fresh context for this specific bookmark

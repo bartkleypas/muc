@@ -27,7 +27,7 @@ class TerminalBridge implements AutoCloseable {
      * Draws the "Mainframe Heuristic" signature and initial header.
      */
     void drawSignature(Map stats) {
-        String version = "v1.2.0-nav"
+        String version = "v1.3-majel"
         String engine  = "GROOVY-DAG-ENGINE"
 
         def msgCount = stats.totalMessages ?: 0
@@ -36,15 +36,14 @@ class TerminalBridge implements AutoCloseable {
         
         // Cyan for the ship and the telemetry
         terminal.writer().println("""
-\u001B[36m             _
-\u001B[36m      __  _//_  __  \u001B[0m-----< The Bridge is established, Navigator >
-\u001B[36m     / _\\/_--_\\/_ \\ \u001B[36m[ ${engine} | ${version} ]
-\u001B[36m     \\__/[_||_]\\__/ \u001B[34m[ MESSAGES: ${msgCount} | BRANCHES: ${branchCount} ]
-\u001B[33m      --  '--'  --  \u001B[34m[ LAST_LEAF: ${lastLeaf} ]\u001B[0m
+\u001B[36m   __  _//_  __  \u001B[36m[ ${engine} | ${version} ]
+\u001B[36m  / _\\/_--_\\/_ \\ \u001B[34m[ MESSAGES: ${msgCount} | BRANCHES: ${branchCount} ]
+\u001B[36m  \\__/[_||_]\\__/ \u001B[34m[ COORDINATES: ${lastLeaf} ]
+\u001B[33m   --  '--'  --
 
+\u001B[1;32m[SYSTEM]\u001B[0m: TerminalBridge online. Type /bye or q to quit, and /help for other commands available.\u001B[0m
 """)
 
-        terminal.writer().println("\u001B[1;32m[SYSTEM]\u001B[0m: TerminalBridge online. Type /bye or q to quit, and /help for other commands available.\u001B[0m\n")
         terminal.flush()
     }
 
@@ -149,7 +148,7 @@ class TerminalBridge implements AutoCloseable {
     }
 
     void printSpeaker(Message msg) {
-        String color = (msg.role == "assistant") ? "\u001B[1;36m" : "\u001B[1;32m"
+        String color = (msg.role == "assistant" || msg.role == "system" ) ? "\u001B[1;36m" : "\u001B[1;32m"
         String name = msg.author ?: (msg.role == "assistant" ? "Assistant": "You")
         terminal.writer().print("\n${color}${name}\u001B[0m: ")
         terminal.flush()
