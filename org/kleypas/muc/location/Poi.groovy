@@ -117,12 +117,12 @@ class Poi {
             "- name: ${name}",
             "  description: ${description}",
             "  location: ${location}",
-            "  inventory:\r\n${inventory}",
+            "  inventory:\n${inventory}",
             "  occupants:",
             "    max: ${occupantsMax}",
             "    occ: ${occupantsCurrent}"
         ]
         occupants.each { output.add("    - ${it}") }
-        return output.join("\r\n")
+        return output.join("\n")
     }
 }

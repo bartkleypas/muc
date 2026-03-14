@@ -83,15 +83,20 @@ class Chat {
 
         while (true) {
             Message last = context.messages.last()
-            bridge.updateHUD("The Starship Majel", "Crew", last.getStats())
+            bridge.updateHUD("The Starship Majel", "Navigator", last.getStats())
             bridge.flushBuffer()
 
             String input = reader.readLine("\u001B[1;32mNavigator\u001B[0m: ")?.trim()
 
             if (!input || input == "/bye" || input == "q") break
-            if (processor.process(input)) continue
+            if (processor.process(input)) {
+                if (processor.requestRefresh) {
+                    bridge.drawSignature(logManager.getChronicleStats())
+                    bridge.updateHUD("The Starship Majel", "Navigator", processor.getStats())
+                }
+                continue
+            }
 
-            // Token-efficient execution continues here...
             processUserTurn(input)
         }
     }

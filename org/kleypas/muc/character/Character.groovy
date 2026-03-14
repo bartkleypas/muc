@@ -167,6 +167,6 @@ class Character {
         def inv = inventory.items.each { name, item ->
             out.add("    - ${name}")
         }
-        return out.join('\r\n')
+        return out.join('\n')
     }
 }

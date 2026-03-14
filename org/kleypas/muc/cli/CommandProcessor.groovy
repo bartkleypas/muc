@@ -9,6 +9,7 @@ class CommandProcessor {
     TerminalBridge bridge
     LogManager logManager
     Context context
+    boolean requestRefresh = false
 
     CommandProcessor(TerminalBridge bridge, LogManager logManager, Context context) {
         this.bridge = bridge
@@ -23,6 +24,8 @@ class CommandProcessor {
     boolean process(String input) {
         if (!input.startsWith("/")) return false
 
+        this.requestRefresh = false
+
         switch (input.split(" ")[0]) {
             case "/help":
                 handleHelp()
@@ -31,12 +34,14 @@ class CommandProcessor {
                 handleHelp()
                 return true
             case "/replay":
+                this.requestRefresh = true // Redraws header/HUD after replay
                 handleReplay()
                 return true
             case "/map":
                 handleMap()
                 return true
             case "/jump":
+                this.requestRefresh = true // Timeline shifts require redrawing the UI
                 handleJump(input)
                 return true
             case "/mark":
@@ -46,6 +51,9 @@ class CommandProcessor {
                 handleBookmarks()
                 return true
             case "/faders":
+                if (input.split(" ").size() == 3) {
+                    this.requestRefresh = true
+                }
                 handleFaders(input)
                 return true
             case "/export":

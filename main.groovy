@@ -95,15 +95,7 @@ if (options.build) {
 }
 
 if (options.test) {
+    Logger.setLevel(LogLevel.INFO)
     Logger.info "# Sent a test arg."
-    def test = new Test()
-
-    test.rng()
-    test.location()
-    test.character()
-    test.inventory()
-    // test.narrator()
-    // test.illustrator() <-- currently disabled.
-    // test.story()
-    // test.tui() // <-- NOTE: Will block test completion needing input if enabled.
+    new Test().run()
 }
