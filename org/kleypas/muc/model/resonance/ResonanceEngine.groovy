@@ -1,4 +1,4 @@
-package org.kleypas.muc.model
+package org.kleypas.muc.model.resonance
 
 class ResonanceEngine {
 

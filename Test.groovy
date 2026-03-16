@@ -7,6 +7,7 @@ import org.kleypas.muc.location.*
 import org.kleypas.muc.character.*
 import org.kleypas.muc.inventory.*
 import org.kleypas.muc.model.*
+import org.kleypas.muc.model.resonance.*
 import org.kleypas.muc.illustrator.*
 
 class Test {
