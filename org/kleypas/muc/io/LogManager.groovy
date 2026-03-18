@@ -1,7 +1,7 @@
 package org.kleypas.muc.io
 
 import org.kleypas.muc.model.Message
-import org.kleypas.muc.model.Resonance
+import org.kleypas.muc.model.resonance.*
 
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
@@ -59,7 +59,7 @@ public class LogManager {
             Message msg = new Message(raw)
 
             // Reconstructs the resonance state from the raw map.
-            // msg.resonance = new Resonance(raw)
+            msg.vibe = new Resonance(raw.vibe)
 
             return msg
         } as List<Message> // Give back a list of (decrypted) messages.
@@ -93,9 +93,6 @@ public class LogManager {
                 finalContent = msg.content.trim()
 
                 finalContent = finalContent.replaceAll(/\n{3,}/, "\n\n")
-
-                String faderTokens = msg.getStats().collect { k, v -> "[${k.toUpperCase()}:${v}]" }.join(" ")
-                finalContent = "${faderTokens} ${finalContent}"
             }
 
             massagedMessages << [role: msg.role, content: finalContent]
@@ -134,16 +131,7 @@ public class LogManager {
 
         byte[] encryptionKey = key ?: this.persistentKey
 
-        Map logMap = [
-            timestamp: entry.timestamp,
-            messageId: entry.messageId,
-            parentId: entry.parentId,
-            role: entry.role,
-            author: entry.author,
-            bookmark: entry.bookmark,
-            encrypted: false,
-            content: entry.content
-        ] + entry.getStats()
+        Map logMap = entry.asMap()
 
         // If an encryption key is provided, wrap the contents in the CipherService
         if (encryptionKey && entry.content) {

@@ -75,6 +75,12 @@ class TerminalBridge implements AutoCloseable {
         terminal.flush()
     }
 
+    void updateHUD(String location, Message msg) {
+        String hero = msg.author ?: "Unknown"
+        Map res = msg.vibe.asMap()
+        this.updateHUD(location, hero, res)
+    }
+
     /**
      * Updates the pinned HUD with current world state.
      */

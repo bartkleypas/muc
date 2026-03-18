@@ -1,5 +1,6 @@
 package org.kleypas.muc.model
 
+import org.kleypas.muc.model.resonance.*
 import java.time.Instant
 import java.util.UUID
 
@@ -14,21 +15,34 @@ class Message {
     String author
     String content
 
-    Resonance resonance = new Resonance()
+    Resonance vibe
 
     String bookmark = null
     Boolean encrypted = false
     Boolean isCurrent = false
 
     Message(Map args = [:]) {
+        this.vibe = args.vibe instanceof Resonance ? args.vibe : new Resonance()
         args.each { k, v ->
-            if (k == 'stats' || k == 'inheritedStats') {
-                this.resonance = new Resonance(v)
-            } else if (k != 'resonance' && this.hasProperty(k)) {
+            if ((k == 'vibe' || k == 'resonance') && v instanceof Map) {
+                this.vibe = new Resonance(v)
+            } else if (this.hasProperty(k)) {
                 this."$k" = v
             }
         }
     }
 
-    Map getStats() { resonance.asMap() }
+    Map asMap() {
+        return [
+            'timestamp': timestamp,
+            'messageId': messageId,
+            'parentId': parentId,
+            'role': role,
+            'author': author,
+            'vibe': vibe.asMap(),
+            'encrypted': encrypted,
+            'content': content,
+            'bookmark': bookmark
+        ]
+    }
 }

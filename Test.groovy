@@ -7,22 +7,80 @@ import org.kleypas.muc.location.*
 import org.kleypas.muc.character.*
 import org.kleypas.muc.inventory.*
 import org.kleypas.muc.model.*
+import org.kleypas.muc.model.resonance.*
 import org.kleypas.muc.illustrator.*
 
 class Test {
-    Cli cli = new Cli()
+    Cli cli
+    Logger logger
+    Model model
+    LogManager logManager
+    Context context
+    Message systemMsg
+    Resonance vibe
+    String rngResults
+    String locationResults
+    String characterResults
+    String inventoryResults
+    String narratorResults
+    String storyResults
 
     Test() {
-        Logger.setLevel(LogLevel.INFO)
+        this.logger = new Logger()
+        logger.setLevel(LogLevel.INFO)
     }
 
-    void rng() {
-        Logger.info "## Running RNG tests"
+    void run() {
+        logger.info("# Starting Unit Tests")
+        initializeResources()
+
+        rngTest()
+        locationTest()
+        characterTest()
+        inventoryTest()
+        narratorTest()
+        // illustrator()
+        faderTest()
+        storyTest()
+        logger.info("# Tests completed successfully.")
+    }
+
+    private void initializeResources() {
+        this.cli = new Cli()
+        String historyFile = "Story/UnitTests.jsonl"
+        this.logManager = new LogManager(historyFile)
+        this.context = new Context().enableLogging(logManager)
+        this.model = new Model(ModelType.MEDIUM)
+        this.vibe = new Resonance()
+
+        initializeNewChronicle(historyFile)
+    }
+
+    private void initializeNewChronicle(String path) {
+        // Delete existing unit test results to start fresh
+        if (new File(path).exists()) {
+           new File(path).delete()
+        }
+        String promptText = new File("Characters/George.md").text
+
+        // We start the train with this one, so make it global eh?
+        this.systemMsg = context.addMessage(
+            role: "system",
+            author: "George",
+            content: promptText,
+            vibe: this.vibe
+        )
+        logManager.appendEntry(systemMsg)
+    }
+
+    void rngTest() {
+        def sb = []
+        sb.add("## Running RNG tests")
         Coin coin = new Coin() // 2 sided dice, ie: Coin
-        Logger.info "### Picked up our lucky coin. It is showing:\r\n${coin}"
+        sb.add("### Picked up our lucky coin. It is showing:\n${coin}")
 
         coin = coin.flip()
-        Logger.info "### Flipping it, we get this:\n${coin}"
+        sb.add("### Flipping it, we get this:\n${coin}")
 
         def flips = 8
         def results = []
@@ -31,143 +89,148 @@ class Test {
             def value = flip.val ? 1 : 0 // recast to "int"? stil a String, but now a numeral
             results.add(value)
         }
-        Logger.info "### Flipping it a bunch (in binary):\n${results.join()}"
+        sb.add("### Flipping it a bunch (in binary):\n${results.join()}")
 
         def d20 = new Dice(DiceType.D20)
-        Logger.info "### Rolling a D20 on the desk:\n${d20}"
+        sb.add("### Rolling a D20 on the desk:\n${d20}")
+        this.rngResults = sb.join("\n")
+        logger.info(sb.join("\n"))
     }
 
-    void location() {
-        Logger.info "## Running Location tests"
-        Location location = new Location(0.00f, 0.00f, 0.00f)
-        Logger.info "### Location:\n${location}"
+    void locationTest() {
+        def sb = []
+        sb.add("## Running Location tests")
 
-        Poi library = new Poi(location, "The Library of George the Radiant Owl")
-        library.description = "An infinate library, and grand repository of information. The walls and texts of the library are swirling code and shimmering vellum that distort and pulse with energy. There is a melancholic tune from a distant lute that weaves into the fabric of the building, and the faint, ethereal voice of the mothership echoing in the alcoves. There is a perpetual clinging scent of aged ink and long lost lore. A place to contemplate an adventure, or journal adventures about to begin."
-        Logger.info "### POI:\n${library.toString()}"
+        Location location = new Location()
+        sb.add("### Location:\n${location.toMd()}")
 
-        def locationSheet = "Locations/Library.json"
-        library.exportPoi(locationSheet)
+        Poi library = new Poi(
+            location: location,
+            name: "The Library of George the Radiant Owl",
+            description: "An infinate library, and grand repository of information. The walls and texts of the library are swirling code and shimmering vellum that distort and pulse with energy. There is a melancholic tune from a distant lute that weaves into the fabric of the building, and the faint, ethereal voice of the mothership echoing in the alcoves. There is a perpetual clinging scent of aged ink and long lost lore. A place to contemplate an adventure, or journal adventures about to begin."
+        )
+        sb.add("### POI:\n${library.toMd()}")
+        this.locationResults = sb.join("\n")
+        logger.info(sb.join("\n"))
     }
 
-    void character() {
-        Logger.info "## Running Character tests"
+    void characterTest() {
+        def sb = []
+        sb.add("#### Character Sheet for Phiglit:")
         Character hero = new Character(name: "Phiglit")
         hero.description = "The Reclusive Code Wizard"
         hero.bio = "A middle aged male human, standing about 6 feet tall. Has grey hair with a full beard and mustashe. Wearing a zippered hoodie and bluejeans. Runs Arch Linux, btw."
         hero.armorType = ArmorType.LIGHT
         hero.location = new Location(0.00f, 0.00f, 0.00f)
-        Logger.info "### A Hero:\n${hero.toString()}"
 
         Item tool = new Item("Linux terminal of Justice", ItemType.TOOL)
         tool.description = "A rugged and powerful pocket computer, used for sending instructions to chatbots."
         hero.inventory.addItem(tool)
-        Logger.info "### With ${tool.name} in hand, our hero now has this:\n${hero.toString()}"
+        sb.add(hero.toMd())
+        this.characterResults = sb.join("\n")
+        logger.info(sb.join("\n"))
     }
 
     // Epwna does a lot of inventory testing for us
-    void inventory() {
-        Logger.info "## Running Inventory tests"
+    void inventoryTest() {
+        def sb = []
+        sb.add("## Running Inventory tests")
         Character hero = new Character(name: "Epwna")
         hero.description = "The Crafty Tinkerer"
         hero.bio = "A middle aged female human, standing around 5 feet tall. She is wearing pink overalls, and has a short yellow and red pixie haircut. Enjoys carving and carpentry, as well as a skilled sculpter. Takes inspiration from nature and especially birds."
         hero.armorType = ArmorType.LIGHT
         hero.location = new Location(0.00f, 0.00f, 0.00f)
-        Logger.info "### A Hero:\n${hero.toString()}"
+        sb.add("### A Hero:\n${hero.toMd()}")
 
         Item tool = new Item("Chisel of Carving", ItemType.TOOL)
         tool.description = "A chisel, that oddly never dulls, and is always just the right size for the job."
         hero.inventory.addItem(tool)
-        Logger.info "### And she comes prepared with:\n${hero.inventory.toString()}"
+        sb.add("### And she comes prepared with:\n${hero.inventory.toMd()}")
 
         hero.inventory.useItem(tool)
-        Logger.info "### Our hero used ${tool.name}, but it should still be in her inventory:\n${hero.inventory.toString()}"
+        sb.add("### Our hero used ${tool.name}, but it should still be in her inventory:\n${hero.inventory.toMd()}")
 
         Item potion = new Item("Healing potion", ItemType.CONSUMABLE)
         potion.description = "Some brain-sauce for the static tantrums"
         potion.stack = 3
         hero.inventory.addItem(potion)
-        Logger.info "### After picking up a stack of ${potion.stack} ${potion.name}(s), our hero now has this:\n${hero.inventory.toString()}"
+        sb.add("### After picking up a stack of ${potion.stack} ${potion.name}(s), our hero now has this:\n${hero.inventory.toMd()}")
 
         hero.inventory.useItem(potion)
-        Logger.info "### And after downing a breakfast of champions (${potion.name}), they are left with this:\n${hero.inventory.toString()}"
+        sb.add("### And after downing a breakfast of champions (${potion.name}), they are left with this:\n${hero.inventory.toMd()}")
 
         Item muffin = new Item("Blueberry Muffin", ItemType.CONSUMABLE)
         muffin.description = "A muffin of infinite tasty goodness"
         hero.inventory.addItem(muffin)
-        Logger.info "### Our hero picked up a ${muffin.name}, filling her inventory slots in ${hero.inventory.name}:\n${hero.inventory.toString()}"
+        sb.add("### Our hero picked up a ${muffin.name}, filling her inventory slots in ${hero.inventory.name}:\n${hero.inventory.toMd()}")
 
-        Logger.info "### Adding anything else to ${hero.inventory.name} should fail:"
+        sb.add("### Adding anything else to ${hero.inventory.name} should fail:")
         Item straw = new Item("Straw", ItemType.CONSUMABLE)
         try {
             hero.inventory.addItem(straw)
         } catch (e) {
-            Logger.info "!!! Yup. here is the error:\n${e.getMessage()}"
+            sb.add("!!! Yup. here is the error:\n${e.getMessage()}")
         }
 
         hero.inventory.useItem(potion)
-        Logger.info "### After using a potion:\n${hero.inventory.toString()}"
+        sb.add("### After using a potion:\n${hero.inventory.toMd()}")
 
         hero.inventory.useItem(potion)
-        Logger.info "### And another:\n${hero.inventory.toString()}"
+        sb.add("### And another:\n${hero.inventory.toMd()}")
 
-        Logger.info "### And... another? (should fail):"
+        sb.add("### And... another? (should fail):")
         try {
             hero.inventory.useItem(potion)
         } catch (e) {
-            Logger.info "!!! Yup. With this error:\n${e.getMessage()}"
+            sb.add("!!! Yup. With this error:\n${e.getMessage()}")
         }
 
-        Logger.info "### Make sure one is still left in the bag."
+        sb.add("### Make sure one is still left in the bag.")
         potion.stack = 1
         hero.inventory.addItem(potion)
-        Logger.info "### Finally, our hero ends up like this:\n${hero.toString()}"
+        sb.add("### Finally, our hero ends up like this:\n${hero.toMd()}")
+        this.inventoryResults = "#### Character sheet for Epwna:\n${hero.toMd()}"
+        logger.info(sb.join("\n"))
     }
 
-    void narrator() {
+    void narratorTest() {
+        def sb = []
+        this.context.messages[0].content = "${systemMsg.content}\n${this.locationResults}\n${this.rngResults}"
         try {
-            Logger.info "## Running Unified Narrator Test"
-
-            // Init a model
-            Model model = new Model(model: "smallfry")
-
-            // clear out our old unit test results and start a new one.
-            File logFile = new File("Story/UnitTests.jsonl")
-            logFile.delete()
-            logFile.createNewFile()
-
-            // We need a jsonl logger!
-            LogManager logManager = new LogManager("Story/UnitTests.jsonl")
-
-            // Initialize Context
-            Context context = new Context().enableLogging(logManager)
-            String georgePrompt = new File("Characters/George.md").text
-            Message systemPrompt = context.addMessage("system", georgePrompt)
-
-            logManager.appendEntry(systemPrompt)
+            sb.add("## Running Unified Narrator Test")
 
             // The Interaction
-            String input = "Please describe yourself George."
-            Logger.info "### user says:\n${input}"
+            String input = "Good morning George. My name is Phiglit. Here is my character sheet:\n${characterResults}\nWould you please describe yourself, and where we are?"
+            sb.add("### User says:\n${input}")
 
-            context.addMessage("user", input, systemPrompt.messageId)
-            Message userMessage = context.getLastMessage()
-            logManager.appendEntry(userMessage)
+            Message userMsg = context.addMessage(
+                role: "user",
+                author: "Traveler",
+                content: input,
+                parentId: systemMsg.messageId,
+                vibe: this.vibe
+            )
+            logManager.appendEntry(userMsg)
 
             // Generate and Log
             String output = model.generateResponse(context)
-            Logger.info "### George says:\n${output}"
-            context.addMessage("assistant", output, userMessage.messageId)
-
-            Message modelMessage = context.getLastMessage()
-            logManager.appendEntry(modelMessage)
+            sb.add("### George says:\n${output}")
+            Message modelMsg = context.addMessage(
+                role: "assistant",
+                author: "George",
+                content: output,
+                parentId: userMsg.messageId,
+                vibe: this.vibe
+            )
+            logManager.appendEntry(modelMsg)
 
         } finally {
-            Logger.info "Test done."
+            sb.add("## Character Test done.")
+            logger.info(sb.join("\n"))
         }
     }
 
-    void illustrator() {
+    void illustratorTest() {
         Logger.info "## Running Illustrator tests"
         Character hero = new Character(name: "Rosie")
         hero.description = "The Illustrator"
@@ -200,48 +263,93 @@ class Test {
         Logger.info "### Recipt:\r\n${img}"
     }
 
-    void story() {
-        Logger.info "## Running Story tests, resuming from the UnitTests.jsonl file we crafted in the Narrator testing above."
+    void faderTest() {
+        logger.info("## Running vibe checks")
+        def sb = []
 
-        LogManager logManager = new LogManager("Story/UnitTests.jsonl")
-        Context context = new Context().enableLogging(logManager)
-
-        Logger.info "### Loading story from:\nStory/UnitTests.jsonl"
-        def entries = logManager.readAllEntries()
-        def lastMessage = entries.last()
-        context.messages.clear()
-
-        entries.each { entry ->
-            def msg = new Message(
-                entry.role as String,
-                entry.content as String,
-                entry.messageId as String,
-                entry.parentId as String,
-                java.time.Instant.parse(entry.timestamp as String),
-                entry.nurturance as Double ?: 1.0,
-                entry.playfulness as Double ?: 1.0,
-                entry.steadfastness as Double ?: 1.0,
-                entry.attunement as Double ?: 1.0
+        try {
+            // See `ResonanceType` class for these keys and the range of values (0.0 - 2.0 in a Double):
+            this.vibe = new Resonance(
+                warmth: 0.2,
+                cynicism: 1.8,
+                efficiency: 1.0,
+                resonance: 1.0,
+                gravity: 0.5
             )
-            context.messages.add(msg)
+            sb.add("### Adjusted Impulse: ${this.vibe.asMap()}")
+
+            String input = "George, tell me what you think of this 'Refinery' we are building. Be honest."
+
+            Message userMsg = context.addMessage(
+                role: "user",
+                author: "Traveler",
+                content: input,
+                vibe: this.vibe.clone()
+            )
+            logManager.appendEntry(userMsg)
+
+            String output = model.generateResponse(context, this.vibe.toPrefix())
+            sb.add("### George's Spikey Response:\n${output}")
+
+            def deltas = ResonanceEngine.calculate(output)
+            this.vibe + deltas
+
+            sb.add("### Post-Calculation Vibe: ${this.vibe.asMap()}")
+
+            Message modelMsg = context.addMessage(
+                role: "assistant",
+                author: "George",
+                content: output,
+                parentId: userMsg.messageId,
+                vibe: this.vibe.clone()
+            )
+            logManager.appendEntry(modelMsg)
+
+        } finally {
+            logger.info(sb.join("\n"))
+            logger.info("## Fader Stress Test complete")
         }
+    }
 
-        Model narrator = new Model(model: "smallfry")
+    void storyTest() {
+        def sb = []
+        try {
+            sb.add("## Running Story tests, resuming from the UnitTests.jsonl file we crafted in the Narrator testing above.")
+            this.context = logManager.readAllEntries()
 
-        def input = "I think I would like to pick up the electric bass and strike up a relaxed and groovy bassline. Currently it is sitting in its stand by the hearth."
-        Logger.info "### user says:\n${input}"
-        context.addMessage("user", input, lastMessage.messageId)
-        Message userMessage = context.getLastMessage()
-        logManager.appendEntry(userMessage)
+            Message lastMsg = context.messages.last()
+            this.vibe = lastMsg.vibe
 
-        def output = narrator.generateResponse(context)
-        Logger.info "### George says:\n${output}"
-        def modelMessage = context.addMessage("assistant", output, userMessage.messageId)
-        logManager.appendEntry(modelMessage)
+            String input = "I would like to introduce you to Ewpna. This is her character sheet:\n${inventoryResults}"
+            input = "${input}\nI think I would like to pick up the electric bass and strike up a relaxed and groovy bassline. Currently it is sitting in its stand by the hearth."
+            sb.add("### User says:\n${input}")
+            Message userMsg = context.addMessage(
+                role: "user",
+                author: "Traveler",
+                content: input,
+                parentId: lastMsg.messageId,
+                vibe: this.vibe.clone()
+            )
+            logManager.appendEntry(userMsg)
+
+            String output = model.generateResponse(context, this.vibe.toPrefix())
+            sb.add("### George says:\n${output}")
+            Message modelMsg = context.addMessage(
+                role: "assistant",
+                author: "George",
+                content: output,
+                parentId: userMsg.messageId,
+                vibe: this.vibe.clone()
+            )
+            logManager.appendEntry(modelMsg)
+        } finally {
+            sb.add("## Story Resume Tests done.")
+            logger.info(sb.join("\n"))
+        }
     }
 
     // NOTE: Will break test execution waiting for input.
-    void tui() {
+    void tuiTest() {
         // Using Groovy's 'use' or a simple try-with-resources equivalent
         def bridge = new TerminalBridge()
         try {

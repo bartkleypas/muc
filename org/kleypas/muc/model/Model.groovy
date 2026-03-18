@@ -13,6 +13,7 @@ import groovy.json.JsonSlurper
 class Model {
 
     Provider provider
+    ModelType type
     String model
     String role
     Boolean stream
@@ -25,12 +26,13 @@ class Model {
      * <p>Initialises the provider, default model, role, streaming flag,
      * temperature and an empty {@link Context} for the conversation.</p>
      */
-    Model() {
+    Model(ModelType type = ModelType.MEDIUM) {
         this.provider = new Provider()
-        this.model = "gemma3:latest"
+        this.type = type
+        this.model = type.modelId
         this.role = "assistant"
         this.stream = false
-        this.temperature = 0.7
+        this.temperature = type.defaultTemp
         this.body = new Context()
     }
 
@@ -42,13 +44,19 @@ class Model {
      * @throws RuntimeException if the HTTP request fails or the API returns
      *                          an unexpected status code.
      */
-    String generateResponse(Context body) {
+    String generateResponse(Context body, String prefix = "") {
         URL url = new URL(provider.apiUrl)
         def post = url.openConnection()
 
+        def messages = body.messages.collect { [role: it.role, content: it.content] }
+
+        if (prefix) {
+            messages << [role: "assistant", content: prefix]
+        }
+
         def postData = [
-            messages: body.messages,
-            model: this.model,
+            messages: messages,
+            model: this.type.modelId,
             stream: this.stream,
             temperature: this.temperature
         ]
@@ -88,8 +96,8 @@ class Model {
 
         def postData = [
             messages: body.messages,
-            model: this.model,
-            stream: true, // THE CRITICAL TOGGLE
+            model: this.type.modelId,
+            stream: true,
             temperature: this.temperature
         ]
 
@@ -134,17 +142,26 @@ class Model {
      * This preserves the KV cache of the history while ensuring the model generates
      * text in the correct "mood".
      */
-    void streamResponseWithPrefix(Context body, String assistnatPrefix, Closure onToken) {
+    void streamResponseWithPrefix(Context body, String assistantPrefix, Closure onToken) {
+        if (!this.type.supportsVibe) {
+            println "[DEBUG] Model class ${type} bypassing prefix suture for neutral judgement."
+            streamResponse(body, onToken)
+        }
+
         URL url = new URL(provider.apiUrl)
         def post = url.openConnection()
 
         // Temp version of messages list
         def messages = body.messages.collect { [role: it.role, content: it.content]}
 
+        if (assistantPrefix) {
+            messages << [role: "assistant", content: assistantPrefix]
+        }
+
         // Suture the faders into the beginning of an "open" assistant response
         def postData = [
             messages: messages,
-            model: this.model,
+            model: this.type.modelId,
             stream: true,
             temperature: this.temperature
         ]

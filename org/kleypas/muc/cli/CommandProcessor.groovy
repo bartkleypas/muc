@@ -1,15 +1,18 @@
 package org.kleypas.muc.cli
 
-import org.kleypas.muc.model.Context
-import org.kleypas.muc.model.Message
-import org.kleypas.muc.model.TagParser
+import org.kleypas.muc.model.*
+import org.kleypas.muc.model.resonance.*
+import org.kleypas.muc.util.TagParser
 import org.kleypas.muc.io.LogManager
 
 class CommandProcessor {
     TerminalBridge bridge
     LogManager logManager
     Context context
+    boolean requestRefresh = false
+    Resonance vibe
 
+    private String currentLocation = "The Starship Majel"
     CommandProcessor(TerminalBridge bridge, LogManager logManager, Context context) {
         this.bridge = bridge
         this.logManager = logManager
@@ -23,6 +26,8 @@ class CommandProcessor {
     boolean process(String input) {
         if (!input.startsWith("/")) return false
 
+        this.requestRefresh = false
+
         switch (input.split(" ")[0]) {
             case "/help":
                 handleHelp()
@@ -31,12 +36,14 @@ class CommandProcessor {
                 handleHelp()
                 return true
             case "/replay":
+                this.requestRefresh = true // Redraws header/HUD after replay
                 handleReplay()
                 return true
             case "/map":
                 handleMap()
                 return true
             case "/jump":
+                this.requestRefresh = true // Timeline shifts require redrawing the UI
                 handleJump(input)
                 return true
             case "/mark":
@@ -46,6 +53,9 @@ class CommandProcessor {
                 handleBookmarks()
                 return true
             case "/faders":
+                if (input.split(" ").size() == 3) {
+                    this.requestRefresh = true
+                }
                 handleFaders(input)
                 return true
             case "/export":
@@ -108,9 +118,7 @@ class CommandProcessor {
             // The core "Iron" of the jump
             this.context = context.loadBranch(targetEntry.messageId)
             bridge.replayLastTurn(context)
-
-            String currentAuthor = targetEntry.author ?: "Mainframe"
-            bridge.updateHUD("The Bridge", currentAuthor, targetEntry.getStats())
+            this.vibe = context.messages.last().vibe
             bridge.terminal.writer().println("\u001B[35m## Timeline shifted to [${targetEntry.messageId.take(8)}]\u001B[0m")
         } else {
             bridge.terminal.writer().println("\u001B[31m[ERROR]\u001B[0m: Cannot pivot to a user node or invalid ID.")
@@ -125,13 +133,12 @@ class CommandProcessor {
         if (target) {
             target.bookmark = label
             logManager.updateEntry(target)
-            bridge.terminal.writer().println("\u001B[35m## George marks the page: \"${label}\"\u001B[0m")
+            bridge.terminal.writer().println("\u001B[35m## Timeline marked: \"${label}\"\u001B[0m")
 
             String imagePrompt = TagParser.extractString(target.content, "IMAGE_DESC")
             if (imagePrompt) {
-                bridge.terminal.writer().println("\n\u001B[35m## George has sketched a vision in the margins... \u001B[0m")
                 new File("Story/VisionQueue.txt") << "${target.messageId}|${imagePrompt}\n"
-                bridge.terminal.writer().println("\u001B[34m## Vision queued for later rendering.\u001B[0m\n")
+                bridge.terminal.writer().println("\u001B[34m## Image queued for later rendering.\u001B[0m\n")
             }
         }
     }
@@ -152,25 +159,23 @@ class CommandProcessor {
 
         // If we just get "/faders" -> List the current values
         if (parts.size() == 1) {
-            w.println("\n\u001b[1;36m-- GEORGE'S INTERNAL MIXING BOARD --\u001B[0m")
-            lastMessage.getStats().each { trait, value ->
+            w.println("\n\u001b[1;36m------ MAJEL'S INTERNAL MIXING BOARD -------\u001B[0m")
+            lastMessage.vibe.asMap().each { trait, value ->
                 String bar = "█" * (int)(value * 10)
                 w.println("\u001B[32m${trait.padRight(15)}\u001B[0m: [${value.toString().padRight(4)}] ${bar}")
             }
-            w.println("\u001B[1;36m--------------------------------------\u001B[0m")
+            w.println("\u001B[1;36m--------------------------------------------\u001B[0m")
             w.println("Usage: /faders <trait> <value> (e.g., /faders sarcasm 0.8)\n")
         }
         else if (parts.size() == 3) {
             String trait = parts[1]
             try {
                 double newValue = Double.parseDouble(parts[2])
-                newValue = Math.max(0.0, Math.min(2.0, newValue))
-                if (lastMessage.resonance.hasProperty(trait)) {
-                    lastMessage.resonance."${trait}" = newValue
-                    w.println("\u001B[36m[George]\u001B[0m: I feel a sudden shift in my ${trait}... (Set to ${newValue})\u001B[0m")
-                    bridge.updateHUD("The Library", "Navigator", lastMessage.getStats())
+                if (lastMessage.vibe.updateFromLegacyKey(trait, newValue)) {
+                    this.vibe = lastMessage.vibe
+                    w.println("\u001B[36m[Majel]\u001B[0m: I feel a sudden shift in my ${trait}... (Set to ${newValue})\u001B[0m")
                 } else {
-                    w.println("\u001B[31m[ERROR]\u001B[0m:George doesn't have a '${trait}' fader.")
+                    w.println("\u001B[31m[ERROR]\u001B[0m:Majel doesn't have a '${trait}' fader.")
                 }
             } catch (NumberFormatException e) {
                 w.println("\u001B[31m[ERROR]\u001B[0m: Value must be a number (0.0 to 2.0).")
@@ -226,9 +231,5 @@ class CommandProcessor {
         }
 
         bridge.terminal.writer().println("\u001B[32m[SUCCESS]\u001B[0m: Refinery file updated: ${fullPath}")
-    }
-
-    Map getStats() {
-        return this.context.messages.last().getStats()
     }
 }

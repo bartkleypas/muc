@@ -1,4 +1,4 @@
-package org.kleypas.muc.model
+package org.kleypas.muc.util
 
 import java.util.regex.Pattern
 import java.util.regex.Matcher

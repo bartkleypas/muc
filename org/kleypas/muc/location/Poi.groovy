@@ -2,6 +2,7 @@ package org.kleypas.muc.location
 
 import groovy.json.JsonOutput
 
+import org.kleypas.muc.character.Character
 import org.kleypas.muc.inventory.Inventory
 
 /**
@@ -38,15 +39,20 @@ class Poi {
      * @param location geographic coordinates
      * @param name human‑readable name
      */
-    Poi(Location location, String name) {
-        this.name = name
-        this.description = description
-        this.location = location
+    Poi() {
+        this.name = "The Poi"
+        this.description = "Poi Description"
+        this.location = new Location()
         this.inventory = new Inventory(name: name, slotsMax: 10)
         this.occupants = []
         this.occupantsMax = 10
         this.occupantsCurrent = 0
-        this.radius = 10 // in meters
+        this.radius = 10
+    }
+
+    Poi(Location location, String name) {
+        this.location = location
+        this.name = name
     }
 
     /**
@@ -107,22 +113,21 @@ class Poi {
     }
 
     /**
-     * {@inheritDoc}
+     * Formats the POI into a Markdown string.
      *
      * @return a YAML‑style string representation of the POI
      */
-    @Override
-    String toString() {
+    String toMd() {
         def output = [
             "- name: ${name}",
             "  description: ${description}",
-            "  location: ${location}",
-            "  inventory:\r\n${inventory}",
+            "  location: [${location.toMd()}]",
+            "  inventory:\n${inventory.toMd()}",
             "  occupants:",
             "    max: ${occupantsMax}",
             "    occ: ${occupantsCurrent}"
         ]
         occupants.each { output.add("    - ${it}") }
-        return output.join("\r\n")
+        return output.join("\n")
     }
 }
