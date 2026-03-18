@@ -93,9 +93,6 @@ public class LogManager {
                 finalContent = msg.content.trim()
 
                 finalContent = finalContent.replaceAll(/\n{3,}/, "\n\n")
-
-                String faderTokens = msg.getStats().collect { k, v -> "[${k.toUpperCase()}:${v}]" }.join(" ")
-                finalContent = "${faderTokens} ${finalContent}"
             }
 
             massagedMessages << [role: msg.role, content: finalContent]

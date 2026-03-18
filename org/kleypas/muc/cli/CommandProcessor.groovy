@@ -118,8 +118,7 @@ class CommandProcessor {
             // The core "Iron" of the jump
             this.context = context.loadBranch(targetEntry.messageId)
             bridge.replayLastTurn(context)
-
-            bridge.updateHUD(currentLocation, targetEntry)
+            this.vibe = context.messages.last().vibe
             bridge.terminal.writer().println("\u001B[35m## Timeline shifted to [${targetEntry.messageId.take(8)}]\u001B[0m")
         } else {
             bridge.terminal.writer().println("\u001B[31m[ERROR]\u001B[0m: Cannot pivot to a user node or invalid ID.")
