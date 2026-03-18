@@ -17,6 +17,7 @@ class Test {
     LogManager logManager
     Context context
     Message systemMsg
+    Resonance vibe
     String rngResults
     String locationResults
     String characterResults
@@ -39,6 +40,7 @@ class Test {
         inventoryTest()
         narratorTest()
         // illustrator()
+        faderTest()
         storyTest()
         logger.info("# Tests completed successfully.")
     }
@@ -48,7 +50,8 @@ class Test {
         String historyFile = "Story/UnitTests.jsonl"
         this.logManager = new LogManager(historyFile)
         this.context = new Context().enableLogging(logManager)
-        this.model = new Model(model: "smallfry")
+        this.model = new Model(ModelType.MEDIUM)
+        this.vibe = new Resonance()
 
         initializeNewChronicle(historyFile)
     }
@@ -64,7 +67,8 @@ class Test {
         this.systemMsg = context.addMessage(
             role: "system",
             author: "George",
-            content: promptText
+            content: promptText,
+            vibe: this.vibe
         )
         logManager.appendEntry(systemMsg)
     }
@@ -96,12 +100,16 @@ class Test {
     void locationTest() {
         def sb = []
         sb.add("## Running Location tests")
-        Location location = new Location(0.00f, 0.00f, 0.00f)
-        sb.add("### Location:\n${location}")
 
-        Poi library = new Poi(location, "The Library of George the Radiant Owl")
-        library.description = "An infinate library, and grand repository of information. The walls and texts of the library are swirling code and shimmering vellum that distort and pulse with energy. There is a melancholic tune from a distant lute that weaves into the fabric of the building, and the faint, ethereal voice of the mothership echoing in the alcoves. There is a perpetual clinging scent of aged ink and long lost lore. A place to contemplate an adventure, or journal adventures about to begin."
-        sb.add("### POI:\n${library.toString()}")
+        Location location = new Location()
+        sb.add("### Location:\n${location.toMd()}")
+
+        Poi library = new Poi(
+            location: location,
+            name: "The Library of George the Radiant Owl",
+            description: "An infinate library, and grand repository of information. The walls and texts of the library are swirling code and shimmering vellum that distort and pulse with energy. There is a melancholic tune from a distant lute that weaves into the fabric of the building, and the faint, ethereal voice of the mothership echoing in the alcoves. There is a perpetual clinging scent of aged ink and long lost lore. A place to contemplate an adventure, or journal adventures about to begin."
+        )
+        sb.add("### POI:\n${library.toMd()}")
         this.locationResults = sb.join("\n")
         logger.info(sb.join("\n"))
     }
@@ -118,7 +126,7 @@ class Test {
         Item tool = new Item("Linux terminal of Justice", ItemType.TOOL)
         tool.description = "A rugged and powerful pocket computer, used for sending instructions to chatbots."
         hero.inventory.addItem(tool)
-        sb.add(hero.toString())
+        sb.add(hero.toMd())
         this.characterResults = sb.join("\n")
         logger.info(sb.join("\n"))
     }
@@ -132,29 +140,29 @@ class Test {
         hero.bio = "A middle aged female human, standing around 5 feet tall. She is wearing pink overalls, and has a short yellow and red pixie haircut. Enjoys carving and carpentry, as well as a skilled sculpter. Takes inspiration from nature and especially birds."
         hero.armorType = ArmorType.LIGHT
         hero.location = new Location(0.00f, 0.00f, 0.00f)
-        sb.add("### A Hero:\n${hero.toString()}")
+        sb.add("### A Hero:\n${hero.toMd()}")
 
         Item tool = new Item("Chisel of Carving", ItemType.TOOL)
         tool.description = "A chisel, that oddly never dulls, and is always just the right size for the job."
         hero.inventory.addItem(tool)
-        sb.add("### And she comes prepared with:\n${hero.inventory.toString()}")
+        sb.add("### And she comes prepared with:\n${hero.inventory.toMd()}")
 
         hero.inventory.useItem(tool)
-        sb.add("### Our hero used ${tool.name}, but it should still be in her inventory:\n${hero.inventory.toString()}")
+        sb.add("### Our hero used ${tool.name}, but it should still be in her inventory:\n${hero.inventory.toMd()}")
 
         Item potion = new Item("Healing potion", ItemType.CONSUMABLE)
         potion.description = "Some brain-sauce for the static tantrums"
         potion.stack = 3
         hero.inventory.addItem(potion)
-        sb.add("### After picking up a stack of ${potion.stack} ${potion.name}(s), our hero now has this:\n${hero.inventory.toString()}")
+        sb.add("### After picking up a stack of ${potion.stack} ${potion.name}(s), our hero now has this:\n${hero.inventory.toMd()}")
 
         hero.inventory.useItem(potion)
-        sb.add("### And after downing a breakfast of champions (${potion.name}), they are left with this:\n${hero.inventory.toString()}")
+        sb.add("### And after downing a breakfast of champions (${potion.name}), they are left with this:\n${hero.inventory.toMd()}")
 
         Item muffin = new Item("Blueberry Muffin", ItemType.CONSUMABLE)
         muffin.description = "A muffin of infinite tasty goodness"
         hero.inventory.addItem(muffin)
-        sb.add("### Our hero picked up a ${muffin.name}, filling her inventory slots in ${hero.inventory.name}:\n${hero.inventory.toString()}")
+        sb.add("### Our hero picked up a ${muffin.name}, filling her inventory slots in ${hero.inventory.name}:\n${hero.inventory.toMd()}")
 
         sb.add("### Adding anything else to ${hero.inventory.name} should fail:")
         Item straw = new Item("Straw", ItemType.CONSUMABLE)
@@ -165,10 +173,10 @@ class Test {
         }
 
         hero.inventory.useItem(potion)
-        sb.add("### After using a potion:\n${hero.inventory.toString()}")
+        sb.add("### After using a potion:\n${hero.inventory.toMd()}")
 
         hero.inventory.useItem(potion)
-        sb.add("### And another:\n${hero.inventory.toString()}")
+        sb.add("### And another:\n${hero.inventory.toMd()}")
 
         sb.add("### And... another? (should fail):")
         try {
@@ -180,8 +188,8 @@ class Test {
         sb.add("### Make sure one is still left in the bag.")
         potion.stack = 1
         hero.inventory.addItem(potion)
-        sb.add("### Finally, our hero ends up like this:\n${hero.toString()}")
-        this.inventoryResults = "#### Character sheet for Epwna:\n${hero.toString()}"
+        sb.add("### Finally, our hero ends up like this:\n${hero.toMd()}")
+        this.inventoryResults = "#### Character sheet for Epwna:\n${hero.toMd()}"
         logger.info(sb.join("\n"))
     }
 
@@ -192,14 +200,15 @@ class Test {
             sb.add("## Running Unified Narrator Test")
 
             // The Interaction
-            String input = "Good morning George. Here is my character sheet:\n${characterResults}\nWould you please describe yourself, and where we are?"
+            String input = "Good morning George. My name is Phiglit. Here is my character sheet:\n${characterResults}\nWould you please describe yourself, and where we are?"
             sb.add("### User says:\n${input}")
 
             Message userMsg = context.addMessage(
                 role: "user",
                 author: "Traveler",
                 content: input,
-                parentId: systemMsg.messageId
+                parentId: systemMsg.messageId,
+                vibe: this.vibe
             )
             logManager.appendEntry(userMsg)
 
@@ -210,7 +219,8 @@ class Test {
                 role: "assistant",
                 author: "George",
                 content: output,
-                parentId: userMsg.messageId
+                parentId: userMsg.messageId,
+                vibe: this.vibe
             )
             logManager.appendEntry(modelMsg)
 
@@ -253,6 +263,54 @@ class Test {
         Logger.info "### Recipt:\r\n${img}"
     }
 
+    void faderTest() {
+        logger.info("## Running vibe checks")
+        def sb = []
+
+        try {
+            // See `ResonanceType` class for these keys and the range of values (0.0 - 2.0 in a Double):
+            this.vibe = new Resonance(
+                warmth: 0.2,
+                cynicism: 1.8,
+                efficiency: 1.0,
+                resonance: 1.0,
+                gravity: 0.5
+            )
+            sb.add("### Adjusted Impulse: ${this.vibe.asMap()}")
+
+            String input = "George, tell me what you think of this 'Refinery' we are building. Be honest."
+
+            Message userMsg = context.addMessage(
+                role: "user",
+                author: "Traveler",
+                content: input,
+                vibe: this.vibe.clone()
+            )
+            logManager.appendEntry(userMsg)
+
+            String output = model.generateResponse(context, this.vibe.toPrefix())
+            sb.add("### George's Spikey Response:\n${output}")
+
+            def deltas = ResonanceEngine.calculate(output)
+            this.vibe + deltas
+
+            sb.add("### Post-Calculation Vibe: ${this.vibe.asMap()}")
+
+            Message modelMsg = context.addMessage(
+                role: "assistant",
+                author: "George",
+                content: output,
+                parentId: userMsg.messageId,
+                vibe: this.vibe.clone()
+            )
+            logManager.appendEntry(modelMsg)
+
+        } finally {
+            logger.info(sb.join("\n"))
+            logger.info("## Fader Stress Test complete")
+        }
+    }
+
     void storyTest() {
         def sb = []
         try {
@@ -260,6 +318,7 @@ class Test {
             this.context = logManager.readAllEntries()
 
             Message lastMsg = context.messages.last()
+            this.vibe = lastMsg.vibe
 
             String input = "I would like to introduce you to Ewpna. This is her character sheet:\n${inventoryResults}"
             input = "${input}\nI think I would like to pick up the electric bass and strike up a relaxed and groovy bassline. Currently it is sitting in its stand by the hearth."
@@ -268,17 +327,19 @@ class Test {
                 role: "user",
                 author: "Traveler",
                 content: input,
-                parentId: lastMsg.messageId
+                parentId: lastMsg.messageId,
+                vibe: this.vibe.clone()
             )
             logManager.appendEntry(userMsg)
 
-            String output = model.generateResponse(context)
+            String output = model.generateResponse(context, this.vibe.toPrefix())
             sb.add("### George says:\n${output}")
             Message modelMsg = context.addMessage(
                 role: "assistant",
                 author: "George",
                 content: output,
-                parentId: userMsg.messageId
+                parentId: userMsg.messageId,
+                vibe: this.vibe.clone()
             )
             logManager.appendEntry(modelMsg)
         } finally {

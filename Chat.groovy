@@ -1,6 +1,9 @@
 
+import org.kleypas.muc.character.*
 import org.kleypas.muc.cli.*
+import org.kleypas.muc.inventory.*
 import org.kleypas.muc.io.*
+import org.kleypas.muc.location.*
 import org.kleypas.muc.model.*
 import org.kleypas.muc.model.resonance.*
 import org.kleypas.muc.util.*
@@ -16,8 +19,12 @@ class Chat {
     Model model
     TerminalBridge bridge
     CommandProcessor processor
-    String location
     Resonance vibe
+
+    Character player
+    Character partner
+    Location location
+    Poi poi
 
     Chat(def options) {
         this.options = options
@@ -28,6 +35,8 @@ class Chat {
      */
     void run() {
         initializeResources()
+
+        introductions()
 
         new TerminalBridge().withCloseable { b ->
             this.bridge = b
@@ -44,23 +53,55 @@ class Chat {
         this.logManager = new LogManager(historyFile, cli.envVars.ENCRYPTION_KEY.getBytes() ?: new byte[0])
         this.context = new Context().enableLogging(logManager)
         this.model = new Model(ModelType.BIG)
-        this.location = "The Starship Majel"
+
+        this.location = new Location()
+
+        this.poi = new Poi(
+            location: this.location,
+            name: "Starship Majel"
+        )
 
         // Load existing history or initialize system prompt
         if (new File(historyFile).exists()) {
-            logManager.readAllEntries().each { context.messages.add(it) }
+            logManager.readAllEntries().each { context.addMessage(it) }
         } else {
             initializeNewChronicle(promptFile)
         }
+
+        if (context.messages && !context.messages.isEmpty()) {
+            Message lastMessage = context.messages.last()
+            if (lastMessage.vibe) {
+                this.vibe = lastMessage.vibe.clone()
+            } else {
+                this.vibe = new Resonance()
+            }
+        } else {
+            this.vibe = new Resonance()
+        }
+    }
+
+    private void introductions() {
+        this.player = new Character(
+            name: "Navigator",
+            description: "A Seasoned Navigator",
+            location: poi.location
+        )
+        this.poi.addOccupant(this.player)
+
+        this.partner = new Character(
+            name: "Majel",
+            description: "The Starship Majal on-board digital assistant.",
+            location: poi.location
+        )
     }
 
     private void initializeNewChronicle(String path) {
         String promptText = new File(path).text
         Message systemMsg = context.addMessage(
             role: "system",
-            author: "Majel",
+            author: partner.name,
             content: promptText,
-            vibe: new Resonance() // Starts us off whith the global vibes.
+            vibe: this.vibe.clone()
         )
         logManager.appendEntry(systemMsg)
     }
@@ -70,7 +111,7 @@ class Chat {
 
         Message last = context.messages.last()
         if (last.role == "system") {
-            bridge.printToken("Welcome to ${location}. I am its AI assistant. Welcome to the crew.")
+            bridge.printToken("Welcome to ${location.name}. I am its AI assistant. Welcome to the crew.")
         } else {
             bridge.replayLastTurn(context)
         }
@@ -79,48 +120,49 @@ class Chat {
 
     private void executionLoop() {
         def reader = LineReaderBuilder.builder().terminal(bridge.terminal).build()
-
         while (true) {
-            Message last = context.messages.last()
-            bridge.updateHUD(location, last)
-            bridge.flushBuffer()
-
-            String input = reader.readLine("\u001B[1;32mNavigator\u001B[0m: ")?.trim()
-
+            bridge.updateHUD(poi.name, player.name, this.vibe.asMap())
+            String input = reader.readLine("\u001B[1;32m${player.name}\u001B[0m: ")
             if (!input || input == "/bye" || input == "q") break
             if (processor.process(input)) {
                 if (processor.requestRefresh) {
                     this.vibe = processor.vibe
-                    bridge.updateHUD(location, last)
                 }
                 continue
             }
 
-            processUserTurn(input)
+            Message userMsg = processUserTurn(input)
+            context.addMessage(userMsg)
+            logManager.appendEntry(userMsg)
+
+            Message assistantMsg = processModelTurn(userMsg)
+            context.addMessage(assistantMsg)
+            logManager.appendEntry(assistantMsg)
+            bridge.flushBuffer()
         }
     }
 
-    private void processUserTurn(String input) {
+    private Message processUserTurn(String input) {
         Message last = context.messages.last()
 
-        Message userMsg = context.addMessage(
+        Message mine = new Message(
             role: "user",
-            author: "Navigator",
+            author: player.name,
             content: input,
             parentId: last.messageId,
             vibe: this.vibe
         )
-        logManager.appendEntry(userMsg)
-
-        bridge.printSpeaker(userMsg)
+        bridge.printSpeaker(mine) // needs a message object
         bridge.terminal.writer().print("${input}\n")
+        return mine
+    }
 
-        def virtualContext = new Context(context.messages)
+    private Message processModelTurn(Message userMsg) {
         String faderPrefix = userMsg.vibe.toPrefix()
-        bridge.printSpeaker(last)
+        bridge.terminal.writer().print("\u001B[1;36m${partner.name}\u001B[0m: ")
 
         StringBuilder fullOutput = new StringBuilder()
-        model.streamResponseWithPrefix(virtualContext, faderPrefix) { token ->
+        model.streamResponseWithPrefix(context, faderPrefix) { token ->
             bridge.printToken(token)
             fullOutput.append(token)
         }
@@ -132,12 +174,12 @@ class Chat {
         // this.vibe = usrMsg.vibe + deltas
         Message assistantMsg = context.addMessage(
             role: "assistant",
-            author: last.author,
+            author: partner.name,
             content: text,
             parentId: userMsg.messageId,
-            vibe: userMsg.vibe.clone() // Will be updated once it is fixed above.
+            vibe: userMsg.vibe // Will be updated once it is fixed above.
         )
 
-        logManager.appendEntry(assistantMsg)
+        return assistantMsg
     }
 }

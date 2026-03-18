@@ -14,6 +14,7 @@ class Model {
 
     Provider provider
     ModelType type
+    String model
     String role
     Boolean stream
     Double temperature
@@ -43,12 +44,18 @@ class Model {
      * @throws RuntimeException if the HTTP request fails or the API returns
      *                          an unexpected status code.
      */
-    String generateResponse(Context body) {
+    String generateResponse(Context body, String prefix = "") {
         URL url = new URL(provider.apiUrl)
         def post = url.openConnection()
 
+        def messages = body.messages.collect { [role: it.role, content: it.content] }
+
+        if (prefix) {
+            messages << [role: "assistant", content: prefix]
+        }
+
         def postData = [
-            messages: body.messages,
+            messages: messages,
             model: this.type.modelId,
             stream: this.stream,
             temperature: this.temperature

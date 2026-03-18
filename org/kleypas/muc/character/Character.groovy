@@ -152,15 +152,14 @@ class Character {
      *
      * @return a multi‑line string describing the character
      */
-    @Override
-    String toString() {
+    String toMd() {
         def out = [
             "- name: ${name}",
             "  description: ${description}",
             "  bio: ${bio}",
             "  health: ${health}",
             "  armor: ${armorType}",
-            "  location: ${location}",
+            "  location: [${location.toMd()}]",
             "  inventory:",
         ]
         out.add("  - ${inventory.name}")

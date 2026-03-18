@@ -59,7 +59,7 @@ public class LogManager {
             Message msg = new Message(raw)
 
             // Reconstructs the resonance state from the raw map.
-            // msg.resonance = new Resonance(raw)
+            msg.vibe = new Resonance(raw.vibe)
 
             return msg
         } as List<Message> // Give back a list of (decrypted) messages.

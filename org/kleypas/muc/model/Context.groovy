@@ -44,6 +44,11 @@ class Context {
         return newMessage
     }
 
+    public Message addMessage(Message msg) {
+        this.messages.add(msg)
+        return msg
+    }
+
     public Context enableLogging(LogManager manager) {
         this.logManager = manager
         return this

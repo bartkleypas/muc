@@ -1,44 +1,31 @@
 package org.kleypas.muc.model.resonance
 
+import org.kleypas.muc.model.resonance.ResonanceType
+
 class ResonanceEngine {
 
-    /**
-     * The "Regex Palette" - looking for George's signature moves
-     */
-    private static final Map<String, Map<String, Double>> SIGNATURES = [
-        "\\*Hoo-hoo\\*"         : [playfulness: 0.1, nurturance: 0.05],
-        "\\*Adjusts spectacles\\*": [steadfastness: 0.1],
-        "\\*listening\\*"       : [attunement: 0.1, nurturance: 0.05],
-        "\\*measured cadence\\*" : [steadfastness: 0.1],
-        "\\*A smooth baritone\\*" : [steadfastness: 0.05, nurturance: 0.05]
+    // Cluster-based triggers for the "George" Persona
+    private static final Map<ResonanceType, List<String>> THEMATIC_CLUSTERS = [
+        (ResonanceType.EFFICIENCY): ["clutch", "hollow", "talon", "feather", "nocturnal", "hoot", "pellet", "pragmatic", "extraction", "resource"],
+        (ResonanceType.CYNICISM):   ["absurd", "decay", "futile", "reclusive", "algorithm", "noise", "dust", "hubris", "misguided", "clumsy", "skeptical", "fallout"],
+        (ResonanceType.WARMTH):     ["comfort", "hearth", "amber", "soft", "welcome", "friend", "steady", "spirit", "vibrant", "indulgence"],
+        (ResonanceType.GRAVITY):    ["sacred", "duty", "archive", "eternal", "preservation", "weight", "balance", "centuries", "delicate"],
+        (ResonanceType.RESONANCE):  ["pulse", "vibration", "hum", "echo", "shimmer", "frequency", "resonance", "harmonic", "rhythm"]
     ]
 
-    /**
-     * Analyzes a message and returns a Map of the calculated resonance adjustments.
-     */
-    static Map<String, Double> calculate(String content) {
-        def scores = [nurturance: 0.0, playfulness: 0.0, steadfastness: 0.0, attunement: 0.0]
+    static Map<ResonanceType, Double> calculate(String content) {
+        Map<ResonanceType, Double> deltas = [:]
 
-        SIGNATURES.each { pattern, adjustments ->
-            if (content =~ /(?i)${pattern}/) {
-                adjustments.each { key, val -> scores[key] += val }
+        THEMATIC_CLUSTERS.each { type, keywords ->
+            double score = 0.0
+            keywords.each { word ->
+                // Simple word-count nudge
+                if (content.toLowerCase().contains(word)) {
+                    score += 0.05
+                }
             }
+            if (score > 0) deltas[type] = score
         }
-        return scores
-    }
-
-    /*
-     * Applies the calculated deltas to a Message,
-     */
-    static Message applyResonance(Message message, Map<String, Double> deltas) {
-        // List of stats to process
-        deltas.each { trait, delta ->
-            if (message.resonance.hasProperty(trait)) {
-                message.resonance."${trait}" += delta
-            } else {
-                println ""
-            }
-        }
-        return message
+        return deltas
     }
 }

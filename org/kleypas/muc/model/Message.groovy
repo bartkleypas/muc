@@ -34,15 +34,15 @@ class Message {
 
     Map asMap() {
         return [
+            'timestamp': timestamp,
             'messageId': messageId,
             'parentId': parentId,
-            'timestamp': timestamp,
             'role': role,
             'author': author,
-            'content': content,
             'vibe': vibe.asMap(),
-            'bookmark': bookmark,
-            'encrypted': encrypted
+            'encrypted': encrypted,
+            'content': content,
+            'bookmark': bookmark
         ]
     }
 }

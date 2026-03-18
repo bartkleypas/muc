@@ -1,22 +1,50 @@
 package org.kleypas.muc.model.resonance
 
-class Resonance {
+class Resonance implements Cloneable {
     public static final Double MIN = 0.0
     public static final Double MAX = 2.0
     public static final Double DEFAULT = 1.0
 
     private Map<ResonanceType, Double> sigils = [:]
 
-    Resonance(Object inputData = [:]) {
+    def propertyMissing(String name, value) {
+        if (!updateFromLegacyKey(name, value)) {
+            throw new MissingPropertyException(name, this.class)
+        }
+    }
+
+    def propertyMissing(String name) {
+        def type = ResonanceType.fromKey(name)
+        if (type && sigils.containsKey(type)) {
+            return sigils[type]
+        }
+        throw new MissingPropertyException(name, this.class)
+    }
+
+    Resonance() {
         ResonanceType.values().each { sigils[it] = DEFAULT }
-        if (inputData instanceof Resonance) {
-            this.sigils.putAll(inputData.sigils)
-        } else if (inputData instanceof Map) {
-            def data = inputData.vibe ?: inputData.resonance ?: inputData
+    }
+
+    static Resonance from(Object input) {
+        def res = new Resonance()
+        if (input instanceof Resonance) {
+            res.sigils.putAll(input.sigils)
+        } else if (input instanceof Map) {
+            def data = input.vibe ?: input.resonance ?: input
+
+            if (data instanceof Resonance) return from(data)
             if (data instanceof Map) {
-                data.each { k, v -> updateFromLegacyKey(k.toString(), v)}
+                data.each { k, v -> res.updateFromLegacyKey(k.toString()) }
             }
         }
+        return res
+    }
+
+    Resonance plus(Map deltas) {
+        deltas.each { k, v ->
+            updateFromLegacyKey(k.toString(), v)
+        }
+        return this
     }
 
     Boolean updateFromLegacyKey(String key, Double value) {
@@ -51,12 +79,16 @@ class Resonance {
         return sigils.collectEntries { type, val -> [ (type.key): val ]}
     }
 
-    @Override
-    String toString() {
-        return sigils.collect { type, val -> "* **${type.label}:** ${val}" }.join("\n")
-    }
-
     String toPrefix() {
         return sigils.collect { type, value -> "[${type.key.toUpperCase()}: ${value}]" }.join(" ")
+    }
+
+    @Override
+    Resonance clone() {
+        try {
+            return (Resonance) super.clone()
+        } catch (CloneNotSupportedException e) {
+            return new Resonance()
+        }
     }
 }

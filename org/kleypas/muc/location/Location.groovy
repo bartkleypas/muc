@@ -16,6 +16,12 @@ class Location {
     /** Altitude in meters above sea level. */
     float alt
 
+    Location() {
+        this.lat = 0.0f
+        this.lon = 0.0f
+        this.alt = 0.0f
+    }
+
     /**
      * Constructs a {@code Location} with the specified coordinates.
      *
@@ -30,12 +36,11 @@ class Location {
     }
 
     /**
-     * {@inheritDoc}
+     * Formats the coordinates in Markdown format for easy printing.
      *
      * @return a comma‑separated representation of the coordinates
      */
-    @Override
-    String toString() {
+    String toMd() {
         def output = [
             "lat: ${lat}",
             "lon: ${lon}",

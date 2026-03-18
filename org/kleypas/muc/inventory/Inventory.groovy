@@ -105,8 +105,7 @@ class Inventory {
      *
      * @return a string describing the inventory contents
      */
-    @Override
-    String toString() {
+    String toMd() {
         def output = []
         output.add("  - name: ${name}")
         output.add("    slots: ${slotsMax}")
