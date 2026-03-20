@@ -2,6 +2,7 @@
 //usr/bin/env groovy -cp lib/:lib/main.jar "$0" $@; exit $?
 
 import Chat
+import Refinery
 import Test
 
 import org.kleypas.muc.cli.Cli
@@ -24,6 +25,13 @@ if (options.chat) {
     new Chat(options).run()
 }
 
+// Turn our Refinery on.
+if (options.refinery) {
+    Logger.setLevel(LogLevel.INFO)
+    Logger.info "# Sent a refinery arg."
+    new Refinery(iterations: 5).run()
+}
+
 // Prompt for input to generate an image.
 if (options.image) {
     Logger.info "# Sent an image arg."
@@ -40,6 +48,7 @@ if (options.image) {
     Logger.info "## Recipt:\r\n${recipt}"
 }
 
+// Build some stuff!
 if (options.build) {
     Logger.info "Starting project build (Style B: Compile and Package)..."
 
@@ -94,6 +103,7 @@ if (options.build) {
     System.exit(0)
 }
 
+// Test the thing. Should be pretty easy for a model to consume.
 if (options.test) {
     Logger.setLevel(LogLevel.INFO)
     Logger.info "# Sent a test arg."

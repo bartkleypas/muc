@@ -54,7 +54,7 @@ public class Cli {
             c(longOpt: 'chat', argName: 'str', args: 1, optionalArg: true, 'Start a direct chat interface')
             v(longOpt: 'verbose', 'Enable verbose (INFO) logging')
             d(longOpt: 'debug', 'Enable debug logging')
-            debate(longOpt: "debate", "Enable debate mode (Let it cook)")
+            r(longOpt: 'refinery', 'Kick it in the Refinery')
         }
     }
 
