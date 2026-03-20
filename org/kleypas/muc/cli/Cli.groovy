@@ -55,7 +55,6 @@ public class Cli {
             v(longOpt: 'verbose', 'Enable verbose (INFO) logging')
             d(longOpt: 'debug', 'Enable debug logging')
             r(longOpt: 'refinery', 'Kick it in the Refinery')
-            debate(longOpt: "debate", "Enable debate mode (Let it cook)")
         }
     }
 
