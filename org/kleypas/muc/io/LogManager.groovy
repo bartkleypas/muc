@@ -93,6 +93,7 @@ public class LogManager {
                 finalContent = msg.content.trim()
 
                 finalContent = finalContent.replaceAll(/\n{3,}/, "\n\n")
+                finalContent = "${msg.vibe.toPrefix()}\n\n${finalContent}" // Ok, actually do the _thing_.
             }
 
             massagedMessages << [role: msg.role, content: finalContent]
