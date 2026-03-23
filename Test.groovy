@@ -200,7 +200,7 @@ class Test {
             sb.add("## Running Unified Narrator Test")
 
             // The Interaction
-            String input = "Good morning George. My name is Phiglit. Here is my character sheet:\n${characterResults}\nWould you please describe yourself, and where we are?"
+            String input = "${characterResults}\n\nGood morning George. My name is Phiglit. Would you please describe yourself, and where we are?"
             sb.add("### User says:\n${input}")
 
             Message userMsg = context.addMessage(
@@ -279,6 +279,7 @@ class Test {
             sb.add("### Adjusted Impulse: ${this.vibe.asMap()}")
 
             String input = "George, tell me what you think of this 'Refinery' we are building. Be honest."
+            sb.add("### User Input:\n${input}")
 
             Message userMsg = context.addMessage(
                 role: "user",
@@ -289,12 +290,12 @@ class Test {
             logManager.appendEntry(userMsg)
 
             String output = model.generateResponse(context, this.vibe.toPrefix())
-            sb.add("### George's Spikey Response:\n${output}")
+            sb.add("### George's Response:\n${output}")
 
             def deltas = ResonanceEngine.calculate(output)
             this.vibe + deltas
 
-            sb.add("### Post-Calculation Vibe: ${this.vibe.asMap()}")
+            sb.add("### Post-Calculation Vibe: ${this.vibe.toPrefix()}")
 
             Message modelMsg = context.addMessage(
                 role: "assistant",
@@ -318,10 +319,16 @@ class Test {
             this.context = logManager.readAllEntries()
 
             Message lastMsg = context.messages.last()
-            this.vibe = lastMsg.vibe
+            this.vibe = new Resonance(
+                warmth: 1.8,
+                cynicism: 0.2,
+                efficiency: 1.0,
+                resonance: 1.0,
+                gravity: 1.5
+            )
+            sb.add("### Adjusted Impulse: ${this.vibe.asMap()}")
 
-            String input = "I would like to introduce you to Ewpna. This is her character sheet:\n${inventoryResults}"
-            input = "${input}\nI think I would like to pick up the electric bass and strike up a relaxed and groovy bassline. Currently it is sitting in its stand by the hearth."
+            String input = "George, if the Refinery was built not to replace the Forest, but to protect it from the Storm, how would your feathers feel then?"
             sb.add("### User says:\n${input}")
             Message userMsg = context.addMessage(
                 role: "user",
