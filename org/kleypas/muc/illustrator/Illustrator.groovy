@@ -19,6 +19,8 @@ class Illustrator {
     ImgProvider provider
     /** Checkpoint file used by the ComfyUI model. */
     String checkpoint
+    /** Refiner name (if needed) */
+    String refiner
     /** Style that determines the image dimensions. */
     ImageType style
     /** Raw textual input for the image prompt. */
@@ -38,7 +40,8 @@ class Illustrator {
     Illustrator() {
         this.title = title
         this.provider = new ImgProvider()
-        this.checkpoint = "sdxl/sd_xl_base_1.0.safetensors"
+        this.checkpoint = "sd_xl_base_1.0.safetensors"
+        this.refiner = "sd_xl_refiner_1.0.safetensors"
         this.style = ImageType.PORTRAIT
         this.input = input
         this.seed = new Random().nextInt(100000000) // 8 digits of random
@@ -74,6 +77,7 @@ class Illustrator {
         json.prompt["6"].inputs.text = input
         json.prompt["10"].inputs.noise_seed = seed
         json.prompt["10"].inputs.steps = steps
+        json.prompt["12"].inputs.ckpt_name = refiner
         json.prompt["15"].inputs.text = input
         json.prompt["19"].inputs.filename_prefix = title
         def output = new JsonOutput().toJson(json)

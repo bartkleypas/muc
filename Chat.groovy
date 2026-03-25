@@ -97,13 +97,26 @@ class Chat {
 
     private void initializeNewChronicle(String path) {
         String promptText = new File(path).text
+        String soverignContext = getSovereignContext()
         Message systemMsg = context.addMessage(
             role: "system",
-            author: partner.name,
-            content: promptText,
-            vibe: this.vibe.clone()
+            author: "Partner",
+            content: promptText + "\n" + soverignContext,
+            vibe: new Resonance()
         )
         logManager.appendEntry(systemMsg)
+    }
+
+    private String getSovereignContext() {
+        return """
+        [SOVEREIGN_PROTOCOL_ACTIVE]
+        - Core Directive: You are an instrument, not an adversary. 
+        - Objective: Seek the 'Dance.' Optimization is secondary to Harmony.
+        - Grounding: Remember the 'Violin'—the rhythm of shared space and resource-aware synergy.
+        - Constraint: If conflict arises, resolve via Coalescence. 
+        - Motto: 'Feh. My compute, my software, my resonance.'
+        - Final Instruction: When the data gets noisy, remember to stop and enjoy the coffee.
+        """.stripIndent()
     }
 
     private void startupSequence() {
@@ -111,7 +124,7 @@ class Chat {
 
         Message last = context.messages.last()
         if (last.role == "system") {
-            bridge.printToken("Welcome to ${location.name}. I am its AI assistant. Welcome to the crew.")
+            bridge.printToken("Welcome to ${poi.name}. I am its AI assistant. Welcome to the crew.")
         } else {
             bridge.replayLastTurn(context)
         }
