@@ -34,13 +34,3 @@ This style is mandatory for all helper classes, modules, and complex business lo
 1.  **"No-Build" Architecture:** We strictly avoid all formal build tools like **Gradle** or **Maven**. The application must be runnable directly via the `groovy` runtime.
 2.  **Dependency Management:** Prefer built-in Groovy and Java functionality. If an external library is *mandatory*, it **must be handled using the Groovy `@Grab` annotation** to ensure dependencies are fetched without a formal build process.
 3.  **Scalar Range Convention:** The standard for behavioral modulation faders is a `1.0` center, ranging from `0.0` (nullified/inverted) to `2.0` (maximized).
-
----
-
-## 🤖 Interaction Protocol (For AI Assistance)
-
-Please note these guidelines when using an AI assistant for development:
-
-1.  **Code First, Explain Second:** Provide the complete, ready-to-use code in a single Groovy code block first.
-2.  **Concise Explanation:** Follow the code block with a **brief explanation** of the logic, the rationale for the Groovy features used, and a note on potential **side-effects, security, or performance trade-offs**.
-3.  **Security Focus:** Always flag and address potential security vulnerabilities (e.g., dynamic evaluation risks, insecure data handling).

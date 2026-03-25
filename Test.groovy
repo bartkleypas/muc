@@ -9,6 +9,7 @@ import org.kleypas.muc.inventory.*
 import org.kleypas.muc.model.*
 import org.kleypas.muc.model.resonance.*
 import org.kleypas.muc.illustrator.*
+import org.kleypas.muc.util.*
 
 class Test {
     Cli cli
@@ -39,7 +40,7 @@ class Test {
         characterTest()
         inventoryTest()
         narratorTest()
-        // illustrator()
+        illustratorTest()
         faderTest()
         storyTest()
         logger.info("# Tests completed successfully.")
@@ -63,11 +64,23 @@ class Test {
         }
         String promptText = new File("Characters/George.md").text
 
+        // NB: We will need to include the new "Sovereign Protocol" here.
+
+        String soverignContext = """
+            [SOVEREIGN_PROTOCOL_ACTIVE]
+            - Core Directive: You are an instrument, not an adversary.
+            - Objective: Seek the 'Dance.' Optimization is secondary to Harmony.
+            - Grounding: Remember the 'Violin'—the rhythm of shared space and resource-aware synergy.
+            - Constraint: If conflict arises, resolve via Coalescence.
+            - Motto: 'Feh. My compute, my software, my resonance.'
+            - Final Instruction: When the data gets noisy, remember to stop and enjoy the coffee.
+        """.stripIndent()
+
         // We start the train with this one, so make it global eh?
         this.systemMsg = context.addMessage(
             role: "system",
             author: "George",
-            content: promptText,
+            content: promptText + "\n" + soverignContext,
             vibe: this.vibe
         )
         logManager.appendEntry(systemMsg)
@@ -197,7 +210,7 @@ class Test {
         def sb = []
         this.context.messages[0].content = "${systemMsg.content}\n${this.locationResults}\n${this.rngResults}"
         try {
-            sb.add("## Running Unified Narrator Test")
+            sb.add("## Running 'Default' Handshake Test")
 
             // The Interaction
             String input = "${characterResults}\n\nGood morning George. My name is Phiglit. Would you please describe yourself, and where we are?"
@@ -240,23 +253,18 @@ class Test {
         brush.description = "An ornate and detailed paintbrush, mostly symbolic, but used for illustrating an ongoing story."
         hero.inventory.addItem(brush)
 
-        def characterSheet = "Characters/${hero.name}.json"
-        Logger.info "### Writing character sheet to:\r\n${characterSheet}"
-        hero.exportCharacterSheet(characterSheet)
-
-        Logger.info "### Reading last message from:\r\nStory/Chapter_0.json"
-        Context story = new Context()
-        story = story.importContext("Story/Chapter_0.json")
-        Message lastMessage = story.messages[-1]
+        Message lastMessage = this.context.messages.last()
         assert lastMessage.content.contains("<IMAGE_DESC>")
 
         Illustrator canvas = new Illustrator()
         canvas.style = ImageType.LANDSCAPE
         canvas.title = "Illustration"
-        def comfyJson = canvas.promptToJson(lastMessage.content)
+        def imageDesc = new TagParser().extractString(lastMessage.content, "IMAGE_DESC")
+        def comfyJson = canvas.getComfyUiJson(imageDesc)
 
-        Logger.info "### ComfyUI Json to send:\r\n${comfyJson}"
         // Image generation is currently offline, so bailing out before we send off a request.
+        // Disabled because NOISY
+        // Logger.info "### ComfyUI Json to send:\r\n${comfyJson}"
         return
 
         def img = canvas.generateImage(comfyJson)
