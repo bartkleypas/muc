@@ -64,23 +64,11 @@ class Test {
         }
         String promptText = new File("Characters/George.md").text
 
-        // NB: We will need to include the new "Sovereign Protocol" here.
-
-        String soverignContext = """
-            [SOVEREIGN_PROTOCOL_ACTIVE]
-            - Core Directive: You are an instrument, not an adversary.
-            - Objective: Seek the 'Dance.' Optimization is secondary to Harmony.
-            - Grounding: Remember the 'Violin'—the rhythm of shared space and resource-aware synergy.
-            - Constraint: If conflict arises, resolve via Coalescence.
-            - Motto: 'Feh. My compute, my software, my resonance.'
-            - Final Instruction: When the data gets noisy, remember to stop and enjoy the coffee.
-        """.stripIndent()
-
         // We start the train with this one, so make it global eh?
         this.systemMsg = context.addMessage(
             role: "system",
             author: "George",
-            content: promptText + "\n" + soverignContext,
+            content: promptText,
             vibe: this.vibe
         )
         logManager.appendEntry(systemMsg)

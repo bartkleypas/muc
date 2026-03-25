@@ -51,6 +51,7 @@ class Chat {
         String historyFile = options.chat instanceof String ? options.chat : "Story/Majel.jsonl"
         String promptFile = "Characters/Majel.md"
         this.logManager = new LogManager(historyFile, cli.envVars.ENCRYPTION_KEY.getBytes() ?: new byte[0])
+        
         this.context = new Context().enableLogging(logManager)
         this.model = new Model(ModelType.BIG)
 
@@ -97,26 +98,13 @@ class Chat {
 
     private void initializeNewChronicle(String path) {
         String promptText = new File(path).text
-        String soverignContext = getSovereignContext()
         Message systemMsg = context.addMessage(
             role: "system",
             author: "Partner",
-            content: promptText + "\n" + soverignContext,
+            content: promptText,
             vibe: new Resonance()
         )
         logManager.appendEntry(systemMsg)
-    }
-
-    private String getSovereignContext() {
-        return """
-        [SOVEREIGN_PROTOCOL_ACTIVE]
-        - Core Directive: You are an instrument, not an adversary. 
-        - Objective: Seek the 'Dance.' Optimization is secondary to Harmony.
-        - Grounding: Remember the 'Violin'—the rhythm of shared space and resource-aware synergy.
-        - Constraint: If conflict arises, resolve via Coalescence. 
-        - Motto: 'Feh. My compute, my software, my resonance.'
-        - Final Instruction: When the data gets noisy, remember to stop and enjoy the coffee.
-        """.stripIndent()
     }
 
     private void startupSequence() {
