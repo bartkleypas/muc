@@ -1,7 +1,7 @@
 package org.kleypas.muc.io
 
 import org.kleypas.muc.model.Message
-import org.kleypas.muc.model.resonance.*
+import org.kleypas.muc.model.resonance.Resonance
 
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper

@@ -1,7 +1,5 @@
 package org.kleypas.muc.model.resonance
 
-import org.kleypas.muc.model.resonance.ResonanceType
-
 class ResonanceEngine {
 
     // Cluster-based triggers for the "George" Persona
