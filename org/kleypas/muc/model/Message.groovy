@@ -1,6 +1,7 @@
 package org.kleypas.muc.model
 
-import org.kleypas.muc.model.resonance.*
+import org.kleypas.muc.model.resonance.Resonance
+
 import java.time.Instant
 import java.util.UUID
 

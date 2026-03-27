@@ -1,15 +1,38 @@
 // -- Test all the things!
 
-import org.kleypas.muc.cli.*
-import org.kleypas.muc.io.*
-import org.kleypas.muc.rng.*
-import org.kleypas.muc.location.*
-import org.kleypas.muc.character.*
-import org.kleypas.muc.inventory.*
-import org.kleypas.muc.model.*
-import org.kleypas.muc.model.resonance.*
-import org.kleypas.muc.illustrator.*
-import org.kleypas.muc.util.*
+import org.kleypas.muc.cli.Cli
+import org.kleypas.muc.cli.Logger
+import org.kleypas.muc.cli.LogLevel
+import org.kleypas.muc.cli.TerminalBridge
+
+import org.kleypas.muc.io.LogManager
+
+import org.kleypas.muc.rng.Coin
+import org.kleypas.muc.rng.Dice
+import org.kleypas.muc.rng.DiceType
+
+import org.kleypas.muc.location.Location
+import org.kleypas.muc.location.Poi
+
+import org.kleypas.muc.character.Character
+import org.kleypas.muc.character.ArmorType
+
+import org.kleypas.muc.inventory.Inventory
+import org.kleypas.muc.inventory.Item
+import org.kleypas.muc.inventory.ItemType
+
+import org.kleypas.muc.model.Model
+import org.kleypas.muc.model.ModelType
+import org.kleypas.muc.model.Context
+import org.kleypas.muc.model.Message
+
+import org.kleypas.muc.model.resonance.Resonance
+import org.kleypas.muc.model.resonance.ResonanceEngine
+
+import org.kleypas.muc.illustrator.Illustrator
+import org.kleypas.muc.illustrator.ImageType
+
+import org.kleypas.muc.util.TagParser
 
 class Test {
     Cli cli

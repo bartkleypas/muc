@@ -1,12 +1,16 @@
 
-import org.kleypas.muc.character.*
-import org.kleypas.muc.cli.*
-import org.kleypas.muc.inventory.*
-import org.kleypas.muc.io.*
-import org.kleypas.muc.location.*
-import org.kleypas.muc.model.*
-import org.kleypas.muc.model.resonance.*
-import org.kleypas.muc.util.*
+import org.kleypas.muc.character.Character
+import org.kleypas.muc.cli.Cli
+import org.kleypas.muc.cli.CommandProcessor
+import org.kleypas.muc.cli.TerminalBridge
+import org.kleypas.muc.io.LogManager
+import org.kleypas.muc.location.Location
+import org.kleypas.muc.location.Poi
+import org.kleypas.muc.model.Model
+import org.kleypas.muc.model.ModelType
+import org.kleypas.muc.model.Message
+import org.kleypas.muc.model.Context
+import org.kleypas.muc.model.resonance.Resonance
 
 import org.jline.reader.LineReaderBuilder
 import org.jline.reader.LineReader
