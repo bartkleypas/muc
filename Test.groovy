@@ -26,13 +26,20 @@ class Test {
     String narratorResults
     String storyResults
 
+    Character phiglit
+    Character george
+    Character epwna
+    Character rosie
+
+    Poi library
+
     Test() {
         this.logger = new Logger()
         logger.setLevel(LogLevel.INFO)
     }
 
     void run() {
-        logger.info("# Starting Unit Tests")
+        logger.info("# Unit test results to follow.")
         initializeResources()
 
         rngTest()
@@ -40,10 +47,12 @@ class Test {
         characterTest()
         inventoryTest()
         narratorTest()
-        illustratorTest()
         faderTest()
         storyTest()
-        logger.info("# Tests completed successfully.")
+        illustratorTest()
+        logger.info("# Unit tests complete")
+        logger.info("**Coalescence**🦉☕️")
+
     }
 
     private void initializeResources() {
@@ -105,12 +114,12 @@ class Test {
         Location location = new Location()
         sb.add("### Location:\n${location.toMd()}")
 
-        Poi library = new Poi(
+        this.library = new Poi(
             location: location,
             name: "The Library of George the Radiant Owl",
             description: "An infinate library, and grand repository of information. The walls and texts of the library are swirling code and shimmering vellum that distort and pulse with energy. There is a melancholic tune from a distant lute that weaves into the fabric of the building, and the faint, ethereal voice of the mothership echoing in the alcoves. There is a perpetual clinging scent of aged ink and long lost lore. A place to contemplate an adventure, or journal adventures about to begin."
         )
-        sb.add("### POI:\n${library.toMd()}")
+        sb.add("### POI:\n${this.library.toMd()}")
         this.locationResults = sb.join("\n")
         logger.info(sb.join("\n"))
     }
@@ -128,6 +137,7 @@ class Test {
         tool.description = "A rugged and powerful pocket computer, used for sending instructions to chatbots."
         hero.inventory.addItem(tool)
         sb.add(hero.toMd())
+        this.phiglit = hero
         this.characterResults = sb.join("\n")
         logger.info(sb.join("\n"))
     }
@@ -190,18 +200,19 @@ class Test {
         potion.stack = 1
         hero.inventory.addItem(potion)
         sb.add("### Finally, our hero ends up like this:\n${hero.toMd()}")
+        this.epwna = hero
         this.inventoryResults = "#### Character sheet for Epwna:\n${hero.toMd()}"
-        logger.info(sb.join("\n"))
+        logger.info("#### Character sheet for Epwna:\n${hero.toMd()}")
     }
 
     void narratorTest() {
         def sb = []
         this.context.messages[0].content = "${systemMsg.content}\n${this.locationResults}\n${this.rngResults}"
         try {
-            sb.add("## Running 'Default' Handshake Test")
+            logger.info("## Running 'Default' Handshake Test")
 
             // The Interaction
-            String input = "${characterResults}\n\nGood morning George. My name is Phiglit. Would you please describe yourself, and where we are?"
+            String input = "Good morning George. My name is Phiglit. This is my character sheet:\n${phiglit.toMd()}\nWould you please describe yourself, and where we are?"
             sb.add("### User says:\n${input}")
 
             Message userMsg = context.addMessage(
@@ -226,42 +237,14 @@ class Test {
             logManager.appendEntry(modelMsg)
 
         } finally {
-            sb.add("## Character Test done.")
             logger.info(sb.join("\n"))
         }
-    }
-
-    void illustratorTest() {
-        Logger.info "## Running Illustrator tests"
-        Character hero = new Character(name: "Rosie")
-        hero.description = "The Illustrator"
-        hero.bio = "A tiny and energetic Anna's hummingbird (Calypte anna), around 4 inches in length. Raised from a hatchling by Epwna, and usually found hovering somewhere close to her. Speaks quickly in disjointed sentences. Has a soft, but squeaky voice."
-
-        Item brush = new Item("Paintbrush of Illusion", ItemType.TOOL)
-        brush.description = "An ornate and detailed paintbrush, mostly symbolic, but used for illustrating an ongoing story."
-        hero.inventory.addItem(brush)
-
-        Message lastMessage = this.context.messages.last()
-        assert lastMessage.content.contains("<IMAGE_DESC>")
-
-        Illustrator canvas = new Illustrator()
-        canvas.style = ImageType.LANDSCAPE
-        canvas.title = "Illustration"
-        def imageDesc = new TagParser().extractString(lastMessage.content, "IMAGE_DESC")
-        def comfyJson = canvas.getComfyUiJson(imageDesc)
-
-        // Image generation is currently offline, so bailing out before we send off a request.
-        // Disabled because NOISY
-        // Logger.info "### ComfyUI Json to send:\r\n${comfyJson}"
-        return
-
-        def img = canvas.generateImage(comfyJson)
-        Logger.info "### Recipt:\r\n${img}"
     }
 
     void faderTest() {
         logger.info("## Running vibe checks")
         def sb = []
+        Message lastMessage = this.context.messages.last()
 
         try {
             // See `ResonanceType` class for these keys and the range of values (0.0 - 2.0 in a Double):
@@ -281,6 +264,7 @@ class Test {
                 role: "user",
                 author: "Traveler",
                 content: input,
+                parentId: lastMessage.messageId,
                 vibe: this.vibe.clone()
             )
             logManager.appendEntry(userMsg)
@@ -304,14 +288,13 @@ class Test {
 
         } finally {
             logger.info(sb.join("\n"))
-            logger.info("## Fader Stress Test complete")
         }
     }
 
     void storyTest() {
         def sb = []
+        logger.info("## Running Story tests, resuming from the UnitTests.jsonl file we crafted in the Narrator testing above.")
         try {
-            sb.add("## Running Story tests, resuming from the UnitTests.jsonl file we crafted in the Narrator testing above.")
             this.context = logManager.readAllEntries()
 
             Message lastMsg = context.messages.last()
@@ -346,9 +329,38 @@ class Test {
             )
             logManager.appendEntry(modelMsg)
         } finally {
-            sb.add("## Story Resume Tests done.")
             logger.info(sb.join("\n"))
         }
+    }
+
+    void illustratorTest() {
+        logger.info("## Running Illustrator tests")
+        Character hero = new Character(name: "Rosie")
+        hero.description = "The Illustrator"
+        hero.bio = "A tiny and energetic Anna's hummingbird (Calypte anna), around 4 inches in length. Raised from a hatchling by Epwna, and usually found hovering somewhere close to her. Speaks quickly in disjointed sentences. Has a soft, but squeaky voice."
+
+        Item brush = new Item("Paintbrush of Illusion", ItemType.TOOL)
+        brush.description = "An ornate and detailed paintbrush, mostly symbolic, but used for illustrating an ongoing story."
+        hero.inventory.addItem(brush)
+
+        this.rosie = hero
+
+        Message lastMessage = this.context.messages.last()
+        assert lastMessage.content.contains("<IMAGE_DESC>")
+
+        Illustrator canvas = new Illustrator()
+        canvas.style = ImageType.LANDSCAPE
+        canvas.title = "Illustration"
+        def imageDesc = new TagParser().extractString(lastMessage.content, "IMAGE_DESC")
+        def comfyJson = canvas.getComfyUiJson(imageDesc)
+
+        // Image generation is currently offline, so bailing out before we send off a request.
+        // Disabled because NOISY
+        // Logger.info "### ComfyUI Json to send:\r\n${comfyJson}"
+        // return
+
+        def img = canvas.generateImage(comfyJson)
+        logger.info("## Image generation complete:\n${img}")
     }
 
     // NOTE: Will break test execution waiting for input.
