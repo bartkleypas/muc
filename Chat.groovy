@@ -98,6 +98,7 @@ class Chat {
 
     private void initializeNewChronicle(String path) {
         String promptText = new File(path).text
+        // promptText = SystemPromptHelper.buildFullSystemPrompt(promptText)
         Message systemMsg = context.addMessage(
             role: "system",
             author: "Partner",
@@ -128,6 +129,7 @@ class Chat {
             if (processor.process(input)) {
                 if (processor.requestRefresh) {
                     this.vibe = processor.vibe
+                    this.context = processor.context
                 }
                 continue
             }
