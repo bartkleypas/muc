@@ -229,7 +229,7 @@ class Test {
 
     void narratorTest() {
         def sb = []
-        this.context.messages[0].content = "${systemMsg.content}\n---\n${library.toMd()}\n---\n${this.rngResults}"
+        this.context.messages[0].content = "${systemMsg.content}\n---\n${library.toMd()}\n---\n${rngResults}"
         try {
             logger.info("## Running 'Default' Handshake Test")
 
@@ -277,7 +277,7 @@ class Test {
                 resonance: 1.0,
                 gravity: 0.5
             )
-            sb.add("### Adjusted Impulse: ${this.vibe.asMap()}")
+            sb.add("### Adjusted Impulse: ${vibe.asMap()}")
 
             String input = "George, tell me what you think of this 'Refinery' we are building. Be honest.🚧🏭✨"
             sb.add("### User Input:\n${input}")
@@ -329,7 +329,7 @@ class Test {
             )
             sb.add("### Adjusted Impulse: ${vibe.asMap()}")
 
-            String input = "${this.epwna.toMd()}\n---\nGood morning George. I'm Ewpna. What if the Refinery was built not to replace the Forest, but to protect it from the Storm, how would your feathers feel then? 🌬️🛡️🌱🧝‍♀️"
+            String input = "${epwna.toMd()}\n---\nGood morning George. I'm Ewpna. You know, I told him to name it the Forge. Hey Phiglit, have you renamed that class yet? 🛡️🌱🧝‍♀️"
             sb.add("### User says:\n${input}")
             Message userMsg = context.addMessage(
                 role: "user",
@@ -340,7 +340,7 @@ class Test {
             )
             logManager.appendEntry(userMsg)
 
-            String output = model.generateResponse(context, this.vibe.toPrefix())
+            String output = model.generateResponse(context, vibe.toPrefix())
             sb.add("### George says:\n${output}")
             Message modelMsg = context.addMessage(
                 role: "assistant",
@@ -357,18 +357,31 @@ class Test {
 
     void illustratorTest() {
         logger.info("## Running Illustrator tests")
-        Character hero = new Character(name: "Rosie")
-        hero.description = "The Illustrator"
-        hero.bio = "A tiny and energetic Anna's hummingbird (Calypte anna), around 4 inches in length. Raised from a hatchling by Epwna, and usually found hovering somewhere close to her. Speaks quickly in disjointed sentences. Has a soft, but squeaky voice."
-
-        Item brush = new Item("Paintbrush of Illusion", ItemType.TOOL)
-        brush.description = "An ornate and detailed paintbrush, mostly symbolic, but used for illustrating an ongoing story."
-        hero.inventory.addItem(brush)
-
-        this.rosie = hero
 
         Message lastMessage = this.context.messages.last()
         assert lastMessage.content.contains("<IMAGE_DESC>")
+
+        String input = "Ah. Yes, Epwna is right. I forgot to rename the class. Aaaaand all done! Yup, thank you Epwna. I like it much better. What are your thoughts, George? 🦉⚒️💻🧙‍♂️"
+        logger.info("### User says:\n${input}")
+        Message userMsg = context.addMessage(
+            role: "user",
+            author: "Traveler",
+            content: input,
+            parentId: lastMessage.messageId,
+            vibe: this.vibe.clone()
+        )
+        logManager.appendEntry(userMsg)
+
+        String output = model.generateResponse(context, vibe.toPrefix())
+        logger.info("### George says:\n${output}")
+        Message modelMsg = context.addMessage(
+            role: "assistant",
+            author: "George",
+            content: output,
+            parentId: userMsg.messageId,
+            vibe: this.vibe.clone()
+        )
+        logManager.appendEntry(modelMsg)
 
         Illustrator canvas = new Illustrator()
         canvas.style = ImageType.LANDSCAPE

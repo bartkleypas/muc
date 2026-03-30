@@ -3,7 +3,7 @@ import org.kleypas.muc.model.*
 import org.kleypas.muc.model.resonance.*
 import org.kleypas.muc.io.*
 
-class Refinery {
+class Forge {
     private Model teacher
     private String persona
     private LogManager logManager
@@ -11,7 +11,7 @@ class Refinery {
     private List<String> seeds
     private int iterations
 
-    Refinery(Map config = [:]) {
+    Forge(Map config = [:]) {
         this.teacher = config.teacher ?: new Model(ModelType.BIG)
         this.persona = config.persona ?: new File("Characters/George.md").text
         this.logManager = config.logManager ?: new LogManager("Story/fake.jsonl")
