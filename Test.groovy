@@ -3,7 +3,6 @@
 import org.kleypas.muc.cli.Cli
 import org.kleypas.muc.cli.Logger
 import org.kleypas.muc.cli.LogLevel
-import org.kleypas.muc.cli.TerminalBridge
 
 import org.kleypas.muc.io.LogManager
 
@@ -230,12 +229,12 @@ class Test {
 
     void narratorTest() {
         def sb = []
-        this.context.messages[0].content = "${systemMsg.content}\n${this.locationResults}\n${this.rngResults}"
+        this.context.messages[0].content = "${systemMsg.content}\n---\n${library.toMd()}\n---\n${rngResults}"
         try {
             logger.info("## Running 'Default' Handshake Test")
 
             // The Interaction
-            String input = "Good morning George. My name is Phiglit. This is my character sheet:\n${phiglit.toMd()}\nWould you please describe yourself, and where we are?"
+            String input = "${phiglit.toMd()}\n---\nGood morning George! My name is Phiglit. Would you please describe yourself, and where we are? 💻🧙‍♂️📚"
             sb.add("### User says:\n${input}")
 
             Message userMsg = context.addMessage(
@@ -278,9 +277,9 @@ class Test {
                 resonance: 1.0,
                 gravity: 0.5
             )
-            sb.add("### Adjusted Impulse: ${this.vibe.asMap()}")
+            sb.add("### Adjusted Impulse: ${vibe.asMap()}")
 
-            String input = "George, tell me what you think of this 'Refinery' we are building. Be honest."
+            String input = "George, tell me what you think of this 'Refinery' we are building. Be honest.🚧🏭✨"
             sb.add("### User Input:\n${input}")
 
             Message userMsg = context.addMessage(
@@ -292,13 +291,13 @@ class Test {
             )
             logManager.appendEntry(userMsg)
 
-            String output = model.generateResponse(context, this.vibe.toPrefix())
+            String output = model.generateResponse(context, vibe.toPrefix())
             sb.add("### George's Response:\n${output}")
 
             def deltas = ResonanceEngine.calculate(output)
             this.vibe + deltas
 
-            sb.add("### Post-Calculation Vibe: ${this.vibe.toPrefix()}")
+            sb.add("### Post-Calculation Vibe: ${vibe.toPrefix()}")
 
             Message modelMsg = context.addMessage(
                 role: "assistant",
@@ -328,9 +327,9 @@ class Test {
                 resonance: 1.0,
                 gravity: 1.5
             )
-            sb.add("### Adjusted Impulse: ${this.vibe.asMap()}")
+            sb.add("### Adjusted Impulse: ${vibe.asMap()}")
 
-            String input = "George, if the Refinery was built not to replace the Forest, but to protect it from the Storm, how would your feathers feel then?"
+            String input = "${epwna.toMd()}\n---\nGood morning George. I'm Ewpna. You know, I told him to name it the Forge. Hey Phiglit, have you renamed that class yet? 🛡️🌱🧝‍♀️"
             sb.add("### User says:\n${input}")
             Message userMsg = context.addMessage(
                 role: "user",
@@ -341,7 +340,7 @@ class Test {
             )
             logManager.appendEntry(userMsg)
 
-            String output = model.generateResponse(context, this.vibe.toPrefix())
+            String output = model.generateResponse(context, vibe.toPrefix())
             sb.add("### George says:\n${output}")
             Message modelMsg = context.addMessage(
                 role: "assistant",
@@ -358,18 +357,31 @@ class Test {
 
     void illustratorTest() {
         logger.info("## Running Illustrator tests")
-        Character hero = new Character(name: "Rosie")
-        hero.description = "The Illustrator"
-        hero.bio = "A tiny and energetic Anna's hummingbird (Calypte anna), around 4 inches in length. Raised from a hatchling by Epwna, and usually found hovering somewhere close to her. Speaks quickly in disjointed sentences. Has a soft, but squeaky voice."
-
-        Item brush = new Item("Paintbrush of Illusion", ItemType.TOOL)
-        brush.description = "An ornate and detailed paintbrush, mostly symbolic, but used for illustrating an ongoing story."
-        hero.inventory.addItem(brush)
-
-        this.rosie = hero
 
         Message lastMessage = this.context.messages.last()
         assert lastMessage.content.contains("<IMAGE_DESC>")
+
+        String input = "Ah. Yes, Epwna is right. I forgot to rename the class. Aaaaand all done! Yup, thank you Epwna. I like it much better. What are your thoughts, George? 🦉⚒️💻🧙‍♂️"
+        logger.info("### User says:\n${input}")
+        Message userMsg = context.addMessage(
+            role: "user",
+            author: "Traveler",
+            content: input,
+            parentId: lastMessage.messageId,
+            vibe: this.vibe.clone()
+        )
+        logManager.appendEntry(userMsg)
+
+        String output = model.generateResponse(context, vibe.toPrefix())
+        logger.info("### George says:\n${output}")
+        Message modelMsg = context.addMessage(
+            role: "assistant",
+            author: "George",
+            content: output,
+            parentId: userMsg.messageId,
+            vibe: this.vibe.clone()
+        )
+        logManager.appendEntry(modelMsg)
 
         Illustrator canvas = new Illustrator()
         canvas.style = ImageType.LANDSCAPE
@@ -377,34 +389,7 @@ class Test {
         def imageDesc = new TagParser().extractString(lastMessage.content, "IMAGE_DESC")
         def comfyJson = canvas.getComfyUiJson(imageDesc)
 
-        // Image generation is currently offline, so bailing out before we send off a request.
-        // Disabled because NOISY
-        // Logger.info "### ComfyUI Json to send:\r\n${comfyJson}"
-        // return
-
         def img = canvas.generateImage(comfyJson)
         logger.info("## Image generation complete:\n${img}")
-    }
-
-    // NOTE: Will break test execution waiting for input.
-    void tuiTest() {
-        // Using Groovy's 'use' or a simple try-with-resources equivalent
-        def bridge = new TerminalBridge()
-        try {
-            bridge.drawSignature()
-            int rad = 80
-            boolean running = true
-
-            while (running) {
-                bridge.updateHUD("The Grand Repository", "Phiglit (Ready)", rad)
-
-                char key = (char) bridge.readKey()
-                if (key == 'r' && rad < 100) rad += 5
-                else if (key == 'e' && rad > 0) rad -= 5
-                else if (key == 'q') running = false
-            }
-        } finally {
-            bridge.close()
-        }
     }
 }

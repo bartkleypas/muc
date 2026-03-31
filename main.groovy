@@ -2,7 +2,7 @@
 //usr/bin/env groovy -cp lib/:lib/main.jar "$0" $@; exit $?
 
 import Chat
-import Refinery
+import Forge
 import Test
 
 import org.kleypas.muc.cli.Cli
@@ -28,8 +28,8 @@ if (options.chat) {
 // Turn our Refinery on.
 if (options.refinery) {
     Logger.setLevel(LogLevel.INFO)
-    Logger.info "# Sent a refinery arg."
-    new Refinery(iterations: 5).run()
+    Logger.info "# Sent a refinery arg. Starting Forge."
+    new Forge(iterations: 5).run()
 }
 
 // Prompt for input to generate an image.
