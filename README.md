@@ -55,7 +55,7 @@ While in Chat Mode (`-c`), the following commands allow you to manipulate the "S
 
 ---
 
-## 🦎 The Refinery: From Dialog to LoRA
+## 🦎 The Forge: From Dialog to LoRA
 
 The `MUC` app is designed not just for play, but for the deliberate cultivation of a Sovereign Persona. By utilizing the apps built in features, the user can "harvest" specific conversations from the narrative graph into a dataset useful in fine-tuning via something like Axolotl. If you *really* want to generate some tokens, the CLI also supports a `-r` option, putting the app into a headless "exploration" mode, useful for generating a large surface area of personality impulses to train a LoRA adapter with.
 
@@ -77,7 +77,7 @@ The project follows the standard Java/Groovy packaging and file location convent
 * `main.groovy` - The apps entry point.
 * `Chat.groovy` - The TUI Chat loop.
 * `Test.groovy` - The runnable test harness.
-* `Refinery.groovy` - Batch processing of persona definitions.
+* `Forge.groovy` - Batch processing of persona definitions.
 * `org.kleypas.muc.cli` - Command-line and chat loop argument parsing and the TUI interface.
 * `org.kleypas.muc.model` - Model handling routines, such as API provider, message definition, and context management.
 * `org.kleypas.muc.model.resonance` - Model "vibes."
