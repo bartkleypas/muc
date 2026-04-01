@@ -352,13 +352,14 @@ class Test {
             logManager.appendEntry(modelMsg)
         } finally {
             logger.info(sb.join("\n"))
+            this.context = context
         }
     }
 
     void illustratorTest() {
         logger.info("## Running Illustrator tests")
 
-        Message lastMessage = this.context.messages.last()
+        Message lastMessage = context.messages.last()
         assert lastMessage.content.contains("<IMAGE_DESC>")
 
         String input = "Ah. Yes, Epwna is right. I forgot to rename the class. Aaaaand all done! Yup, thank you Epwna. I like it much better. What are your thoughts, George? 🦉⚒️💻🧙‍♂️"
