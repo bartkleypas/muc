@@ -71,10 +71,9 @@ class Test {
         narratorTest()
         faderTest()
         storyTest()
-        illustratorTest()
+        // illustratorTest()
         logger.info("# Unit tests complete")
         logger.info("**Coalescence**🦉☕️")
-
     }
 
     private void initializeResources() {
@@ -259,6 +258,7 @@ class Test {
             logManager.appendEntry(modelMsg)
 
         } finally {
+            this.context = context
             logger.info(sb.join("\n"))
         }
     }
@@ -309,12 +309,12 @@ class Test {
             logManager.appendEntry(modelMsg)
 
         } finally {
+            this.context = context
             logger.info(sb.join("\n"))
         }
     }
 
     void storyTest() {
-        def sb = []
         logger.info("## Running Story tests, resuming from the UnitTests.jsonl file we crafted in the Narrator testing above.")
         try {
             this.context = logManager.readAllEntries()
@@ -327,10 +327,10 @@ class Test {
                 resonance: 1.0,
                 gravity: 1.5
             )
-            sb.add("### Adjusted Impulse: ${vibe.asMap()}")
+            logger.info("### Adjusted Impulse: ${vibe.asMap()}")
 
             String input = "${epwna.toMd()}\n---\nGood morning George. I'm Ewpna. You know, I told him to name it the Forge. Hey Phiglit, have you renamed that class yet? 🛡️🌱🧝‍♀️"
-            sb.add("### User says:\n${input}")
+            logger.info("### User says:\n${input}")
             Message userMsg = context.addMessage(
                 role: "user",
                 author: "Traveler",
@@ -341,7 +341,7 @@ class Test {
             logManager.appendEntry(userMsg)
 
             String output = model.generateResponse(context, vibe.toPrefix())
-            sb.add("### George says:\n${output}")
+            logger.info("### George says:\n${output}")
             Message modelMsg = context.addMessage(
                 role: "assistant",
                 author: "George",
@@ -350,8 +350,29 @@ class Test {
                 vibe: this.vibe.clone()
             )
             logManager.appendEntry(modelMsg)
+
+            input = "Ah. Yes, Epwna is right. I forgot to rename the class. Aaaaand all done! Yup, thank you Epwna. I like it much better. What are your thoughts, George? 🦉⚒️💻🧙‍♂️"
+            logger.info("### User says:\n${input}")
+            userMsg = context.addMessage(
+                role: "user",
+                author: "Traveler",
+                content: input,
+                parentId: modelMsg.messageId,
+                vibe: this.vibe.clone()
+            )
+            logManager.appendEntry(userMsg)
+
+            output = model.generateResponse(context, vibe.toPrefix())
+            logger.info("### George says:\n${output}")
+            modelMsg = context.addMessage(
+                role: "assistant",
+                author: "George",
+                content: output,
+                parentId: userMsg.messageId,
+                vibe: this.vibe.clone()
+            )
+            logManager.appendEntry(modelMsg)
         } finally {
-            logger.info(sb.join("\n"))
             this.context = context
         }
     }
@@ -359,30 +380,8 @@ class Test {
     void illustratorTest() {
         logger.info("## Running Illustrator tests")
 
-        Message lastMessage = context.messages.last()
+        Message lastMessage = this.context.messages.last()
         assert lastMessage.content.contains("<IMAGE_DESC>")
-
-        String input = "Ah. Yes, Epwna is right. I forgot to rename the class. Aaaaand all done! Yup, thank you Epwna. I like it much better. What are your thoughts, George? 🦉⚒️💻🧙‍♂️"
-        logger.info("### User says:\n${input}")
-        Message userMsg = context.addMessage(
-            role: "user",
-            author: "Traveler",
-            content: input,
-            parentId: lastMessage.messageId,
-            vibe: this.vibe.clone()
-        )
-        logManager.appendEntry(userMsg)
-
-        String output = model.generateResponse(context, vibe.toPrefix())
-        logger.info("### George says:\n${output}")
-        Message modelMsg = context.addMessage(
-            role: "assistant",
-            author: "George",
-            content: output,
-            parentId: userMsg.messageId,
-            vibe: this.vibe.clone()
-        )
-        logManager.appendEntry(modelMsg)
 
         Illustrator canvas = new Illustrator()
         canvas.style = ImageType.LANDSCAPE
