@@ -4,7 +4,7 @@
 
 Unlike linear chat applications, `MUC` treats conversations as a Directed Acyclic Graph (DAG), allowing you to branch reality, jump between timelines, and maintain a persistent history stored in JSONL format. The CLI provides a robust navigation suite: use `/map` to visualize the branching paths of your story, `/jump <id>` to teleport to specific nodes in the timeline, and `/bookmarks` to manage saved "anchors" in the narrative tapestry.
 
-The core of the interaction experience is the **Resonance Engine**, a method of real-time behavior modulation. This allows the Navigator to dynamically adjust the emotional and cognitive "faders" of the AI—such as `nurturance`, `playfulness`, or `sarcasm`, on the fly at inference time. By adjusting these values (0.0 to 2.0), you can shift the AI's tone from a cold, clinical archivist to a manic, whimsical companion without losing the thread of the conversation.
+In addition, the app uses Thematic Resonance Clusters (e.g., Warmth, Gravity, Efficiency) to adjust the "tilt of the universe" at inference time.
 
 Note: Coded and maintained with guidance from a friendly and patient AI assistant. Please see **`CONTRIBUTING.md`** for details.
 
@@ -19,7 +19,7 @@ Note: Coded and maintained with guidance from a friendly and patient AI assistan
 * **Hybrid Vault:** Secure, optionally encrypted (AES-256) storage of narrative history in a local JSONL format.
 
 ### 🎭 Narrative Interaction
-* **Resonance Faders:** Real-time personality modulation via scalar weights, injecting raw emotional parameters directly into the model's instructions.
+* **Resonance Faders:** Real-time personality modulation via scalar weights, placed into the model's system prompt.
 * **Semantic Tag Parsing:** Supports advanced output rendering, including `<IMAGE_DESC>` parsing for on-demand "visual margin sketches."
 * **TUI Interface:** A rich, CLI-focused terminal experience with color-coded feedback and intuitive command handling.
 
@@ -33,7 +33,7 @@ Since `MUC` is a single-file runtime application, setup is minimal.
 * **Java Runtime:** Ensure you have a recent Java Development Kit (JDK) installed, with version 21 or higher recommended.
 * **Groovy Runtime:** Install the Groovy runtime environment, with version 4 supported, but 5 or higher recommended.
 * **ENV VARS:** Set up environment variables for any necessary configurations (or set them in `Secrets/.env`):
-    * `OLLAMA_API_URL`: Set this environment variable to the URL of your OLLAMA instance. eg: `OLLAMA_API_URL=http://localhost:11434/api/v1`
+    * `OLLAMA_API_URL`: Set this environment variable to the URL of your OLLAMA instance. eg: `OLLAMA_API_URL=http://localhost:11434/api/chat`
     * `OLLAMA_API_KEY`: Set this environment variable if you need authentication for your API provider. eg: `OLLAMA_API_KEY=sk-your-api-key`
     * `ENCRYPTION_KEY`: Set this environment variable if you want to encrypt the user and model messages writen to the JSONL file on disk (AES-256). eg: `ENCRYPTION_KEY=SuperSecretKey`
 
