@@ -20,14 +20,12 @@ Logger.info "Welcome to the Muc. Starting execution loop."
 
 // Get directly to a chat.
 if (options.chat) {
-    Logger.setLevel(LogLevel.INFO)
     Logger.info "# Sent a chat arg."
     new Chat(options).run()
 }
 
 // Turn our Refinery on.
 if (options.refinery) {
-    Logger.setLevel(LogLevel.INFO)
     Logger.info "# Sent a refinery arg. Starting Forge."
     new Forge(iterations: 5).run()
 }
@@ -35,7 +33,6 @@ if (options.refinery) {
 // Prompt for input to generate an image.
 if (options.image) {
     Logger.info "# Sent an image arg."
-    Logger.setLevel(LogLevel.INFO)
     def illustrator = new Illustrator()
     illustrator.style = ImageType.PORTRAIT
     illustrator.title = "ComfyUI"
@@ -105,7 +102,7 @@ if (options.build) {
 
 // Test the thing. Should be pretty easy for a model to consume.
 if (options.test) {
-    Logger.setLevel(LogLevel.INFO)
     Logger.info "# Sent a test arg."
     new Test().run()
 }
+

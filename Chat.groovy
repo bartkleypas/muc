@@ -169,7 +169,7 @@ class Chat {
         bridge.terminal.writer().print("\u001B[1;36m${partner.name}\u001B[0m: ")
 
         StringBuilder fullOutput = new StringBuilder()
-        model.streamResponseWithPrefix(context, faderPrefix) { token ->
+        model.streamResponse(context) { token ->
             bridge.printToken(token)
             fullOutput.append(token)
         }

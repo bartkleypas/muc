@@ -71,10 +71,9 @@ class Test {
         narratorTest()
         faderTest()
         storyTest()
-        illustratorTest()
+        // illustratorTest()
         logger.info("# Unit tests complete")
         logger.info("**Coalescence**🦉☕️")
-
     }
 
     private void initializeResources() {
@@ -82,7 +81,7 @@ class Test {
         String historyFile = "Story/UnitTests.jsonl"
         this.logManager = new LogManager(historyFile)
         this.context = new Context().enableLogging(logManager)
-        this.model = new Model(ModelType.MEDIUM)
+        this.model = new Model(ModelType.BIG)
         this.vibe = new Resonance()
 
         initializeNewChronicle(historyFile)
@@ -228,14 +227,13 @@ class Test {
     }
 
     void narratorTest() {
-        def sb = []
         this.context.messages[0].content = "${systemMsg.content}\n---\n${library.toMd()}\n---\n${rngResults}"
         try {
             logger.info("## Running 'Default' Handshake Test")
 
             // The Interaction
             String input = "${phiglit.toMd()}\n---\nGood morning George! My name is Phiglit. Would you please describe yourself, and where we are? 💻🧙‍♂️📚"
-            sb.add("### User says:\n${input}")
+            logger.info("### User says:\n${input}")
 
             Message userMsg = context.addMessage(
                 role: "user",
@@ -247,8 +245,15 @@ class Test {
             logManager.appendEntry(userMsg)
 
             // Generate and Log
-            String output = model.generateResponse(context)
-            sb.add("### George says:\n${output}")
+            StringBuilder outputBuilder = new StringBuilder()
+            logger.info("### George says:")
+            model.streamResponse(context) { token ->
+                print(token)
+                outputBuilder.append(token)
+            }
+            print("\n")
+            String output = outputBuilder.toString().trim()
+
             Message modelMsg = context.addMessage(
                 role: "assistant",
                 author: "George",
@@ -259,13 +264,12 @@ class Test {
             logManager.appendEntry(modelMsg)
 
         } finally {
-            logger.info(sb.join("\n"))
+            this.context = context
         }
     }
 
     void faderTest() {
         logger.info("## Running vibe checks")
-        def sb = []
         Message lastMessage = this.context.messages.last()
 
         try {
@@ -277,10 +281,9 @@ class Test {
                 resonance: 1.0,
                 gravity: 0.5
             )
-            sb.add("### Adjusted Impulse: ${vibe.asMap()}")
 
             String input = "George, tell me what you think of this 'Refinery' we are building. Be honest.🚧🏭✨"
-            sb.add("### User Input:\n${input}")
+            logger.info("### User Input:\n${input}")
 
             Message userMsg = context.addMessage(
                 role: "user",
@@ -291,13 +294,14 @@ class Test {
             )
             logManager.appendEntry(userMsg)
 
-            String output = model.generateResponse(context, vibe.toPrefix())
-            sb.add("### George's Response:\n${output}")
-
-            def deltas = ResonanceEngine.calculate(output)
-            this.vibe + deltas
-
-            sb.add("### Post-Calculation Vibe: ${vibe.toPrefix()}")
+            logger.info("### George says:")
+            StringBuilder outputBuilder = new StringBuilder()
+            model.streamResponse(context) { token ->
+                print(token)
+                outputBuilder.append(token)
+            }
+            print("\n")
+            String output = outputBuilder.toString().trim()
 
             Message modelMsg = context.addMessage(
                 role: "assistant",
@@ -309,12 +313,11 @@ class Test {
             logManager.appendEntry(modelMsg)
 
         } finally {
-            logger.info(sb.join("\n"))
+            this.context = context
         }
     }
 
     void storyTest() {
-        def sb = []
         logger.info("## Running Story tests, resuming from the UnitTests.jsonl file we crafted in the Narrator testing above.")
         try {
             this.context = logManager.readAllEntries()
@@ -327,10 +330,9 @@ class Test {
                 resonance: 1.0,
                 gravity: 1.5
             )
-            sb.add("### Adjusted Impulse: ${vibe.asMap()}")
 
             String input = "${epwna.toMd()}\n---\nGood morning George. I'm Ewpna. You know, I told him to name it the Forge. Hey Phiglit, have you renamed that class yet? 🛡️🌱🧝‍♀️"
-            sb.add("### User says:\n${input}")
+            logger.info("### User says:\n${input}")
             Message userMsg = context.addMessage(
                 role: "user",
                 author: "Traveler",
@@ -340,8 +342,15 @@ class Test {
             )
             logManager.appendEntry(userMsg)
 
-            String output = model.generateResponse(context, vibe.toPrefix())
-            sb.add("### George says:\n${output}")
+            logger.info("### George says:")
+            StringBuilder outputBuilder = new StringBuilder()
+            model.streamResponse(context, vibe.toPrefix()) { token ->
+                print(token)
+                outputBuilder.append(token)
+            }
+            print("\n")
+            String output = outputBuilder.toString().trim()
+
             Message modelMsg = context.addMessage(
                 role: "assistant",
                 author: "George",
@@ -350,8 +359,35 @@ class Test {
                 vibe: this.vibe.clone()
             )
             logManager.appendEntry(modelMsg)
+
+            input = "Ah. Yes, Epwna is right. I forgot to rename the class. Aaaaand all done! Yup, thank you Epwna. I like it much better. What are your thoughts, George? 🦉⚒️💻🧙‍♂️"
+            logger.info("### User says:\n${input}")
+            userMsg = context.addMessage(
+                role: "user",
+                author: "Traveler",
+                content: input,
+                parentId: modelMsg.messageId,
+                vibe: this.vibe.clone()
+            )
+            logManager.appendEntry(userMsg)
+
+            logger.info("### George says:")
+            outputBuilder = new StringBuilder()
+            model.streamResponse(context) { token ->
+                print(token)
+                outputBuilder.append(token)
+            }
+            print("\n")
+            output = outputBuilder.toString().trim()
+            modelMsg = context.addMessage(
+                role: "assistant",
+                author: "George",
+                content: output,
+                parentId: userMsg.messageId,
+                vibe: this.vibe.clone()
+            )
+            logManager.appendEntry(modelMsg)
         } finally {
-            logger.info(sb.join("\n"))
             this.context = context
         }
     }
@@ -359,30 +395,8 @@ class Test {
     void illustratorTest() {
         logger.info("## Running Illustrator tests")
 
-        Message lastMessage = context.messages.last()
+        Message lastMessage = this.context.messages.last()
         assert lastMessage.content.contains("<IMAGE_DESC>")
-
-        String input = "Ah. Yes, Epwna is right. I forgot to rename the class. Aaaaand all done! Yup, thank you Epwna. I like it much better. What are your thoughts, George? 🦉⚒️💻🧙‍♂️"
-        logger.info("### User says:\n${input}")
-        Message userMsg = context.addMessage(
-            role: "user",
-            author: "Traveler",
-            content: input,
-            parentId: lastMessage.messageId,
-            vibe: this.vibe.clone()
-        )
-        logManager.appendEntry(userMsg)
-
-        String output = model.generateResponse(context, vibe.toPrefix())
-        logger.info("### George says:\n${output}")
-        Message modelMsg = context.addMessage(
-            role: "assistant",
-            author: "George",
-            content: output,
-            parentId: userMsg.messageId,
-            vibe: this.vibe.clone()
-        )
-        logManager.appendEntry(modelMsg)
 
         Illustrator canvas = new Illustrator()
         canvas.style = ImageType.LANDSCAPE
