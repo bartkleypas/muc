@@ -15,31 +15,22 @@ class Model {
     }
 
     /**
-     * Unified streaming method that handles the Gemma 4 "Thinking" vs "Vibe" sequence.
+     * Unified streaming method.
      */
     void streamResponse(Context context, String prefix = "", Closure onToken) {
         // Build the payload
         def messages = context.messages
-        
-        // If we are suturing a vibe/prefix and the model supports it
-        if (prefix && type.supportsVibe) {
-            messages << [role: "assistant", content: prefix]
-        }
 
         def postData = [
             model: type.modelId,
             messages: messages,
             stream: true,
+            think: type.supportsThinking,
             options: [
                 temperature: this.temperature,
                 num_ctx: 131072 // Bumping the 4k ceiling for the Strix Halo
             ]
         ]
-
-        // Add the native thinking trigger for Gemma 4 if supported
-        if (!type.supportsThinking) {
-            postData.think = false
-        }
 
         executeRequest(postData, onToken)
     }

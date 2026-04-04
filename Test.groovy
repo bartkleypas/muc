@@ -72,8 +72,7 @@ class Test {
         faderTest()
         storyTest()
         // illustratorTest()
-        logger.info("# Unit tests complete")
-        logger.info("**Coalescence**🦉☕️")
+        logger.info("# Unit tests complete:\n**Coalescence**🦉☕️")
     }
 
     private void initializeResources() {
@@ -125,7 +124,7 @@ class Test {
         def d20 = new Dice(DiceType.D20)
         sb.add("### Rolling a D20 on the desk:\n${d20}")
         this.rngResults = sb.join("\n")
-        logger.info(sb.join("\n"))
+        // logger.info(sb.join("\n"))
     }
 
     void locationTest() {
@@ -142,7 +141,7 @@ class Test {
         )
         sb.add("### POI:\n${this.library.toMd()}")
         this.locationResults = sb.join("\n")
-        logger.info(sb.join("\n"))
+        // logger.info(sb.join("\n"))
     }
 
     void characterTest() {
@@ -160,7 +159,7 @@ class Test {
         sb.add(hero.toMd())
         this.phiglit = hero
         this.characterResults = sb.join("\n")
-        logger.info(sb.join("\n"))
+        // logger.info(sb.join("\n"))
     }
 
     // Epwna does a lot of inventory testing for us
@@ -223,11 +222,12 @@ class Test {
         sb.add("### Finally, our hero ends up like this:\n${hero.toMd()}")
         this.epwna = hero
         this.inventoryResults = "#### Character sheet for Epwna:\n${hero.toMd()}"
-        logger.info("#### Character sheet for Epwna:\n${hero.toMd()}")
+        // logger.info("#### Character sheet for Epwna:\n${hero.toMd()}")
     }
 
     void narratorTest() {
-        this.context.messages[0].content = "${systemMsg.content}\n---\n${library.toMd()}\n---\n${rngResults}"
+        // Introduces George, Sets the location to his library, and injects the "vibes" of the room.
+        this.context.messages[0].content = "${systemMsg.content}\n---\n${library.toMd()}\n---\n${this.vibe.toMd()}"
         try {
             logger.info("## Running 'Default' Handshake Test")
 
@@ -282,6 +282,9 @@ class Test {
                 gravity: 0.5
             )
 
+            // Adjusts the system prompt with the new "vibes." Hopefully isn't teaching our Owl friend to be an arse to Phiglit?
+            this.context.messages[0].content = "${systemMsg.content}\n---\n${library.toMd()}\n---\n${this.vibe.toMd()}"
+
             String input = "George, tell me what you think of this 'Refinery' we are building. Be honest.🚧🏭✨"
             logger.info("### User Input:\n${input}")
 
@@ -331,6 +334,9 @@ class Test {
                 gravity: 1.5
             )
 
+            // Again, adjusts the rooms vibes. Epwna has that kind of synergy going on.
+            this.context.messages[0].content = "${systemMsg.content}\n---\n${library.toMd()}\n---\n${this.vibe.toMd()}"
+
             String input = "${epwna.toMd()}\n---\nGood morning George. I'm Ewpna. You know, I told him to name it the Forge. Hey Phiglit, have you renamed that class yet? 🛡️🌱🧝‍♀️"
             logger.info("### User says:\n${input}")
             Message userMsg = context.addMessage(
@@ -344,7 +350,7 @@ class Test {
 
             logger.info("### George says:")
             StringBuilder outputBuilder = new StringBuilder()
-            model.streamResponse(context, vibe.toPrefix()) { token ->
+            model.streamResponse(context) { token ->
                 print(token)
                 outputBuilder.append(token)
             }
@@ -360,6 +366,7 @@ class Test {
             )
             logManager.appendEntry(modelMsg)
 
+            // Continues with adjusted vibes. Should decay or adjust?
             input = "Ah. Yes, Epwna is right. I forgot to rename the class. Aaaaand all done! Yup, thank you Epwna. I like it much better. What are your thoughts, George? 🦉⚒️💻🧙‍♂️"
             logger.info("### User says:\n${input}")
             userMsg = context.addMessage(

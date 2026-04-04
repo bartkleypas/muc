@@ -79,6 +79,10 @@ class Resonance implements Cloneable {
         return sigils.collectEntries { type, val -> [ (type.key): val ]}
     }
 
+    String toMd() {
+        return toPrefix()
+    }
+
     String toPrefix() {
         return sigils.collect { type, value -> "[${type.key.toUpperCase()}: ${value}]" }.join(" ")
     }
