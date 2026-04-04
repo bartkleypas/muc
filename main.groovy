@@ -24,9 +24,9 @@ if (options.chat) {
     new Chat(options).run()
 }
 
-// Turn our Refinery on.
+// Turn our Forge on. (Renamed from Refinery)
 if (options.refinery) {
-    Logger.info "# Sent a refinery arg. Starting Forge."
+    Logger.info "# Sent a refinery arg. Starting the Forge."
     new Forge(iterations: 5).run()
 }
 
