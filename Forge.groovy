@@ -23,7 +23,7 @@ class Forge {
     }
 
     void run() {
-        println "🌿 [SCRIPTORIUM REFINERY] Starting synthetic generation..."
+        println "🌿 [SCRIPTORIUM FORGE] Starting synthetic generation..."
         long totalStartTime = System.currentTimeMillis()
 
         int totalRuns = seeds.size() * iterations
@@ -73,7 +73,7 @@ class Forge {
         long totalElapsed = (System.currentTimeMillis() - startTime) / 1000
         def minutes = (totalElapsed / 60).toInteger()
         def seconds = totalElapsed % 60
-        println "---\n✅ Refinery run complete. Data added to ${trainingFile}"
+        println "---\n✅ Forging complete. Data added to ${trainingFile}"
         println "⏱️ Total Time: ${minutes}m ${seconds}s"
     }
 }

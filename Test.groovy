@@ -81,7 +81,7 @@ class Test {
         String historyFile = "Story/UnitTests.jsonl"
         this.logManager = new LogManager(historyFile)
         this.context = new Context().enableLogging(logManager)
-        this.model = new Model(ModelType.MEDIUM)
+        this.model = new Model(ModelType.BIG)
         this.vibe = new Resonance()
 
         initializeNewChronicle(historyFile)
@@ -227,14 +227,13 @@ class Test {
     }
 
     void narratorTest() {
-        def sb = []
         this.context.messages[0].content = "${systemMsg.content}\n---\n${library.toMd()}\n---\n${rngResults}"
         try {
             logger.info("## Running 'Default' Handshake Test")
 
             // The Interaction
             String input = "${phiglit.toMd()}\n---\nGood morning George! My name is Phiglit. Would you please describe yourself, and where we are? 💻🧙‍♂️📚"
-            sb.add("### User says:\n${input}")
+            logger.info("### User says:\n${input}")
 
             Message userMsg = context.addMessage(
                 role: "user",
@@ -246,8 +245,15 @@ class Test {
             logManager.appendEntry(userMsg)
 
             // Generate and Log
-            String output = model.generateResponse(context)
-            sb.add("### George says:\n${output}")
+            StringBuilder outputBuilder = new StringBuilder()
+            logger.info("### George says:")
+            model.streamResponse(context) { token ->
+                print(token)
+                outputBuilder.append(token)
+            }
+            print("\n")
+            String output = outputBuilder.toString().trim()
+
             Message modelMsg = context.addMessage(
                 role: "assistant",
                 author: "George",
@@ -259,13 +265,11 @@ class Test {
 
         } finally {
             this.context = context
-            logger.info(sb.join("\n"))
         }
     }
 
     void faderTest() {
         logger.info("## Running vibe checks")
-        def sb = []
         Message lastMessage = this.context.messages.last()
 
         try {
@@ -277,10 +281,9 @@ class Test {
                 resonance: 1.0,
                 gravity: 0.5
             )
-            sb.add("### Adjusted Impulse: ${vibe.asMap()}")
 
             String input = "George, tell me what you think of this 'Refinery' we are building. Be honest.🚧🏭✨"
-            sb.add("### User Input:\n${input}")
+            logger.info("### User Input:\n${input}")
 
             Message userMsg = context.addMessage(
                 role: "user",
@@ -291,13 +294,14 @@ class Test {
             )
             logManager.appendEntry(userMsg)
 
-            String output = model.generateResponse(context, vibe.toPrefix())
-            sb.add("### George's Response:\n${output}")
-
-            def deltas = ResonanceEngine.calculate(output)
-            this.vibe + deltas
-
-            sb.add("### Post-Calculation Vibe: ${vibe.toPrefix()}")
+            logger.info("### George says:")
+            StringBuilder outputBuilder = new StringBuilder()
+            model.streamResponse(context) { token ->
+                print(token)
+                outputBuilder.append(token)
+            }
+            print("\n")
+            String output = outputBuilder.toString().trim()
 
             Message modelMsg = context.addMessage(
                 role: "assistant",
@@ -310,7 +314,6 @@ class Test {
 
         } finally {
             this.context = context
-            logger.info(sb.join("\n"))
         }
     }
 
@@ -327,7 +330,6 @@ class Test {
                 resonance: 1.0,
                 gravity: 1.5
             )
-            logger.info("### Adjusted Impulse: ${vibe.asMap()}")
 
             String input = "${epwna.toMd()}\n---\nGood morning George. I'm Ewpna. You know, I told him to name it the Forge. Hey Phiglit, have you renamed that class yet? 🛡️🌱🧝‍♀️"
             logger.info("### User says:\n${input}")
@@ -340,8 +342,15 @@ class Test {
             )
             logManager.appendEntry(userMsg)
 
-            String output = model.generateResponse(context, vibe.toPrefix())
-            logger.info("### George says:\n${output}")
+            logger.info("### George says:")
+            StringBuilder outputBuilder = new StringBuilder()
+            model.streamResponse(context, vibe.toPrefix()) { token ->
+                print(token)
+                outputBuilder.append(token)
+            }
+            print("\n")
+            String output = outputBuilder.toString().trim()
+
             Message modelMsg = context.addMessage(
                 role: "assistant",
                 author: "George",
@@ -362,8 +371,14 @@ class Test {
             )
             logManager.appendEntry(userMsg)
 
-            output = model.generateResponse(context, vibe.toPrefix())
-            logger.info("### George says:\n${output}")
+            logger.info("### George says:")
+            outputBuilder = new StringBuilder()
+            model.streamResponse(context) { token ->
+                print(token)
+                outputBuilder.append(token)
+            }
+            print("\n")
+            output = outputBuilder.toString().trim()
             modelMsg = context.addMessage(
                 role: "assistant",
                 author: "George",
