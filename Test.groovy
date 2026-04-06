@@ -72,7 +72,7 @@ class Test {
         faderTest()
         storyTest()
         toolTest()
-        // illustratorTest()
+        illustratorTest()
         logger.info("# Unit tests complete:\n**Coalescence**🦉☕️")
     }
 
@@ -154,7 +154,7 @@ class Test {
         hero.armorType = ArmorType.LIGHT
         hero.location = new Location(0.00f, 0.00f, 0.00f)
 
-        Item tool = new Item("Linux terminal of Justice", ItemType.TOOL)
+        Item tool = new Item("Linux terminal of Justice", ItemType.TRINKET)
         tool.description = "A rugged and powerful pocket computer, used for sending instructions to chatbots."
         tool.metadata."action" = "ls -lh"
         hero.inventory.addItem(tool)
@@ -238,12 +238,12 @@ class Test {
             bio: "An 18 inch tall Barred Owl (Strix Varia), and narrator of our adventure. Speaks with a baritone voice in a smooth and measured cadence.",
             location: new Location()
         )
-        this.context.messages[0].content = "${systemMsg.content}\n---\n${library.toMd()}\n---\n${this.vibe.toMd()}"
+        this.context.messages[0].content = "${systemMsg.content}\n---\n${library.toJson()}\n---\n${this.vibe.toMd()}"
         try {
             logger.info("## Running 'Default' Handshake Test")
 
             // The Interaction
-            String input = "${phiglit.toMd()}\n---\nGood morning George! My name is Phiglit. Would you please describe yourself, and where we are? 💻🧙‍♂️📚"
+            String input = "${phiglit.toJson()}\n---\nGood morning George! My name is Phiglit. Would you please describe yourself, and where we are? 💻🧙‍♂️📚"
             logger.info("### User says:\n${input}")
 
             Message userMsg = context.addMessage(
@@ -294,7 +294,7 @@ class Test {
             )
 
             // Adjusts the system prompt with the new "vibes." Hopefully isn't teaching our Owl friend to be an arse to Phiglit?
-            this.context.messages[0].content = "${systemMsg.content}\n---\n${library.toMd()}\n---\n${this.vibe.toMd()}"
+            this.context.messages[0].content = "${systemMsg.content}\n---\n${library.toJson()}\n---\n${this.vibe.toMd()}"
 
             String input = "George, tell me what you think of this 'Refinery' we are building. Be honest.🚧🏭✨"
             logger.info("### User Input:\n${input}")
@@ -346,9 +346,9 @@ class Test {
             )
 
             // Again, adjusts the rooms vibes. Epwna has that kind of synergy going on.
-            this.context.messages[0].content = "${systemMsg.content}\n---\n${library.toMd()}\n---\n${this.vibe.toMd()}"
+            this.context.messages[0].content = "${systemMsg.content}\n---\n${library.toJson()}\n---\n${this.vibe.toMd()}"
 
-            String input = "${epwna.toMd()}\n---\nGood morning George. I'm Ewpna. You know, I told him to name it the Forge. Hey Phiglit, have you renamed that class yet? 🛡️🌱🧝‍♀️"
+            String input = "${epwna.toJson()}\n---\nGood morning George. I'm Ewpna. You know, I told him to name it the Forge. Hey Phiglit, have you renamed that class yet? 🛡️🌱🧝‍♀️"
             logger.info("### User says:\n${input}")
             Message userMsg = context.addMessage(
                 role: "user",
@@ -411,18 +411,99 @@ class Test {
     }
 
     void toolTest() {
+        def toolInjection = """## Tool Use Protocol
+- You have access to specialized tools represented as functions.
+- When a task requires a tool, or when a character (like Phiglit) uses an item in their inventory, you must call the corresponding function.
+- Do not narrate the tool action until you have received the 'tool' role response with the results."""
+        this.context.messages[0].content = "${systemMsg.content}\n---\n${library.toJson()}\n---\n${toolInjection}"
         logger.info("## Running Tool use tests")
         logger.info("### Adding a Terminal to George's Bag")
-        Item term = new Item("Terminal", ItemType.TOOL)
-        term.metadata."action" = "git diff"
+        Item term = new Item("terminal", ItemType.TOOL)
+        term.description = "A command to execute through the local shell."
         george.inventory.addItem(term)
-        println george.toMd()
 
+        String input = "Would you please list the contents of the current folder?"
+        logger.info("### User says:\n${input}")
+
+        Message lastMsg = context.messages.last()
+        Message userMsg = context.addMessage(
+            role: "user",
+            author: "Traveler",
+            content: input,
+            parentId: lastMsg.messageId,
+            vibe: this.vibe
+        )
+        logManager.appendEntry(userMsg)
+
+        logger.info("### George says:")
+        StringBuilder outputBuilder = new StringBuilder()
+        model.streamResponse(context, george.inventory) { token ->
+            print(token)
+            outputBuilder.append(token)
+        }
+        print("\n")
+        String output = outputBuilder.toString().trim()
+
+        Message modelMsg = context.addMessage(
+            role: "assistant",
+            author: "George",
+            content: output,
+            parentId: userMsg.messageId,
+            vibe: this.vibe
+        )
+        logManager.appendEntry(modelMsg)
+
+        logger.info("### Got a tool call that looks like this (response side channel):")
+        println(model.toolCall)
+
+        logger.info("### Running the command we got from the model.")
+        def action = model.toolCall[0].function.arguments.action
+        println("Wanting to do this: ${action}")
+
+        term.metadata."action" = action
+        def dirResults = george.inventory.useItem(term)
+
+        Message toolTurn = context.addMessage(
+            role: "tool",
+            author: "George",
+            content: dirResults,
+            parentId: modelMsg.messageId,
+            vibe: this.vibe,
+            tool_call_id: model.toolCall[0].id
+        )
+        logManager.appendEntry(toolTurn)
+
+        logger.info("### George has this to say:")
+        outputBuilder = new StringBuilder()
+        model.streamResponse(context) { token ->
+            print(token)
+            outputBuilder.append(token)
+        }
+        print("\n")
+        output = outputBuilder.toString().trim()
+
+        modelMsg = context.addMessage(
+            role: "assistant",
+            author: "George",
+            content: output,
+            parentId: toolTurn.messageId,
+            vibe: this.vibe
+        )
+        logManager.appendEntry(modelMsg)
+
+        /**
         logger.info("### Using the term to list the directory.")
+        term.metadata."action" = "ls -lh"
         george.inventory.useItem(term)
-        
         logger.info("### The results are:")
-        logger.info(george.inventory.toJsonPretty())
+        logger.info(george.inventory.toJson())
+        
+        logger.info("### Checking the time.")
+        term.metadata."action" = "date"
+        george.inventory.useItem(term)
+        logger.info("### The results are:")
+        logger.info(george.inventory.toJson())
+        */
     }
 
     void illustratorTest() {

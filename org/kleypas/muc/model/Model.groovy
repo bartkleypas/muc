@@ -1,5 +1,6 @@
 package org.kleypas.muc.model
 
+import org.kleypas.muc.inventory.Inventory
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 
@@ -7,6 +8,7 @@ class Model {
     Provider provider
     ModelType type
     Double temperature
+    ArrayList toolCall
 
     Model(ModelType type = ModelType.MEDIUM) {
         this.provider = new Provider()
@@ -17,7 +19,7 @@ class Model {
     /**
      * Unified streaming method.
      */
-    void streamResponse(Context context, String prefix = "", Closure onToken) {
+    void streamResponse(Context context, Inventory bag = null, Closure onToken) {
         // Build the payload
         def messages = context.messages
 
@@ -31,6 +33,11 @@ class Model {
                 num_ctx: 131072 // Bumping the 4k ceiling for the Strix Halo
             ]
         ]
+
+        // Needs an inventory to build the tool list...
+        if (type.supportsTools && bag) {
+            postData.tools = bag.getToolInstructions()
+        }
 
         executeRequest(postData, onToken)
     }
@@ -53,11 +60,15 @@ class Model {
 
                     def data = new JsonSlurper().parseText(line)
                     if (data.message?.thinking) {
-                        // onThinkingToken(data.message.thinking) // Noisy, and needs special attention
+                        onThinkingToken() // Noisy, and needs special attention
                     }
 
                     if (data.message?.content) {
                         onToken(data.message.content)
+                    }
+
+                    if (data.message?.tool_calls) {
+                        onToolCallToken(data.message.tool_calls)
                     }
 
                     if (data.done) {
@@ -68,5 +79,13 @@ class Model {
         } else {
             throw new RuntimeException("Forge Failure: ${post.errorStream.text}")
         }
+    }
+
+    private void onThinkingToken() {
+
+    }
+
+    private void onToolCallToken(ArrayList toolCall) {
+        this.toolCall = toolCall
     }
 }

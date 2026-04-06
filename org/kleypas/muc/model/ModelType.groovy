@@ -3,7 +3,7 @@ package org.kleypas.muc.model
 // An enumeration representing the different types of models available at our disposal.
 // Basically, the three model sizes represent tiers of hardware size and performance.
 enum ModelType {
-    BIG("gemma4:26b", 1.0, false, false),         // Brilliant narrator. No notes.
+    BIG("gemma4:26b", 1.0, false, true, true),         // Brilliant narrator. No notes.
     // BIG("magistral:24b", 0.8, false, true),
     // MEDIUM("gpt-oss:20b", 0.8, false, true),   // Has documented issues transitioning smoothly from thinking and prose. Also not the most convincing narrator.
     MEDIUM("gemma3:12b", 0.7, true, false),       // Good usable compromise and keeps things tight in flight.
@@ -15,11 +15,13 @@ enum ModelType {
     final Double defaultTemp
     final Boolean supportsVibe
     final Boolean supportsThinking
+    final Boolean supportsTools
 
-    ModelType(String id, Double temp, Boolean vibes = false, Boolean thinking = false) {
+    ModelType(String id, Double temp, Boolean vibes = false, Boolean thinking = false, Boolean tools = false) {
         this.modelId = id
         this.defaultTemp = temp
         this.supportsVibe = vibes
         this.supportsThinking = thinking
+        this.supportsTools = tools
     }
 }

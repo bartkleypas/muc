@@ -27,6 +27,35 @@ class Inventory {
     }
 
     /**
+    * Generates a minified JSON array of function definitions
+    * for all Items with ItemType.TOOL in this inventory.
+    */
+    List<Map> getToolInstructions() {
+        List<Map> toolDefinitions = items.values().flatten()
+            .findAll { it.type == ItemType.TOOL }
+            .collect { item ->
+            [
+                type: "function",
+                function: [
+                    name: item.name.toLowerCase().replaceAll(/[^a-z0-0_]/, "_"),
+                    description: item.description,
+                    parameters: [
+                        type: "object",
+                        properties: [
+                            action: [
+                                type: "string",
+                                description: "The specific instruction for the ${item.name}."
+                            ]
+                        ],
+                        required: ["action"]
+                    ]
+                ]
+            ]
+        }
+        return toolDefinitions
+    }
+
+    /**
      * Adds an {@code Item} to the inventory. If the inventory
      * is full (i.e., {@code slotsOccupied} >= {@code slotsMax}),
      * a {@code RuntimeException} is thrown.
@@ -94,10 +123,10 @@ class Inventory {
         def action = item.metadata.get("action")
 
         if (!action) {
-            throw new RuntimeException("This tool is broken; no metadata found boss.")
+            throw new RuntimeException("This tool is broken; no action in the metadata boss.")
         }
 
-        println "Character is activating ${item.name}, trying to do ${action} action..."
+        println "Character is activating \"${item.name}\", trying to do \"${action}\" action..."
         def sout = new StringBuilder(), serr = new StringBuilder()
         def proc = action.execute()
         proc.consumeProcessOutput(sout, serr)
@@ -123,6 +152,7 @@ class Inventory {
      */
     String toJsonPretty() {
         def output = JsonOutput.prettyPrint(JsonOutput.toJson(this))
+        return output
     }
 
     /**
@@ -133,12 +163,12 @@ class Inventory {
      */
     String toMd() {
         def output = []
-        output.add("  - name: ${name}")
-        output.add("    slots: ${slotsMax}")
-        output.add("    taken: ${slotsOccupied}")
+        output.add("- name: ${name}")
+        output.add("  slots: ${slotsMax}")
+        output.add("  taken: ${slotsOccupied}")
         items.each { name, item ->
-            output.add("    - item: ${name}")
-            output.add("      stack: ${item.stack}")
+            output.add("  - item: ${name}")
+            output.add("    stack: ${item.stack}")
         }
         return output.join("\r\n")
     }
