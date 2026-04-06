@@ -23,7 +23,7 @@ class TerminalBridge implements AutoCloseable {
         this.statusLine = Status.getStatus(terminal)
     }
 
-/**
+    /**
      * Draws the "Mainframe Heuristic" signature and initial header.
      */
     void drawSignature(Map stats) {

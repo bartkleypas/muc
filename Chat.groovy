@@ -50,6 +50,10 @@ class Chat {
         }
     }
 
+    /*
+     * Put together some of the stuff we need from the file system and start
+     * a new chronical if needed
+     */
     private void initializeResources() {
         this.cli = new Cli()
         String historyFile = options.chat instanceof String ? options.chat : "Story/Majel.jsonl"
@@ -58,13 +62,6 @@ class Chat {
         
         this.context = new Context().enableLogging(logManager)
         this.model = new Model(ModelType.BIG)
-
-        this.location = new Location()
-
-        this.poi = new Poi(
-            location: this.location,
-            name: "Starship Majel"
-        )
 
         // Load existing history or initialize system prompt
         if (new File(historyFile).exists()) {
@@ -85,7 +82,17 @@ class Chat {
         }
     }
 
+    /*
+     * Define the location, and add some characters
+     */
     private void introductions() {
+
+        this.location = new Location()
+        this.poi = new Poi(
+            location: this.location,
+            name: "Starship Majel"
+        )
+
         this.player = new Character(
             name: "Navigator",
             description: "A Seasoned Navigator",
@@ -100,6 +107,9 @@ class Chat {
         )
     }
 
+    /*
+     * Do the thing if we need to start a new story.
+     */
     private void initializeNewChronicle(String path) {
         String promptText = new File(path).text
         // promptText = SystemPromptHelper.buildFullSystemPrompt(promptText)
@@ -112,6 +122,9 @@ class Chat {
         logManager.appendEntry(systemMsg)
     }
 
+    /*
+     * Do another thing (provide the first startup experience)
+     */
     private void startupSequence() {
         bridge.drawSignature(logManager.getChronicleStats())
 
@@ -124,6 +137,9 @@ class Chat {
         bridge.flushBuffer()
     }
 
+    /*
+     * The main covnersation loop.
+     */
     private void executionLoop() {
         def reader = LineReaderBuilder.builder().terminal(bridge.terminal).build()
         while (true) {
@@ -149,6 +165,9 @@ class Chat {
         }
     }
 
+    /*
+     * Yup. Run through the users turn
+     */
     private Message processUserTurn(String input) {
         Message last = context.messages.last()
 
@@ -164,6 +183,9 @@ class Chat {
         return mine
     }
 
+    /*
+     * And now the models turn
+     */
     private Message processModelTurn(Message userMsg) {
         String faderPrefix = userMsg.vibe.toPrefix()
         bridge.terminal.writer().print("\u001B[1;36m${partner.name}\u001B[0m: ")

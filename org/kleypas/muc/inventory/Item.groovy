@@ -13,6 +13,7 @@ class Item {
     String description
     int stack
     int weight
+    Map<String, Object> metadata
 
     /**
      * Constructs a new {@code Item} with the supplied name and type.
@@ -28,5 +29,6 @@ class Item {
         this.description = description
         this.stack = 1   // sensible default for most items
         this.weight = 1  // sensible default for most items
+        this.metadata = [:] // Someplace to define more "interesting" things to do with an item.
     }
 }

@@ -22,6 +22,8 @@ class Message {
     Boolean encrypted = false
     Boolean isCurrent = false
 
+    String tool_call_id
+
     Message(Map args = [:]) {
         this.vibe = args.vibe instanceof Resonance ? args.vibe : new Resonance()
         args.each { k, v ->
@@ -43,7 +45,8 @@ class Message {
             'vibe': vibe.asMap(),
             'encrypted': encrypted,
             'content': content,
-            'bookmark': bookmark
+            'bookmark': bookmark,
+            'tool_call_id': tool_call_id
         ]
     }
 }

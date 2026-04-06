@@ -95,7 +95,7 @@ class CommandProcessor {
 
     // Display the narrative graph
     private void handleMap() {
-        def currentTip = context.messages.reverse().find { it.role == "assistant" || it.role == "system" }
+        Message currentTip = context.messages.reverse().find { it.role == "assistant" || it.role == "system" }
         String currentId = currentTip?.messageId ?: ""
         Map tree = logManager.buildHistoryTree()
         bridge.terminal.writer().println("\n\u001B[33m## THE MULTIVERSE ##\u001B[0m")
