@@ -490,20 +490,6 @@ class Test {
             vibe: this.vibe
         )
         logManager.appendEntry(modelMsg)
-
-        /**
-        logger.info("### Using the term to list the directory.")
-        term.metadata."action" = "ls -lh"
-        george.inventory.useItem(term)
-        logger.info("### The results are:")
-        logger.info(george.inventory.toJson())
-        
-        logger.info("### Checking the time.")
-        term.metadata."action" = "date"
-        george.inventory.useItem(term)
-        logger.info("### The results are:")
-        logger.info(george.inventory.toJson())
-        */
     }
 
     void illustratorTest() {
