@@ -18,19 +18,26 @@ def version = "1.3-majel"
 
 Logger.info "Welcome to the Muc. Starting execution loop."
 
-// Get directly to a chat.
+/*
+ * Start up a chat. Takes the args value as a string location of an existing
+ * or new journal to work on
+ */
 if (options.chat) {
     Logger.info "# Sent a chat arg."
     new Chat(options).run()
 }
 
-// Turn our Forge on. (Renamed from Refinery)
+/*
+ * Burn some tokens with this one. Runs inference in a loop over handshakes.
+ */
 if (options.refinery) {
     Logger.info "# Sent a refinery arg. Starting the Forge."
     new Forge(iterations: 5).run()
 }
 
-// Prompt for input to generate an image.
+/*
+ * Dive directly into an image generation prompt
+ */
 if (options.image) {
     Logger.info "# Sent an image arg."
     def illustrator = new Illustrator()
@@ -45,7 +52,10 @@ if (options.image) {
     Logger.info "## Recipt:\r\n${recipt}"
 }
 
-// Build some stuff!
+/*
+ * I know I said "no-build", but sometimes it is nice to have a compiled
+ * jar that we can shove into a class path.
+ */
 if (options.build) {
     Logger.info "Starting project build (Style B: Compile and Package)..."
 
@@ -100,9 +110,10 @@ if (options.build) {
     System.exit(0)
 }
 
-// Test the thing. Should be pretty easy for a model to consume.
+/*
+ * Finally, a test routine. You get to meet George here.
+ */
 if (options.test) {
     Logger.info "# Sent a test arg."
     new Test().run()
 }
-

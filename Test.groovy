@@ -71,6 +71,7 @@ class Test {
         narratorTest()
         faderTest()
         storyTest()
+        toolTest()
         // illustratorTest()
         logger.info("# Unit tests complete:\n**Coalescence**🦉☕️")
     }
@@ -155,6 +156,7 @@ class Test {
 
         Item tool = new Item("Linux terminal of Justice", ItemType.TOOL)
         tool.description = "A rugged and powerful pocket computer, used for sending instructions to chatbots."
+        tool.metadata."action" = "ls -lh"
         hero.inventory.addItem(tool)
         sb.add(hero.toMd())
         this.phiglit = hero
@@ -173,12 +175,15 @@ class Test {
         hero.location = new Location(0.00f, 0.00f, 0.00f)
         sb.add("### A Hero:\n${hero.toMd()}")
 
-        Item tool = new Item("Chisel of Carving", ItemType.TOOL)
+        // Limit bag size for testing.
+        hero.inventory.slotsMax = 3
+
+        Item tool = new Item("Chisel of Carving", ItemType.TRINKET)
         tool.description = "A chisel, that oddly never dulls, and is always just the right size for the job."
         hero.inventory.addItem(tool)
         sb.add("### And she comes prepared with:\n${hero.inventory.toMd()}")
 
-        hero.inventory.useItem(tool)
+        // hero.inventory.useItem(tool)
         sb.add("### Our hero used ${tool.name}, but it should still be in her inventory:\n${hero.inventory.toMd()}")
 
         Item potion = new Item("Healing potion", ItemType.CONSUMABLE)
@@ -220,13 +225,19 @@ class Test {
         potion.stack = 1
         hero.inventory.addItem(potion)
         sb.add("### Finally, our hero ends up like this:\n${hero.toMd()}")
+        // println(sb.join("\n"))
         this.epwna = hero
         this.inventoryResults = "#### Character sheet for Epwna:\n${hero.toMd()}"
-        // logger.info("#### Character sheet for Epwna:\n${hero.toMd()}")
     }
 
     void narratorTest() {
         // Introduces George, Sets the location to his library, and injects the "vibes" of the room.
+        this.george = new Character(
+            name: "George",
+            description: "The Narrator",
+            bio: "An 18 inch tall Barred Owl (Strix Varia), and narrator of our adventure. Speaks with a baritone voice in a smooth and measured cadence.",
+            location: new Location()
+        )
         this.context.messages[0].content = "${systemMsg.content}\n---\n${library.toMd()}\n---\n${this.vibe.toMd()}"
         try {
             logger.info("## Running 'Default' Handshake Test")
@@ -397,6 +408,21 @@ class Test {
         } finally {
             this.context = context
         }
+    }
+
+    void toolTest() {
+        logger.info("## Running Tool use tests")
+        logger.info("### Adding a Terminal to George's Bag")
+        Item term = new Item("Terminal", ItemType.TOOL)
+        term.metadata."action" = "git diff"
+        george.inventory.addItem(term)
+        println george.toMd()
+
+        logger.info("### Using the term to list the directory.")
+        george.inventory.useItem(term)
+        
+        logger.info("### The results are:")
+        logger.info(george.inventory.toJsonPretty())
     }
 
     void illustratorTest() {

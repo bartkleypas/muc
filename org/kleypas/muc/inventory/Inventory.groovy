@@ -21,7 +21,7 @@ class Inventory {
      */
     Inventory() {
         this.name = "Bag of Holding"
-        this.slotsMax = 3
+        this.slotsMax = 20
         this.slotsOccupied = 0
         this.items = new HashMap<String, List<Item>>();
     }
@@ -66,18 +66,44 @@ class Inventory {
      * @param item the {@code Item} to use
      * @throws RuntimeException if the item is not present in the inventory
      */
-    void useItem(Item item) {
+    String useItem(Item item) {
         if (!items.containsKey(item.name)) {
             throw new RuntimeException("Nothing there, boss.")
         }
-        if (item.type != ItemType.CONSUMABLE) {
-            return
+        switch(item.type) {
+            case ItemType.CONSUMABLE:
+                handleConsumable(item)
+                break
+            case ItemType.TOOL:
+                executeToolLogic(item)
+                break
+            default:
+                println "You brandish the ${item.name} meaningfully."
         }
+    }
+
+    void handleConsumable(Item item) {
         if (item.stack <= 1) {
             removeItem(item)
             return
         }
         item.stack--
+    }
+
+    String executeToolLogic(Item item) {
+        def action = item.metadata.get("action")
+
+        if (!action) {
+            throw new RuntimeException("This tool is broken; no metadata found boss.")
+        }
+
+        println "Character is activating ${item.name}, trying to do ${action} action..."
+        def sout = new StringBuilder(), serr = new StringBuilder()
+        def proc = action.execute()
+        proc.consumeProcessOutput(sout, serr)
+        proc.waitForOrKill(1000)
+        item.metadata.result = sout.toString()
+        return sout.toString()
     }
 
     /**
