@@ -81,7 +81,7 @@ class Test {
         String historyFile = "Story/UnitTests.jsonl"
         this.logManager = new LogManager(historyFile)
         this.context = new Context().enableLogging(logManager)
-        this.model = new Model(ModelType.BIG)
+        this.model = new Model()
         this.vibe = new Resonance()
 
         initializeNewChronicle(historyFile)
@@ -422,7 +422,7 @@ class Test {
         term.description = "A command to execute through the local shell."
         george.inventory.addItem(term)
 
-        String input = "Would you please list the contents of the current folder?"
+        String input = "Guess what George! We _just_ added tool support! That means the Forge works! Would you like to give them a try? You could try listing the directory, to get an idea of what the Scriptorium is made of."
         logger.info("### User says:\n${input}")
 
         Message lastMsg = context.messages.last()
