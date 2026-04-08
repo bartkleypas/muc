@@ -36,10 +36,12 @@ class Model {
 
         // Needs an inventory to build the tool list...
         if (type.supportsTools && bag) {
+            println "## Trying to instruct model to do:\n${bag.getToolInstructions()}"
             postData.tools = bag.getToolInstructions()
         }
 
         executeRequest(postData, onToken)
+
     }
 
     private void executeRequest(Map payload, Closure onToken) {
@@ -60,7 +62,7 @@ class Model {
 
                     def data = new JsonSlurper().parseText(line)
                     if (data.message?.thinking) {
-                        onThinkingToken() // Noisy, and needs special attention
+                        // onThinkingToken() // Noisy, and needs special attention
                     }
 
                     if (data.message?.content) {
@@ -81,6 +83,7 @@ class Model {
         }
     }
 
+    // We might want to see this if tool calls are failing?
     private void onThinkingToken() {
 
     }

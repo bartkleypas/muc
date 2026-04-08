@@ -23,7 +23,7 @@ class Item {
      * @param name the display name of the item
      * @param type the {@link ItemType} categorising the item
      */
-    Item(String name, ItemType type) {
+    Item() {
         this.name = name
         this.type = type
         this.description = description

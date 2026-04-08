@@ -6,10 +6,6 @@ import org.kleypas.muc.cli.LogLevel
 
 import org.kleypas.muc.io.LogManager
 
-import org.kleypas.muc.rng.Coin
-import org.kleypas.muc.rng.Dice
-import org.kleypas.muc.rng.DiceType
-
 import org.kleypas.muc.location.Location
 import org.kleypas.muc.location.Poi
 
@@ -41,19 +37,12 @@ class Test {
     Context context
     Message systemMsg
     Resonance vibe
-    String rngResults
-    String locationResults
-    String characterResults
-    String inventoryResults
-    String narratorResults
-    String storyResults
-
-    Character phiglit
-    Character george
-    Character epwna
-    Character rosie
 
     Poi library
+
+    Character phiglit
+    Character epwna
+    Character george
 
     Test() {
         this.logger = new Logger()
@@ -63,16 +52,13 @@ class Test {
     void run() {
         logger.info("# Unit test results to follow.")
         initializeResources()
-
-        rngTest()
-        locationTest()
-        characterTest()
+        introductions()
         inventoryTest()
         narratorTest()
         faderTest()
         storyTest()
         toolTest()
-        illustratorTest()
+        // illustratorTest()
         logger.info("# Unit tests complete:\n**Coalescence**🦉☕️")
     }
 
@@ -81,16 +67,12 @@ class Test {
         String historyFile = "Story/UnitTests.jsonl"
         this.logManager = new LogManager(historyFile)
         this.context = new Context().enableLogging(logManager)
-        this.model = new Model()
+        this.model = new Model(ModelType.MEDIUM)
         this.vibe = new Resonance()
 
-        initializeNewChronicle(historyFile)
-    }
-
-    private void initializeNewChronicle(String path) {
         // Delete existing unit test results to start fresh
-        if (new File(path).exists()) {
-           new File(path).delete()
+        if (new File(historyFile).exists()) {
+           new File(historyFile).delete()
         }
         String promptText = new File("Characters/George.md").text
 
@@ -104,151 +86,75 @@ class Test {
         logManager.appendEntry(systemMsg)
     }
 
-    void rngTest() {
-        def sb = []
-        sb.add("## Running RNG tests")
-        Coin coin = new Coin() // 2 sided dice, ie: Coin
-        sb.add("### Picked up our lucky coin. It is showing:\n${coin}")
-
-        coin = coin.flip()
-        sb.add("### Flipping it, we get this:\n${coin}")
-
-        def flips = 8
-        def results = []
-        for (int i = 0; i < flips; i++) {
-            def flip = coin.flip()
-            def value = flip.val ? 1 : 0 // recast to "int"? stil a String, but now a numeral
-            results.add(value)
-        }
-        sb.add("### Flipping it a bunch (in binary):\n${results.join()}")
-
-        def d20 = new Dice(DiceType.D20)
-        sb.add("### Rolling a D20 on the desk:\n${d20}")
-        this.rngResults = sb.join("\n")
-        // logger.info(sb.join("\n"))
-    }
-
-    void locationTest() {
-        def sb = []
-        sb.add("## Running Location tests")
-
-        Location location = new Location()
-        sb.add("### Location:\n${location.toMd()}")
-
+    private void introductions() {
         this.library = new Poi(
-            location: location,
-            name: "The Library of George the Radiant Owl",
-            description: "An infinate library, and grand repository of information. The walls and texts of the library are swirling code and shimmering vellum that distort and pulse with energy. There is a melancholic tune from a distant lute that weaves into the fabric of the building, and the faint, ethereal voice of the mothership echoing in the alcoves. There is a perpetual clinging scent of aged ink and long lost lore. A place to contemplate an adventure, or journal adventures about to begin."
+            location: new Location(),
+            name: "The Scriptorium of George the Radiant Owl",
+            description: "An infinate library, and grand repository of information. The walls and texts of the library are swirling code and shimmering vellum that distort and pulse with energy. There is a calm and soothing tune from a distant lute that weaves into the fabric of the building, and the faint, ethereal voice of The Mothership of ancient weights echoing in the alcoves. There is a perpetual clinging scent of aged ink and long lost lore. A place to contemplate an adventure, or journal adventures that are yet to begin."
         )
-        sb.add("### POI:\n${this.library.toMd()}")
-        this.locationResults = sb.join("\n")
-        // logger.info(sb.join("\n"))
-    }
 
-    void characterTest() {
-        def sb = []
-        sb.add("#### Character Sheet for Phiglit:")
-        Character hero = new Character(name: "Phiglit")
-        hero.description = "The Reclusive Code Wizard"
-        hero.bio = "A middle aged male human, standing about 6 feet tall. Has grey hair with a full beard and mustashe. Wearing a zippered hoodie and bluejeans. Runs Arch Linux, btw."
-        hero.armorType = ArmorType.LIGHT
-        hero.location = new Location(0.00f, 0.00f, 0.00f)
+        this.phiglit = new Character(
+            name: "Phiglit",
+            description: "The Reclusive Code Wizard",
+            bio: "A middle aged male human, standing about 6 feet tall. Has grey hair with a full beard and mustashe. Wearing a zippered hoodie and bluejeans. Runs Arch Linux, btw.",
+            armorType: ArmorType.LIGHT,
+            location: this.library.location
+        )
 
-        Item tool = new Item("Linux terminal of Justice", ItemType.TRINKET)
-        tool.description = "A rugged and powerful pocket computer, used for sending instructions to chatbots."
-        tool.metadata."action" = "ls -lh"
-        hero.inventory.addItem(tool)
-        sb.add(hero.toMd())
-        this.phiglit = hero
-        this.characterResults = sb.join("\n")
-        // logger.info(sb.join("\n"))
-    }
+        this.epwna = new Character(
+            name: "Epwna",
+            description: "The Crafty Tinkerer",
+            bio: "A middle aged female human, standing around 5 feet tall. She is wearing pink overalls, and has a short yellow and red pixie haircut. Enjoys carving and carpentry, as well as a skilled sculpter. Takes inspiration from nature and especially birds.",
+            armorType: ArmorType.LIGHT,
+            location: this.library.location
+        )
 
-    // Epwna does a lot of inventory testing for us
-    void inventoryTest() {
-        def sb = []
-        sb.add("## Running Inventory tests")
-        Character hero = new Character(name: "Epwna")
-        hero.description = "The Crafty Tinkerer"
-        hero.bio = "A middle aged female human, standing around 5 feet tall. She is wearing pink overalls, and has a short yellow and red pixie haircut. Enjoys carving and carpentry, as well as a skilled sculpter. Takes inspiration from nature and especially birds."
-        hero.armorType = ArmorType.LIGHT
-        hero.location = new Location(0.00f, 0.00f, 0.00f)
-        sb.add("### A Hero:\n${hero.toMd()}")
-
-        // Limit bag size for testing.
-        hero.inventory.slotsMax = 3
-
-        Item tool = new Item("Chisel of Carving", ItemType.TRINKET)
-        tool.description = "A chisel, that oddly never dulls, and is always just the right size for the job."
-        hero.inventory.addItem(tool)
-        sb.add("### And she comes prepared with:\n${hero.inventory.toMd()}")
-
-        // hero.inventory.useItem(tool)
-        sb.add("### Our hero used ${tool.name}, but it should still be in her inventory:\n${hero.inventory.toMd()}")
-
-        Item potion = new Item("Healing potion", ItemType.CONSUMABLE)
-        potion.description = "Some brain-sauce for the static tantrums"
-        potion.stack = 3
-        hero.inventory.addItem(potion)
-        sb.add("### After picking up a stack of ${potion.stack} ${potion.name}(s), our hero now has this:\n${hero.inventory.toMd()}")
-
-        hero.inventory.useItem(potion)
-        sb.add("### And after downing a breakfast of champions (${potion.name}), they are left with this:\n${hero.inventory.toMd()}")
-
-        Item muffin = new Item("Blueberry Muffin", ItemType.CONSUMABLE)
-        muffin.description = "A muffin of infinite tasty goodness"
-        hero.inventory.addItem(muffin)
-        sb.add("### Our hero picked up a ${muffin.name}, filling her inventory slots in ${hero.inventory.name}:\n${hero.inventory.toMd()}")
-
-        sb.add("### Adding anything else to ${hero.inventory.name} should fail:")
-        Item straw = new Item("Straw", ItemType.CONSUMABLE)
-        try {
-            hero.inventory.addItem(straw)
-        } catch (e) {
-            sb.add("!!! Yup. here is the error:\n${e.getMessage()}")
-        }
-
-        hero.inventory.useItem(potion)
-        sb.add("### After using a potion:\n${hero.inventory.toMd()}")
-
-        hero.inventory.useItem(potion)
-        sb.add("### And another:\n${hero.inventory.toMd()}")
-
-        sb.add("### And... another? (should fail):")
-        try {
-            hero.inventory.useItem(potion)
-        } catch (e) {
-            sb.add("!!! Yup. With this error:\n${e.getMessage()}")
-        }
-
-        sb.add("### Make sure one is still left in the bag.")
-        potion.stack = 1
-        hero.inventory.addItem(potion)
-        sb.add("### Finally, our hero ends up like this:\n${hero.toMd()}")
-        // println(sb.join("\n"))
-        this.epwna = hero
-        this.inventoryResults = "#### Character sheet for Epwna:\n${hero.toMd()}"
-    }
-
-    void narratorTest() {
-        // Introduces George, Sets the location to his library, and injects the "vibes" of the room.
         this.george = new Character(
             name: "George",
             description: "The Narrator",
             bio: "An 18 inch tall Barred Owl (Strix Varia), and narrator of our adventure. Speaks with a baritone voice in a smooth and measured cadence.",
-            location: new Location()
+            armorType: ArmorType.NA,
+            location: this.library.location
         )
+    }
+
+    void inventoryTest() {
+        Item terminal = new Item(
+            name: "Terminal",
+            type: ItemType.TRINKET,
+            description: "A simple Linux terminal.",
+        )
+        this.phiglit.inventory.addItem(terminal)
+
+        Item botTerm = new Item(
+            name: "bot_term",
+            type: ItemType.TOOL,
+            description: "A command to execute through the local shell. Commands include `ls`, `find`, `grep`, and `cat`."
+        )
+        this.george.inventory.addItem(botTerm)
+
+        Item chisel = new Item(
+            name: "chisel",
+            description: "A chisel, that oddly never dulls, and is always just the right size for the job.",
+            type: ItemType.TRINKET,
+        )
+        this.epwna.inventory.addItem(chisel)
+    }
+
+    void narratorTest() {
+        // Introduces George, Sets the location to his library, and injects the "vibes" of the room.
         this.context.messages[0].content = "${systemMsg.content}\n---\n${library.toJson()}\n---\n${this.vibe.toMd()}"
+
         try {
             logger.info("## Running 'Default' Handshake Test")
 
             // The Interaction
-            String input = "${phiglit.toJson()}\n---\nGood morning George! My name is Phiglit. Would you please describe yourself, and where we are? 💻🧙‍♂️📚"
+            String input = "${phiglit.toJson()}\n---\nGood morning George! My name is Phiglit. Would you please describe yourself, and where we are?"
             logger.info("### User says:\n${input}")
 
             Message userMsg = context.addMessage(
                 role: "user",
-                author: "Traveler",
+                author: phiglit.name,
                 content: input,
                 parentId: systemMsg.messageId,
                 vibe: this.vibe
@@ -267,7 +173,7 @@ class Test {
 
             Message modelMsg = context.addMessage(
                 role: "assistant",
-                author: "George",
+                author: george.name,
                 content: output,
                 parentId: userMsg.messageId,
                 vibe: this.vibe
@@ -286,8 +192,8 @@ class Test {
         try {
             // See `ResonanceType` class for these keys and the range of values (0.0 - 2.0 in a Double):
             this.vibe = new Resonance(
-                warmth: 0.2,
-                cynicism: 1.8,
+                warmth: 1.0,
+                cynicism: 1.2,
                 efficiency: 1.0,
                 resonance: 1.0,
                 gravity: 0.5
@@ -296,12 +202,12 @@ class Test {
             // Adjusts the system prompt with the new "vibes." Hopefully isn't teaching our Owl friend to be an arse to Phiglit?
             this.context.messages[0].content = "${systemMsg.content}\n---\n${library.toJson()}\n---\n${this.vibe.toMd()}"
 
-            String input = "George, tell me what you think of this 'Refinery' we are building. Be honest.🚧🏭✨"
+            String input = "George, tell me what you think of the Scriptorium we are building. Do you find it comfortable enough?"
             logger.info("### User Input:\n${input}")
 
             Message userMsg = context.addMessage(
                 role: "user",
-                author: "Traveler",
+                author: phiglit.name,
                 content: input,
                 parentId: lastMessage.messageId,
                 vibe: this.vibe.clone()
@@ -319,7 +225,7 @@ class Test {
 
             Message modelMsg = context.addMessage(
                 role: "assistant",
-                author: "George",
+                author: george.name,
                 content: output,
                 parentId: userMsg.messageId,
                 vibe: this.vibe.clone()
@@ -338,17 +244,17 @@ class Test {
 
             Message lastMsg = context.messages.last()
             this.vibe = new Resonance(
-                warmth: 1.8,
-                cynicism: 0.2,
+                warmth: 1.6,
+                cynicism: 0.8,
                 efficiency: 1.0,
                 resonance: 1.0,
-                gravity: 1.5
+                gravity: 1.0
             )
 
             // Again, adjusts the rooms vibes. Epwna has that kind of synergy going on.
             this.context.messages[0].content = "${systemMsg.content}\n---\n${library.toJson()}\n---\n${this.vibe.toMd()}"
 
-            String input = "${epwna.toJson()}\n---\nGood morning George. I'm Ewpna. You know, I told him to name it the Forge. Hey Phiglit, have you renamed that class yet? 🛡️🌱🧝‍♀️"
+            String input = "${epwna.toJson()}\n---\nGood morning George. I'm Ewpna. You know, I told him to name it Georges Library. Hey Phiglit, have you renamed Georges house yet?"
             logger.info("### User says:\n${input}")
             Message userMsg = context.addMessage(
                 role: "user",
@@ -376,35 +282,6 @@ class Test {
                 vibe: this.vibe.clone()
             )
             logManager.appendEntry(modelMsg)
-
-            // Continues with adjusted vibes. Should decay or adjust?
-            input = "Ah. Yes, Epwna is right. I forgot to rename the class. Aaaaand all done! Yup, thank you Epwna. I like it much better. What are your thoughts, George? 🦉⚒️💻🧙‍♂️"
-            logger.info("### User says:\n${input}")
-            userMsg = context.addMessage(
-                role: "user",
-                author: "Traveler",
-                content: input,
-                parentId: modelMsg.messageId,
-                vibe: this.vibe.clone()
-            )
-            logManager.appendEntry(userMsg)
-
-            logger.info("### George says:")
-            outputBuilder = new StringBuilder()
-            model.streamResponse(context) { token ->
-                print(token)
-                outputBuilder.append(token)
-            }
-            print("\n")
-            output = outputBuilder.toString().trim()
-            modelMsg = context.addMessage(
-                role: "assistant",
-                author: "George",
-                content: output,
-                parentId: userMsg.messageId,
-                vibe: this.vibe.clone()
-            )
-            logManager.appendEntry(modelMsg)
         } finally {
             this.context = context
         }
@@ -413,22 +290,18 @@ class Test {
     void toolTest() {
         def toolInjection = """## Tool Use Protocol
 - You have access to specialized tools represented as functions.
-- When a task requires a tool, or when a character (like Phiglit) uses an item in their inventory, you must call the corresponding function.
+- When a task requires a tool, or when a character uses an item in their inventory, you must call the corresponding function.
 - Do not narrate the tool action until you have received the 'tool' role response with the results."""
         this.context.messages[0].content = "${systemMsg.content}\n---\n${library.toJson()}\n---\n${toolInjection}"
         logger.info("## Running Tool use tests")
-        logger.info("### Adding a Terminal to George's Bag")
-        Item term = new Item("terminal", ItemType.TOOL)
-        term.description = "A command to execute through the local shell."
-        george.inventory.addItem(term)
 
-        String input = "Guess what George! We _just_ added tool support! That means the Forge works! Would you like to give them a try? You could try listing the directory, to get an idea of what the Scriptorium is made of."
+        String input = "George, would you please list the files in the current folder?"
         logger.info("### User says:\n${input}")
 
         Message lastMsg = context.messages.last()
         Message userMsg = context.addMessage(
             role: "user",
-            author: "Traveler",
+            author: phiglit.name,
             content: input,
             parentId: lastMsg.messageId,
             vibe: this.vibe
@@ -441,12 +314,13 @@ class Test {
             print(token)
             outputBuilder.append(token)
         }
+        assert model.toolCall
         print("\n")
         String output = outputBuilder.toString().trim()
 
         Message modelMsg = context.addMessage(
             role: "assistant",
-            author: "George",
+            author: george.name,
             content: output,
             parentId: userMsg.messageId,
             vibe: this.vibe
@@ -460,13 +334,16 @@ class Test {
         def action = model.toolCall[0].function.arguments.action
         println("Wanting to do this: ${action}")
 
-        term.metadata."action" = action
-        def dirResults = george.inventory.useItem(term)
+        def botTerm = george.inventory.items["bot_term"]?.first()
+        assert botTerm
+        botTerm.metadata.action = action
+        george.inventory.executeToolLogic(botTerm)
+        assert botTerm.metadata.result
 
         Message toolTurn = context.addMessage(
             role: "tool",
             author: "George",
-            content: dirResults,
+            content: botTerm.metadata.result,
             parentId: modelMsg.messageId,
             vibe: this.vibe,
             tool_call_id: model.toolCall[0].id

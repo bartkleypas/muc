@@ -121,18 +121,24 @@ class Inventory {
 
     String executeToolLogic(Item item) {
         def action = item.metadata.get("action")
+        println "Character is activating \"${item.name}\", trying to do \"${action}\" action..."
+
+        def allowedCommands = ['ls', 'cat', 'grep', 'find']
+        def baseCommand = action.split(' ')[0]
+
+        if (!allowedCommands.contains(baseCommand)) {
+            return "Error: The Scriptorium forbids the use of '${baseCommand}'."
+        }
 
         if (!action) {
             throw new RuntimeException("This tool is broken; no action in the metadata boss.")
         }
 
-        println "Character is activating \"${item.name}\", trying to do \"${action}\" action..."
         def sout = new StringBuilder(), serr = new StringBuilder()
-        def proc = action.execute()
-        proc.consumeProcessOutput(sout, serr)
-        proc.waitForOrKill(1000)
+        def proc = ["/bin/sh", "-c", action].execute()
+        proc.waitForProcessOutput(sout, serr)
         item.metadata.result = sout.toString()
-        return sout.toString()
+        return serr.length() > 0 ? "Error: $serr" : sout.toString()
     }
 
     /**
