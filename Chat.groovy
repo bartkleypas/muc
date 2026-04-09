@@ -11,7 +11,8 @@ import org.kleypas.muc.model.ModelType
 import org.kleypas.muc.model.Message
 import org.kleypas.muc.model.Context
 import org.kleypas.muc.model.resonance.Resonance
-
+import org.kleypas.muc.inventory.Item
+import org.kleypas.muc.inventory.ItemType
 import org.jline.reader.LineReaderBuilder
 import org.jline.reader.LineReader
 
@@ -83,6 +84,20 @@ class Chat {
     }
 
     /*
+     * Do the thing if we need to start a new story.
+     */
+    private void initializeNewChronicle(String path) {
+        String promptText = new File(path).text
+        Message systemMsg = context.addMessage(
+            role: "system",
+            author: "Partner",
+            content: promptText,
+            vibe: new Resonance()
+        )
+        logManager.appendEntry(systemMsg)
+    }
+
+    /*
      * Define the location, and add some characters
      */
     private void introductions() {
@@ -105,21 +120,34 @@ class Chat {
             description: "The Starship Majal on-board digital assistant.",
             location: poi.location
         )
-    }
 
-    /*
-     * Do the thing if we need to start a new story.
-     */
-    private void initializeNewChronicle(String path) {
-        String promptText = new File(path).text
-        // promptText = SystemPromptHelper.buildFullSystemPrompt(promptText)
-        Message systemMsg = context.addMessage(
-            role: "system",
-            author: "Partner",
-            content: promptText,
-            vibe: new Resonance()
+        Item terminal = new Item(
+            name: "terminal",
+            type: ItemType.TOOL,
+            description: "A command to execute through the local shell. Commands include `ls`, `find`, `grep`, and `cat`."
         )
-        logManager.appendEntry(systemMsg)
+        this.partner.inventory.addItem(terminal)
+
+        Item testRunner = new Item(
+            name: "test_runner",
+            type: ItemType.TOOL,
+            description: "Run the unit tests with the command `groovy main.groovy -t`"
+        )
+        this.partner.inventory.addItem(testRunner)
+
+        Item gitDiff = new Item(
+            name: "git_diff",
+            type: ItemType.TOOL,
+            description: "Check the status of the local repo using the `git diff` command."
+        )
+        this.partner.inventory.addItem(gitDiff)
+
+        Item clock = new Item(
+            name: "clock",
+            type: ItemType.TOOL,
+            description: "Check the local \"wall time\" using the `date` command."
+        )
+        this.partner.inventory.addItem(clock)
     }
 
     /*
@@ -187,27 +215,67 @@ class Chat {
      * And now the models turn
      */
     private Message processModelTurn(Message userMsg) {
+        model.toolCall = null
         String faderPrefix = userMsg.vibe.toPrefix()
         bridge.terminal.writer().print("\u001B[1;36m${partner.name}\u001B[0m: ")
 
         StringBuilder fullOutput = new StringBuilder()
-        model.streamResponse(context) { token ->
+        // Pass the partner's inventory so the model knows which tools are available
+        model.streamResponse(context, partner.inventory) { token ->
             bridge.printToken(token)
             fullOutput.append(token)
         }
 
         String text = fullOutput.toString().trim()
 
-        // OK! Now we can pick up the vibes off of the model with ResonanceEngine!
-        // def deltas = ResonanceEngine.calculate(text)
-        // this.vibe = usrMsg.vibe + deltas
         Message assistantMsg = context.addMessage(
             role: "assistant",
             author: partner.name,
             content: text,
             parentId: userMsg.messageId,
-            vibe: userMsg.vibe // Will be updated once it is fixed above.
+            vibe: userMsg.vibe
         )
+        logManager.appendEntry(assistantMsg)
+
+        // --- TOOL REFLEX LOGIC ---
+        if (model.toolCall) {
+            // 1. Extract action from the tool call
+            String action = model.toolCall[0].function.arguments.action
+
+            // 2. Find the tool in the partner's inventory
+            // We look for an item that matches the function name (e.g., 'terminal')
+            Item toolItem = partner.inventory.items[model.toolCall[0].function.name]?.first()
+            if (toolItem) {
+                // 3. Execute the tool logic
+                toolItem.metadata.action = action
+                partner.inventory.executeToolLogic(toolItem)
+                assert toolItem.metadata.result
+
+                // 4. Create the 'tool' role message with the result
+                Message toolTurn = context.addMessage(
+                    role: "tool",
+                    author: partner.name,
+                    content: toolItem.metadata.result,
+                    parentId: assistantMsg.messageId,
+                    vibe: assistantMsg.vibe,
+                    tool_call_id: model.toolCall[0].id
+                )
+                logManager.appendEntry(toolTurn)
+
+                // 5. Trigger a follow-up turn so the assistant can react to the tool result
+                // We recursively call processModelTurn with the new tool message
+                return processModelTurn(toolTurn)
+            } else {
+                println("### Tool ${model.toolCall[0].function.name} not found in ${partner.name}'s inventory!")
+            }
+        }
+
+        // --- RESONANCE UPDATE ---
+        // Update the vibe based on the assistant's response
+        def deltas = org.kleypas.muc.model.resonance.ResonanceEngine.calculate(text)
+        if (deltas) {
+            this.vibe = assistantMsg.vibe + deltas
+        }
 
         return assistantMsg
     }

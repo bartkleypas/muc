@@ -123,7 +123,7 @@ class Inventory {
         def action = item.metadata.get("action")
         println "Character is activating \"${item.name}\", trying to do \"${action}\" action..."
 
-        def allowedCommands = ['ls', 'cat', 'grep', 'find']
+        def allowedCommands = ['ls', 'cat', 'grep', 'find', 'groovy', 'git', 'date']
         def baseCommand = action.split(' ')[0]
 
         if (!allowedCommands.contains(baseCommand)) {
