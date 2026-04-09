@@ -13,6 +13,8 @@ class Inventory {
     int slotsMax
     int slotsOccupied
     Map<String, List<Item>> items
+    List ALLOWED_BINARIES = ['ls', 'cat', 'grep', 'find', 'groovy', 'git', 'date']
+    List FORBIDDEN_STRINGS = [';', '&', '|', '>', '<', '`', '$', '..']
 
     /**
      * Constructs a new {@code Inventory} with default settings.
@@ -104,7 +106,7 @@ class Inventory {
                 handleConsumable(item)
                 break
             case ItemType.TOOL:
-                executeToolLogic(item)
+                return executeToolLogic(item)
                 break
             default:
                 println "You brandish the ${item.name} meaningfully."
@@ -120,25 +122,47 @@ class Inventory {
     }
 
     String executeToolLogic(Item item) {
-        def action = item.metadata.get("action")
+
+        if (!item.metadata.get("action")?.trim()) {
+            throw new RuntimeException("This tool is broken; no action in the metadata, boss.")
+        }
+
+        String action = item.metadata.get("action")?.trim()
         println "Character is activating \"${item.name}\", trying to do \"${action}\" action..."
 
-        def allowedCommands = ['ls', 'cat', 'grep', 'find', 'groovy', 'git', 'date']
-        def baseCommand = action.split(' ')[0]
+        if (FORBIDDEN_STRINGS.any { action.contains(it) }) {
+            throw new RuntimeException("FATAL: Potential breach of trust detected.")
+        }
 
-        if (!allowedCommands.contains(baseCommand)) {
+        def parts = action.trim().split(/\s+/)
+        def baseCommand = parts[0]
+
+        if (!ALLOWED_BINARIES.contains(baseCommand)) {
             return "Error: The Scriptorium forbids the use of '${baseCommand}'."
         }
 
-        if (!action) {
-            throw new RuntimeException("This tool is broken; no action in the metadata boss.")
-        }
+        def stdout = new StringBuilder()
+        try {
+            ProcessBuilder pb = new ProcessBuilder("/bin/sh", "-c", action)
+            pb.redirectErrorStream(true)
 
-        def sout = new StringBuilder(), serr = new StringBuilder()
-        def proc = ["/bin/sh", "-c", action].execute()
-        proc.waitForProcessOutput(sout, serr)
-        item.metadata.result = sout.toString()
-        return serr.length() > 0 ? "Error: $serr" : sout.toString()
+            Process proc = pb.start()
+
+            proc.inputStream.eachLine { line ->
+                stdout.append(line).append("\n")
+            }
+
+            proc.waitFor()
+            def finalOutput = stdout.toString().trim()
+
+            item.metadata.result = finalOutput.isEmpty() ? "[No Output]" : finalOutput
+
+            return finalOutput.isEmpty() ? "[Success - No Output]" : finalOutput
+        } catch (Exception e) {
+            def errorMsg = "System Error during tool execution: ${e.message}"
+            item.metadata.result = errorMsg
+            return errorMsg
+        }
     }
 
     /**

@@ -295,7 +295,7 @@ class Test {
         this.context.messages[0].content = "${systemMsg.content}\n---\n${george.toJson()}\n---\n${library.toJson()}\n---\n${toolInjection}"
         logger.info("## Running Tool use tests")
 
-        String input = "George, would you please read the README.md? I'm curious about your thoughts, as the repositories Sovereign Owl assistant."
+        String input = "George, would you please read the projects LICENSE file, and tell me your thoughts on being its Sovereign AI persona."
         logger.info("### User says:\n${input}")
 
         Message lastMsg = context.messages.last()
