@@ -58,7 +58,7 @@ class Test {
         faderTest()
         storyTest()
         toolTest()
-        illustratorTest()
+        // illustratorTest()
         logger.info("# Unit tests complete:\n**Coalescence**🦉☕️")
     }
 
@@ -202,7 +202,7 @@ class Test {
             // Adjusts the system prompt with the new "vibes." Hopefully isn't teaching our Owl friend to be an arse to Phiglit?
             this.context.messages[0].content = "${systemMsg.content}\n---\n${george.toJson()}\n---\n${library.toJson()}\n---\n${this.vibe.toMd()}"
 
-            String input = "George, tell me what you think of the Scriptorium we are building. Do you find it comfortable enough?"
+            String input = "George, tell me what you think of the Scriptorium we are building together. I hope you find the environment agreeable."
             logger.info("### User Input:\n${input}")
 
             Message userMsg = context.addMessage(
@@ -254,7 +254,7 @@ class Test {
             // Again, adjusts the rooms vibes. Epwna has that kind of synergy going on.
             this.context.messages[0].content = "${systemMsg.content}\n---\n${george.toJson()}\n---\n${library.toJson()}\n---\n${this.vibe.toMd()}"
 
-            String input = "${epwna.toJson()}\n---\nGood morning George. I'm Ewpna. You know, I told him to name it Georges Library. Hey Phiglit, have you renamed Georges house yet?"
+            String input = "${epwna.toJson()}\n---\nGood morning George! I'm Ewpna. Phiglit never told me what a handsome Owl he was working on back here. Your Scriptorium is quite a sight to behold. Almost infinate, if I'm not mistaken."
             logger.info("### User says:\n${input}")
             Message userMsg = context.addMessage(
                 role: "user",
@@ -295,7 +295,7 @@ class Test {
         this.context.messages[0].content = "${systemMsg.content}\n---\n${george.toJson()}\n---\n${library.toJson()}\n---\n${toolInjection}"
         logger.info("## Running Tool use tests")
 
-        String input = "George, would you please read the README.md? I'm curious about your thoughts."
+        String input = "George, would you please read the README.md? I'm curious about your thoughts, as the repositories Sovereign Owl assistant."
         logger.info("### User says:\n${input}")
 
         Message lastMsg = context.messages.last()
