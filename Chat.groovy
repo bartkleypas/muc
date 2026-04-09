@@ -183,12 +183,8 @@ class Chat {
             }
 
             Message userMsg = processUserTurn(input)
-            context.addMessage(userMsg)
-            logManager.appendEntry(userMsg)
 
-            Message assistantMsg = processModelTurn(userMsg)
-            context.addMessage(assistantMsg)
-            logManager.appendEntry(assistantMsg)
+            processModelTurn(userMsg)
             bridge.flushBuffer()
         }
     }
@@ -206,8 +202,9 @@ class Chat {
             parentId: last.messageId,
             vibe: this.vibe
         )
-        bridge.printSpeaker(mine) // needs a message object
-        bridge.terminal.writer().print("${input}\n")
+        context.addMessage(mine)
+        logManager.appendEntry(mine)
+
         return mine
     }
 
