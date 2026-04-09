@@ -131,7 +131,7 @@ class Chat {
         Item testRunner = new Item(
             name: "test_runner",
             type: ItemType.TOOL,
-            description: "Run the unit tests with the command `groovy main.groovy -t`"
+            description: "Run the unit tests with the `groovy main.groovy -t` action."
         )
         this.partner.inventory.addItem(testRunner)
 
@@ -178,12 +178,13 @@ class Chat {
                 if (processor.requestRefresh) {
                     this.vibe = processor.vibe
                     this.context = processor.context
+                    this.model.toolCall = null
                 }
                 continue
             }
 
             Message userMsg = processUserTurn(input)
-
+            bridge.terminal.writer().print("\u001B[1;36m${partner.name}\u001B[0m: ")
             processModelTurn(userMsg)
             bridge.flushBuffer()
         }
@@ -214,7 +215,7 @@ class Chat {
     private Message processModelTurn(Message userMsg) {
         model.toolCall = null
         String faderPrefix = userMsg.vibe.toPrefix()
-        bridge.terminal.writer().print("\u001B[1;36m${partner.name}\u001B[0m: ")
+        // bridge.terminal.writer().print("\u001B[1;36m${partner.name}\u001B[0m: ")
 
         StringBuilder fullOutput = new StringBuilder()
         // Pass the partner's inventory so the model knows which tools are available
