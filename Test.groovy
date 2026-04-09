@@ -58,7 +58,7 @@ class Test {
         faderTest()
         storyTest()
         toolTest()
-        // illustratorTest()
+        illustratorTest()
         logger.info("# Unit tests complete:\n**Coalescence**🦉☕️")
     }
 
@@ -143,7 +143,7 @@ class Test {
 
     void narratorTest() {
         // Introduces George, Sets the location to his library, and injects the "vibes" of the room.
-        this.context.messages[0].content = "${systemMsg.content}\n---\n${library.toJson()}\n---\n${this.vibe.toMd()}"
+        this.context.messages[0].content = "${systemMsg.content}\n---\n${george.toJson()}\n---\n${library.toJson()}\n---\n${this.vibe.toMd()}"
 
         try {
             logger.info("## Running 'Default' Handshake Test")
@@ -200,7 +200,7 @@ class Test {
             )
 
             // Adjusts the system prompt with the new "vibes." Hopefully isn't teaching our Owl friend to be an arse to Phiglit?
-            this.context.messages[0].content = "${systemMsg.content}\n---\n${library.toJson()}\n---\n${this.vibe.toMd()}"
+            this.context.messages[0].content = "${systemMsg.content}\n---\n${george.toJson()}\n---\n${library.toJson()}\n---\n${this.vibe.toMd()}"
 
             String input = "George, tell me what you think of the Scriptorium we are building. Do you find it comfortable enough?"
             logger.info("### User Input:\n${input}")
@@ -252,13 +252,13 @@ class Test {
             )
 
             // Again, adjusts the rooms vibes. Epwna has that kind of synergy going on.
-            this.context.messages[0].content = "${systemMsg.content}\n---\n${library.toJson()}\n---\n${this.vibe.toMd()}"
+            this.context.messages[0].content = "${systemMsg.content}\n---\n${george.toJson()}\n---\n${library.toJson()}\n---\n${this.vibe.toMd()}"
 
             String input = "${epwna.toJson()}\n---\nGood morning George. I'm Ewpna. You know, I told him to name it Georges Library. Hey Phiglit, have you renamed Georges house yet?"
             logger.info("### User says:\n${input}")
             Message userMsg = context.addMessage(
                 role: "user",
-                author: "Traveler",
+                author: epwna.name,
                 content: input,
                 parentId: lastMsg.messageId,
                 vibe: this.vibe.clone()
@@ -276,7 +276,7 @@ class Test {
 
             Message modelMsg = context.addMessage(
                 role: "assistant",
-                author: "George",
+                author: george.name,
                 content: output,
                 parentId: userMsg.messageId,
                 vibe: this.vibe.clone()
@@ -288,14 +288,14 @@ class Test {
     }
 
     void toolTest() {
-        def toolInjection = """## Tool Use Protocol
+        String toolInjection = """## Tool Use Protocol
 - You have access to specialized tools represented as functions.
 - When a task requires a tool, or when a character uses an item in their inventory, you must call the corresponding function.
 - Do not narrate the tool action until you have received the 'tool' role response with the results."""
-        this.context.messages[0].content = "${systemMsg.content}\n---\n${library.toJson()}\n---\n${toolInjection}"
+        this.context.messages[0].content = "${systemMsg.content}\n---\n${george.toJson()}\n---\n${library.toJson()}\n---\n${toolInjection}"
         logger.info("## Running Tool use tests")
 
-        String input = "George, would you please list the files in the current folder?"
+        String input = "George, would you please read the README.md? I'm curious about your thoughts."
         logger.info("### User says:\n${input}")
 
         Message lastMsg = context.messages.last()
@@ -314,8 +314,8 @@ class Test {
             print(token)
             outputBuilder.append(token)
         }
-        assert model.toolCall
         print("\n")
+        assert model.toolCall
         String output = outputBuilder.toString().trim()
 
         Message modelMsg = context.addMessage(
@@ -331,10 +331,10 @@ class Test {
         println(model.toolCall)
 
         logger.info("### Running the command we got from the model.")
-        def action = model.toolCall[0].function.arguments.action
+        String action = model.toolCall[0].function.arguments.action
         println("Wanting to do this: ${action}")
 
-        def botTerm = george.inventory.items["bot_term"]?.first()
+        Item botTerm = george.inventory.items["bot_term"]?.first()
         assert botTerm
         botTerm.metadata.action = action
         george.inventory.executeToolLogic(botTerm)

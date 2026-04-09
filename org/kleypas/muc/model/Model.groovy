@@ -36,7 +36,6 @@ class Model {
 
         // Needs an inventory to build the tool list...
         if (type.supportsTools && bag) {
-            println "## Trying to instruct model to do:\n${bag.getToolInstructions()}"
             postData.tools = bag.getToolInstructions()
         }
 

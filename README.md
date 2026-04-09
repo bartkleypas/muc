@@ -23,6 +23,12 @@ Note: Coded and maintained with guidance from a friendly and patient AI assistan
 * **Semantic Tag Parsing:** Supports advanced output rendering, including `<IMAGE_DESC>` parsing for on-demand "visual margin sketches."
 * **TUI Interface:** A rich, CLI-focused terminal experience with color-coded feedback and intuitive command handling.
 
+### 🧰 The Interactive Toolkit (Tool Use)
+The `MUC` engine supports **Function Calling** via a specialized tool-use protocol. The assistant (e.g. Majel) can be equipped with items in its `inventory` that represent local system capabilities.
+* **Automated Execution:** When the model triggers a tool call (e.g., `terminal`), the engine intercepts the call, executes the command through the local shell, and feeds the output back into the conversation stream.
+* **System Integration:** Currently supports tools like `terminal` (ls, cat, grep), `git_diff` (inspecting the repo), and `test_runner` (running the unit test suite).
+* **Recursive Narratives:** The engine handles the "Chain of Thought" required for tool usage, allowing the assistant to observe the results of its actions and narrate the outcome.
+
 ---
 
 ## 🚀 Getting Started
@@ -67,6 +73,7 @@ The `MUC` app is designed not just for play, but for the deliberate cultivation 
    * **Injection:** The `LogManager` automatically injects the current **Resonance Faders** as control tokens (e.g., `[SARCASM:1.7]`) into the assistant's response. This teaches the model the direct relationship between the "Maths" and the "Iron" of its personality.
 3. **Dataset Stacking:** The `/export` command will append the current conversation to the targetted file. This allows the user to stack multiple distinct timelines into a single training file, creating a robust dataset of diverse reactions and emotional states, perfect for feeding into Axolotl training pipelines.
 4. **Batch Processing:** Passing the `-r` argument to the CLI (eg. `groovy main.groovy -r`) will process each line of a "handshake" file through the persona's system prompt in a loop with randomized personality fader values.
+5. **Tool-driven Data Capture:** Because the engine supports tool-use, your datasets can now include complex, multi-turn interactions where the model responds to system outputs (like terminal logs or git diffs). This allows you to train models that understand the relationship between **environmental input** and **narrative response**.
 
 ---
 
