@@ -19,9 +19,14 @@ class Model {
     /**
      * Unified streaming method.
      */
-    void streamResponse(Context context, Inventory bag = null, Closure onToken) {
+    void streamResponse(Context context, Inventory bag = null, String prefix = null, Closure onToken) {
         // Build the payload
         def messages = context.messages
+
+        // If we are suturing a vibe/prefix and the model supports it
+        if (type.supportsVibe && prefix) {
+            messages << [role: "assistant", content: prefix]
+        }
 
         def postData = [
             model: type.modelId,

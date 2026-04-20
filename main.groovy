@@ -39,17 +39,23 @@ if (options.refinery) {
  * Dive directly into an image generation prompt
  */
 if (options.image) {
+    String input
+    if (options.image instanceof String) {
+        input = options.image
+    } else {
+        print "## You: "
+        input = System.in.newReader().readLine().trim()
+    }
+
     Logger.info "# Sent an image arg."
     def illustrator = new Illustrator()
     illustrator.style = ImageType.PORTRAIT
     illustrator.title = "ComfyUI"
 
-    print "## You: "
-    def input = System.in.newReader().readLine().trim()
-    def prompt = illustrator.getPrompt(input)
+    def prompt = illustrator.getComfyUiJson(input)
 
     def recipt = illustrator.generateImage(prompt)
-    Logger.info "## Recipt:\r\n${recipt}"
+    println "## Recipt of image generation:\n${recipt}"
 }
 
 /*

@@ -12,7 +12,6 @@ class CommandProcessor {
     boolean requestRefresh = false
     Resonance vibe
 
-    private String currentLocation = "The Starship Majel"
     CommandProcessor(TerminalBridge bridge, LogManager logManager, Context context) {
         this.bridge = bridge
         this.logManager = logManager

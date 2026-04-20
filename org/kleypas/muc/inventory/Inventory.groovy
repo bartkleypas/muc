@@ -13,8 +13,6 @@ class Inventory {
     int slotsMax
     int slotsOccupied
     Map<String, List<Item>> items
-    List ALLOWED_BINARIES = ['ls', 'cat', 'grep', 'find', 'groovy', 'git', 'date']
-    List FORBIDDEN_STRINGS = [';', '&', '|', '>', '<', '`', '$', '..']
 
     /**
      * Constructs a new {@code Inventory} with default settings.
@@ -46,7 +44,7 @@ class Inventory {
                         properties: [
                             action: [
                                 type: "string",
-                                description: "The specific instruction for the ${item.name}."
+                                description: "The specific action/instructions for ${item.name}, sent as a shell command."
                             ]
                         ],
                         required: ["action"]
@@ -122,6 +120,9 @@ class Inventory {
     }
 
     String executeToolLogic(Item item) {
+
+        List ALLOWED_BINARIES = ['ls', 'cat', 'grep', 'find', 'groovy', 'git', 'date']
+        List FORBIDDEN_STRINGS = [';', '&', '|', '>', '<', '`', '$', '..']
 
         if (!item.metadata.get("action")?.trim()) {
             throw new RuntimeException("This tool is broken; no action in the metadata, boss.")

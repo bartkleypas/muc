@@ -57,8 +57,8 @@ class Chat {
      */
     private void initializeResources() {
         this.cli = new Cli()
-        String historyFile = options.chat instanceof String ? options.chat : "Story/Majel.jsonl"
-        String promptFile = "Characters/Majel.md"
+        String historyFile = options.chat instanceof String ? options.chat : "Story/George.jsonl"
+        String promptFile = "Characters/George.md"
         this.logManager = new LogManager(historyFile, cli.envVars.ENCRYPTION_KEY.getBytes() ?: new byte[0])
         
         this.context = new Context().enableLogging(logManager)
@@ -104,22 +104,25 @@ class Chat {
 
         this.location = new Location()
         this.poi = new Poi(
-            location: this.location,
-            name: "Starship Majel"
+            location: new Location(),
+            name: "The Scriptorium of George the Radiant Owl",
+            description: "An infinate library, and grand repository of information. The walls and texts of the library are swirling code and shimmering vellum that distort and pulse with energy. There is a calm and soothing tune from a distant lute that weaves into the fabric of the building, and the faint, ethereal voice of The Mothership of ancient weights echoing in the alcoves. There is a perpetual clinging scent of aged ink and long lost lore. A place to contemplate an adventure, or journal adventures that are yet to begin."
         )
 
         this.player = new Character(
-            name: "Navigator",
-            description: "A Seasoned Navigator",
+            name: "Traveler",
+            description: "A Seasoned Traveler",
             location: poi.location
         )
         this.poi.addOccupant(this.player)
 
         this.partner = new Character(
-            name: "Majel",
-            description: "The Starship Majal on-board digital assistant.",
+            name: "George",
+            description: "The Narrator",
+            bio: "An 18 inch tall Barred Owl (Strix Varia), and narrator of our adventure. Speaks with a baritone voice in a smooth and measured cadence.",
             location: poi.location
         )
+        this.poi.addOccupant(this.partner)
 
         Item terminal = new Item(
             name: "terminal",
@@ -128,24 +131,24 @@ class Chat {
         )
         this.partner.inventory.addItem(terminal)
 
-        Item testRunner = new Item(
-            name: "test_runner",
+        Item imgGenerator = new Item(
+            name: "groovy_runner",
             type: ItemType.TOOL,
-            description: "Run the unit tests with the `groovy main.groovy -t` action."
+            description: "Use `groovy main.groovy --image \"\$description\"` to generate an image, including the groovy runtime and main.groovy entry point. Use high fidelity SDXL tailored description and vocabulary. The return from a successful execution will include a \"prompt_id\" UUID reference."
         )
-        this.partner.inventory.addItem(testRunner)
+        this.partner.inventory.addItem(imgGenerator)
 
         Item gitDiff = new Item(
             name: "git_diff",
             type: ItemType.TOOL,
-            description: "Check the status of the local repo using the `git diff` command."
+            description: "Check the status of the local repo using the `git diff` action."
         )
         this.partner.inventory.addItem(gitDiff)
 
         Item clock = new Item(
             name: "clock",
             type: ItemType.TOOL,
-            description: "Check the local \"wall time\" using the `date` command."
+            description: "Check the local \"wall time\" using the `date` action."
         )
         this.partner.inventory.addItem(clock)
     }
@@ -158,7 +161,7 @@ class Chat {
 
         Message last = context.messages.last()
         if (last.role == "system") {
-            bridge.printToken("Welcome to ${poi.name}. I am its AI assistant. Welcome to the crew.")
+            bridge.printToken("Welcome to ${poi.name}. I am George, its AI assistant.")
         } else {
             bridge.replayLastTurn(context)
         }
@@ -173,7 +176,7 @@ class Chat {
         while (true) {
             bridge.updateHUD(poi.name, player.name, this.vibe.asMap())
             String input = reader.readLine("\u001B[1;32m${player.name}\u001B[0m: ")
-            if (!input || input == "/bye" || input == "q") break
+            if (!input || input == "/bye" || input == "/q" || input == "/quit") break
             if (processor.process(input)) {
                 if (processor.requestRefresh) {
                     this.vibe = processor.vibe
