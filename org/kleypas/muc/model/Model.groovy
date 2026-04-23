@@ -21,16 +21,48 @@ class Model {
      */
     void streamResponse(Context context, Inventory bag = null, String prefix = null, Closure onToken) {
         // Build the payload
-        def messages = context.messages
+        // Clone the list to avoid side effects on the context
+        def messages = new ArrayList(context.messages)
 
-        // If we are suturing a vibe/prefix and the model supports it
-        if (type.supportsVibe && prefix) {
-            messages << [role: "assistant", content: prefix]
+        // Handle stylistic prefix (vibe)
+        if (prefix && type.supportsVibe) {
+            if (type.supportsThinking) {
+                // For thinking models, inject as a system directive to avoid disrupting the reasoning phase
+                def systemMsgIndex = messages.findIndexOf { it.role == "system" }
+                if (systemMsgIndex != -1) {
+                    def systemMsg = messages[systemMsgIndex]
+                    messages[systemMsgIndex] = new Message(
+                        role: "system",
+                        content: systemMsg.content + "\n\nStylistic Directive: ${prefix}"
+                    )
+                } else {
+                    // Fallback: Add a system message if none exists
+                    messages.add(0, new Message(role: "system", content: "Stylistic Directive: ${prefix}"))
+                }
+            } else {
+                // Legacy suture for non-thinking models (Assistant pre-fill)
+                messages << new Message(role: "assistant", content: prefix)
+            }
+        }
+
+        // Transform Message objects to maps the API expects
+        def apiMessages = messages.collect { msg ->
+            def m = [
+                role: msg.role,
+                content: msg.content ?: ""
+            ]
+            if (msg.tool_calls) {
+                m.tool_calls = msg.tool_calls
+            }
+            if (msg.tool_call_id) {
+                m.tool_call_id = msg.tool_call_id
+            }
+            return m
         }
 
         def postData = [
             model: type.modelId,
-            messages: messages,
+            messages: apiMessages,
             stream: true,
             think: type.supportsThinking,
             options: [

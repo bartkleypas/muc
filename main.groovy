@@ -14,7 +14,7 @@ import org.kleypas.muc.illustrator.ImageType
 
 Cli cli = new Cli()
 def options = cli.parse(args)
-def version = "1.3-majel"
+def version = "1.4-george"
 
 Logger.info "Welcome to the Muc. Starting execution loop."
 
@@ -55,7 +55,7 @@ if (options.image) {
     def prompt = illustrator.getComfyUiJson(input)
 
     def recipt = illustrator.generateImage(prompt)
-    println "## Recipt of image generation:\n${recipt}"
+    println "## Recipt of background image generation:\n${recipt}"
 }
 
 /*

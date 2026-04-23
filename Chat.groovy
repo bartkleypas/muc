@@ -222,7 +222,7 @@ class Chat {
 
         StringBuilder fullOutput = new StringBuilder()
         // Pass the partner's inventory so the model knows which tools are available
-        model.streamResponse(context, partner.inventory) { token ->
+        model.streamResponse(context, partner.inventory, faderPrefix) { token ->
             bridge.printToken(token)
             fullOutput.append(token)
         }
@@ -234,7 +234,8 @@ class Chat {
             author: partner.name,
             content: text,
             parentId: userMsg.messageId,
-            vibe: userMsg.vibe
+            vibe: userMsg.vibe,
+            tool_calls: model.toolCall
         )
         logManager.appendEntry(assistantMsg)
 
@@ -249,7 +250,7 @@ class Chat {
             if (toolItem) {
                 // 3. Execute the tool logic
                 toolItem.metadata.action = action
-                partner.inventory.executeToolLogic(toolItem)
+                partner.inventory.useItem(toolItem)
                 assert toolItem.metadata.result
 
                 // 4. Create the 'tool' role message with the result

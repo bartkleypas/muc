@@ -23,6 +23,7 @@ class Message {
     Boolean isCurrent = false
 
     String tool_call_id
+    List tool_calls
 
     Message(Map args = [:]) {
         this.vibe = args.vibe instanceof Resonance ? args.vibe : new Resonance()
@@ -46,7 +47,8 @@ class Message {
             'encrypted': encrypted,
             'content': content,
             'bookmark': bookmark,
-            'tool_call_id': tool_call_id
+            'tool_call_id': tool_call_id,
+            'tool_calls': tool_calls
         ]
     }
 }

@@ -67,7 +67,7 @@ class Test {
         String historyFile = "Story/UnitTests.jsonl"
         this.logManager = new LogManager(historyFile)
         this.context = new Context().enableLogging(logManager)
-        this.model = new Model(ModelType.MEDIUM)
+        this.model = new Model(ModelType.BIG)
         this.vibe = new Resonance()
 
         // Delete existing unit test results to start fresh
@@ -79,7 +79,7 @@ class Test {
         // We start the train with this one, so make it global eh?
         this.systemMsg = context.addMessage(
             role: "system",
-            author: "George",
+            author: "System",
             content: promptText,
             vibe: this.vibe
         )
@@ -150,11 +150,7 @@ class Test {
 
     void narratorTest() {
         // Introduces George, Sets the location to his library, and injects the "vibes" of the room.
-        String modelInstructions = [
-            library.toJson(),
-            george.toJson(),
-            systemMsg.content
-        ].join('\n---\n')
+        String modelInstructions = systemMsg.content
 
         this.context.messages[0].content = modelInstructions
 
@@ -333,7 +329,8 @@ class Test {
             author: george.name,
             content: output,
             parentId: userMsg.messageId,
-            vibe: this.vibe
+            vibe: this.vibe,
+            tool_calls: model.toolCall
         )
         logManager.appendEntry(modelMsg)
 
@@ -347,7 +344,7 @@ class Test {
         Item botTerm = george.inventory.items["terminal"]?.first()
         assert botTerm
         botTerm.metadata.action = action
-        george.inventory.executeToolLogic(botTerm)
+        george.inventory.useItem(botTerm)
         assert botTerm.metadata.result
 
         Message toolTurn = context.addMessage(
@@ -412,7 +409,8 @@ class Test {
             author: george.name,
             content: output,
             parentId: userMsg.messageId,
-            vibe: this.vibe
+            vibe: this.vibe,
+            tool_calls: model.toolCall
         )
         logManager.appendEntry(modelMsg)
 
@@ -426,7 +424,7 @@ class Test {
         Item botTerm = george.inventory.items["groovy_runner"]?.first()
         assert botTerm
         botTerm.metadata.action = action
-        george.inventory.executeToolLogic(botTerm)
+        george.inventory.useItem(botTerm)
         assert botTerm.metadata.result
 
         Message toolTurn = context.addMessage(

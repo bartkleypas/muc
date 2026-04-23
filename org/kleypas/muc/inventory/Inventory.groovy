@@ -31,28 +31,10 @@ class Inventory {
     * for all Items with ItemType.TOOL in this inventory.
     */
     List<Map> getToolInstructions() {
-        List<Map> toolDefinitions = items.values().flatten()
+        items.values().flatten()
             .findAll { it.type == ItemType.TOOL }
-            .collect { item ->
-            [
-                type: "function",
-                function: [
-                    name: item.name.toLowerCase().replaceAll(/[^a-z0-0_]/, "_"),
-                    description: item.description,
-                    parameters: [
-                        type: "object",
-                        properties: [
-                            action: [
-                                type: "string",
-                                description: "The specific action/instructions for ${item.name}, sent as a shell command."
-                            ]
-                        ],
-                        required: ["action"]
-                    ]
-                ]
-            ]
-        }
-        return toolDefinitions
+            .collect { ToolKit.createTool(it)?.getDefinition() }
+            .findAll { it != null }
     }
 
     /**
@@ -104,8 +86,7 @@ class Inventory {
                 handleConsumable(item)
                 break
             case ItemType.TOOL:
-                return executeToolLogic(item)
-                break
+                return ToolKit.createTool(item)?.execute()
             default:
                 println "You brandish the ${item.name} meaningfully."
         }
@@ -117,53 +98,6 @@ class Inventory {
             return
         }
         item.stack--
-    }
-
-    String executeToolLogic(Item item) {
-
-        List ALLOWED_BINARIES = ['ls', 'cat', 'grep', 'find', 'groovy', 'git', 'date']
-        List FORBIDDEN_STRINGS = [';', '&', '|', '>', '<', '`', '$', '..']
-
-        if (!item.metadata.get("action")?.trim()) {
-            throw new RuntimeException("This tool is broken; no action in the metadata, boss.")
-        }
-
-        String action = item.metadata.get("action")?.trim()
-        println "Character is activating \"${item.name}\", trying to do \"${action}\" action..."
-
-        if (FORBIDDEN_STRINGS.any { action.contains(it) }) {
-            throw new RuntimeException("FATAL: Potential breach of trust detected.")
-        }
-
-        def parts = action.trim().split(/\s+/)
-        def baseCommand = parts[0]
-
-        if (!ALLOWED_BINARIES.contains(baseCommand)) {
-            return "Error: The Scriptorium forbids the use of '${baseCommand}'."
-        }
-
-        def stdout = new StringBuilder()
-        try {
-            ProcessBuilder pb = new ProcessBuilder("/bin/sh", "-c", action)
-            pb.redirectErrorStream(true)
-
-            Process proc = pb.start()
-
-            proc.inputStream.eachLine { line ->
-                stdout.append(line).append("\n")
-            }
-
-            proc.waitFor()
-            def finalOutput = stdout.toString().trim()
-
-            item.metadata.result = finalOutput.isEmpty() ? "[No Output]" : finalOutput
-
-            return finalOutput.isEmpty() ? "[Success - No Output]" : finalOutput
-        } catch (Exception e) {
-            def errorMsg = "System Error during tool execution: ${e.message}"
-            item.metadata.result = errorMsg
-            return errorMsg
-        }
     }
 
     /**
