@@ -35,7 +35,8 @@ class Model {
             think: type.supportsThinking,
             options: [
                 temperature: this.temperature,
-                num_ctx: 131072 // Bumping the 4k ceiling for the Strix Halo
+                num_ctx: 32768, // Bumping the 4k ceiling for the Strix Halo
+                num_predict: 8192
             ]
         ]
 
@@ -66,7 +67,7 @@ class Model {
 
                     def data = new JsonSlurper().parseText(line)
                     if (data.message?.thinking) {
-                        // onThinkingToken() // Noisy, and needs special attention
+                        // print(data.message?.thinking) // Noisy, and needs special attention
                     }
 
                     if (data.message?.content) {

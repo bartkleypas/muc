@@ -143,7 +143,7 @@ class Test {
         Item imgGenerator = new Item(
             name: "groovy_runner",
             type: ItemType.TOOL,
-            description: "Use `groovy main.groovy --image \"\$description\"` to generate an image, includeing the groovy runtime and main.groovy entry point. Use high fidelity SDXL tailored description and vocabulary."
+            description: "A command to execute to generate an image. Command is `groovy main.groovy --image \"\$description\"`."
         )
         this.george.inventory.addItem(imgGenerator)
     }
@@ -175,8 +175,6 @@ class Test {
             logManager.appendEntry(userMsg)
 
             String vibePrefix = vibe.toPrefix()
-
-            println vibePrefix
 
             // Generate and Log
             StringBuilder outputBuilder = new StringBuilder()
@@ -306,7 +304,7 @@ class Test {
         this.context.messages[0].content = "${systemMsg.content}"
         logger.info("## Running Tool use tests")
 
-        String input = "George, would you please read the projects LICENSE file, and tell me your thoughts on being its resident AI persona."
+        String input = "George, would you please read the `LICENSE` file?"
         logger.info("### User says:\n${input}")
 
         Message lastMsg = context.messages.last()
