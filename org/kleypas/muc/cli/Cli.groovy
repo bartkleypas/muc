@@ -50,7 +50,7 @@ public class Cli {
             b(longOpt: 'build', 'Build the project (A non-mandate mock)')
             t(longOpt: 'test', 'Run integration tests')
             j(longOpt: 'json', 'Enable JSON output format')
-            i(longOpt: 'image', 'Activate image generation mode')
+            i(longOpt: 'image', argName: 'str', args: 1, optionalArg: true, 'Activate image generation mode')
             c(longOpt: 'chat', argName: 'str', args: 1, optionalArg: true, 'Start a direct chat interface')
             v(longOpt: 'verbose', 'Enable verbose (INFO) logging')
             d(longOpt: 'debug', 'Enable debug logging')

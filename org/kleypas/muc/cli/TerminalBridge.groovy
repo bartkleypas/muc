@@ -27,23 +27,21 @@ class TerminalBridge implements AutoCloseable {
      * Draws the "Mainframe Heuristic" signature and initial header.
      */
     void drawSignature(Map stats) {
-        String version = "v1.3-majel"
+        String version = "v1.4-george"
         String engine  = "GROOVY-DAG-ENGINE"
 
         def msgCount = stats.totalMessages ?: 0
         def branchCount = stats.branchCount ?: 0
         def lastLeaf = stats.lastJumpId ?: "UNKNOWN"
         
-        // Cyan for the ship and the telemetry
         terminal.writer().println("""
-\u001B[36m   __  _//_  __  \u001B[36m[ ${engine} | ${version} ]
-\u001B[36m  / _\\/_--_\\/_ \\ \u001B[34m[ MESSAGES: ${msgCount} | BRANCHES: ${branchCount} ]
-\u001B[36m  \\__/[_||_]\\__/ \u001B[34m[ COORDINATES: ${lastLeaf} ]
-\u001B[33m   --  '--'  --
+\u001B[36m  ,-.  \u001B[0m-----< Welcome to the Scriptorium, Traveler >
+\u001B[36m (O\u001B[33m,\u001B[36mO)\u001B[0m/     \u001B[36m[ ${engine} | ${version} ]
+\u001B[36m {###}      \u001B[34m[ MESSAGES: ${msgCount} | BRANCHES: ${branchCount} ]
+\u001B[33m--"-"-      \u001B[34m[ LAST_LEAF: ${lastLeaf} ]\u001B[0m
 
-\u001B[1;32m[SYSTEM]\u001B[0m: TerminalBridge online. Type /bye or q to quit, and /help for other commands available.\u001B[0m
+\u001B[1;32m[SYSTEM]\u001B[0m: Type /bye, /q, or /quit to quit, and /help for other commands available.\u001B[0m
 """)
-
         terminal.flush()
     }
 
