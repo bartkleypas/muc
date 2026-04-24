@@ -67,7 +67,7 @@ class Test {
         String historyFile = "Story/UnitTests.jsonl"
         this.logManager = new LogManager(historyFile)
         this.context = new Context().enableLogging(logManager)
-        this.model = new Model(ModelType.BIG)
+        this.model = new Model(ModelType.MEDIUM)
         this.vibe = new Resonance()
 
         // Delete existing unit test results to start fresh
@@ -149,10 +149,6 @@ class Test {
     }
 
     void narratorTest() {
-        // Introduces George, Sets the location to his library, and injects the "vibes" of the room.
-        String modelInstructions = systemMsg.content
-
-        this.context.messages[0].content = modelInstructions
 
         try {
             logger.info("## Running 'Default' Handshake Test")
@@ -455,22 +451,4 @@ class Test {
         )
         logManager.appendEntry(modelMsg)
     }
-
-    /**
-    void illustratorTest() {
-        logger.info("## Running Illustrator tests")
-
-        Message lastMessage = this.context.messages.last()
-        assert lastMessage.content.contains("<IMAGE_DESC>")
-
-        Illustrator canvas = new Illustrator()
-        canvas.style = ImageType.LANDSCAPE
-        canvas.title = "Illustration"
-        def imageDesc = new TagParser().extractString(lastMessage.content, "IMAGE_DESC")
-        def comfyJson = canvas.getComfyUiJson(imageDesc)
-
-        def img = canvas.generateImage(comfyJson)
-        logger.info("## Image generation complete:\n${img}")
-    }
-    */
 }
