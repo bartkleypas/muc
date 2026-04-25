@@ -133,12 +133,6 @@ class CommandProcessor {
             target.bookmark = label
             logManager.updateEntry(target)
             bridge.terminal.writer().println("\u001B[35m## Timeline marked: \"${label}\"\u001B[0m")
-
-            String imagePrompt = TagParser.extractString(target.content, "IMAGE_DESC")
-            if (imagePrompt) {
-                new File("Story/VisionQueue.txt") << "${target.messageId}|${imagePrompt}\n"
-                bridge.terminal.writer().println("\u001B[34m## Image queued for later rendering.\u001B[0m\n")
-            }
         }
     }
 
@@ -203,7 +197,7 @@ class CommandProcessor {
 
     private void handleExportAll(String input) {
         String[] parts = input.split(" ")
-        String fileName = parts.size() > 1 ? parts[1] : "Majel.jsonl"
+        String fileName = parts.size() > 1 ? parts[1] : "Export.jsonl"
         String fullPath = "Exports/${fileName}"
 
         // 1. Wipe the file so we start fresh for this batch
