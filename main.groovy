@@ -55,7 +55,7 @@ if (options.image) {
     def prompt = illustrator.getComfyUiJson(input)
 
     def recipt = illustrator.generateImage(prompt)
-    println "## Recipt of background image generation:\n${recipt}"
+    println "## Recipt of background image generation task:\n${recipt}"
 }
 
 /*

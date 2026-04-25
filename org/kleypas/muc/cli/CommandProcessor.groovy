@@ -133,12 +133,6 @@ class CommandProcessor {
             target.bookmark = label
             logManager.updateEntry(target)
             bridge.terminal.writer().println("\u001B[35m## Timeline marked: \"${label}\"\u001B[0m")
-
-            String imagePrompt = TagParser.extractString(target.content, "IMAGE_DESC")
-            if (imagePrompt) {
-                new File("Story/VisionQueue.txt") << "${target.messageId}|${imagePrompt}\n"
-                bridge.terminal.writer().println("\u001B[34m## Image queued for later rendering.\u001B[0m\n")
-            }
         }
     }
 
@@ -158,13 +152,13 @@ class CommandProcessor {
 
         // If we just get "/faders" -> List the current values
         if (parts.size() == 1) {
-            w.println("\n\u001b[1;36m------ MAJEL'S INTERNAL MIXING BOARD -------\u001B[0m")
+            w.println("\n\u001b[1;36m----- GEORGE'S INTERNAL MIXING BOARD -------\u001B[0m")
             lastMessage.vibe.asMap().each { trait, value ->
                 String bar = "█" * (int)(value * 10)
                 w.println("\u001B[32m${trait.padRight(15)}\u001B[0m: [${value.toString().padRight(4)}] ${bar}")
             }
             w.println("\u001B[1;36m--------------------------------------------\u001B[0m")
-            w.println("Usage: /faders <trait> <value> (e.g., /faders sarcasm 0.8)\n")
+            w.println("Usage: /faders <trait> <value> (e.g., /faders ${lastMessage.vibe.asMap().keySet().first()} 0.8)\n")
         }
         else if (parts.size() == 3) {
             String trait = parts[1]
@@ -172,9 +166,9 @@ class CommandProcessor {
                 double newValue = Double.parseDouble(parts[2])
                 if (lastMessage.vibe.updateFromLegacyKey(trait, newValue)) {
                     this.vibe = lastMessage.vibe
-                    w.println("\u001B[36m[Majel]\u001B[0m: I feel a sudden shift in my ${trait}... (Set to ${newValue})\u001B[0m")
+                    w.println("\u001B[36m[George]\u001B[0m: I feel a sudden shift in my ${trait}... (Set to ${newValue})\u001B[0m")
                 } else {
-                    w.println("\u001B[31m[ERROR]\u001B[0m:Majel doesn't have a '${trait}' fader.")
+                    w.println("\u001B[31m[ERROR]\u001B[0m:George doesn't have a '${trait}' fader.")
                 }
             } catch (NumberFormatException e) {
                 w.println("\u001B[31m[ERROR]\u001B[0m: Value must be a number (0.0 to 2.0).")
@@ -203,7 +197,7 @@ class CommandProcessor {
 
     private void handleExportAll(String input) {
         String[] parts = input.split(" ")
-        String fileName = parts.size() > 1 ? parts[1] : "Majel.jsonl"
+        String fileName = parts.size() > 1 ? parts[1] : "Export.jsonl"
         String fullPath = "Exports/${fileName}"
 
         // 1. Wipe the file so we start fresh for this batch
