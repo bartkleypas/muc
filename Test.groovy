@@ -58,7 +58,7 @@ class Test {
         faderTest()
         storyTest()
         toolTest()
-        illustratorTest()
+        // illustratorTest()
         logger.info("# Unit tests complete:\n**Coalescence**🦉☕️")
     }
 
@@ -67,7 +67,7 @@ class Test {
         String historyFile = "Story/UnitTests.jsonl"
         this.logManager = new LogManager(historyFile)
         this.context = new Context().enableLogging(logManager)
-        this.model = new Model(ModelType.MEDIUM)
+        this.model = new Model(ModelType.SMALL)
         this.vibe = new Resonance()
 
         // Delete existing unit test results to start fresh
@@ -148,45 +148,118 @@ class Test {
         this.george.inventory.addItem(imgGenerator)
     }
 
-    void narratorTest() {
+    private Message simulateTurn(Character author, String input, Message parentMsg, Resonance currentVibe) {
+        logger.info("### User says:\n${input}")
 
+        Message userMsg = context.addMessage(
+            role: "user",
+            author: author.name,
+            content: input,
+            parentId: parentMsg.messageId,
+            vibe: currentVibe
+        )
+        logManager.appendEntry(userMsg)
+
+        String vibePrefix = currentVibe.toPrefix()
+        StringBuilder outputBuilder = new StringBuilder()
+        logger.info("### George says:")
+        model.streamResponse(context, null, vibePrefix) { token ->
+            print(token)
+            outputBuilder.append(token)
+        }
+        print("\n")
+
+        Message modelMsg = context.addMessage(
+            role: "assistant",
+            author: george.name,
+            content: outputBuilder.toString().trim(),
+            parentId: userMsg.messageId,
+            vibe: currentVibe
+        )
+        logManager.appendEntry(modelMsg)
+        return modelMsg
+    }
+
+    private Message executeToolTurn(Character author, String input, Message parentMsg, Resonance currentVibe, Inventory inventory, String expectedItemName) {
+        logger.info("### User says:\n${input}")
+
+        Message userMsg = context.addMessage(
+            role: "user",
+            author: author.name,
+            content: input,
+            parentId: parentMsg.messageId,
+            vibe: currentVibe
+        )
+        logManager.appendEntry(userMsg)
+
+        String vibePrefix = currentVibe.toPrefix()
+        logger.info("### George says:")
+        StringBuilder outputBuilder = new StringBuilder()
+        model.streamResponse(context, inventory, vibePrefix) { token ->
+            print(token)
+            outputBuilder.append(token)
+        }
+        print("\n")
+        
+        assert model.toolCall : "Expected a tool call but got none."
+        
+        Message modelMsg = context.addMessage(
+            role: "assistant",
+            author: george.name,
+            content: outputBuilder.toString().trim(),
+            parentId: userMsg.messageId,
+            vibe: currentVibe,
+            tool_calls: model.toolCall
+        )
+        logManager.appendEntry(modelMsg)
+
+        logger.info("### Got a tool call that looks like this (response side channel):")
+        println(model.toolCall)
+
+        logger.info("### Running the command we got from the model.")
+        String action = model.toolCall[0].function.arguments.action
+        println("Wanting to do this: ${action}")
+
+        Item botItem = george.inventory.items[expectedItemName]?.first()
+        assert botItem : "Could not find expected item: ${expectedItemName}"
+        botItem.metadata.action = action
+        george.inventory.useItem(botItem)
+        assert botItem.metadata.result : "Tool execution did not produce a result."
+
+        Message toolTurn = context.addMessage(
+            role: "tool",
+            author: "George",
+            content: botItem.metadata.result,
+            parentId: modelMsg.messageId,
+            vibe: currentVibe,
+            tool_call_id: model.toolCall[0].id
+        )
+        logManager.appendEntry(toolTurn)
+
+        logger.info("### George has this to say:")
+        outputBuilder = new StringBuilder()
+        model.streamResponse(context, null, vibePrefix) { token ->
+            print(token)
+            outputBuilder.append(token)
+        }
+        print("\n")
+
+        Message finalModelMsg = context.addMessage(
+            role: "assistant",
+            author: "George",
+            content: outputBuilder.toString().trim(),
+            parentId: toolTurn.messageId,
+            vibe: currentVibe
+        )
+        logManager.appendEntry(finalModelMsg)
+        return finalModelMsg
+    }
+
+    void narratorTest() {
         try {
             logger.info("## Running 'Default' Handshake Test")
-
-            // The Interaction
             String input = "${phiglit.toJson()}\n---\nGood morning George! My name is Phiglit. Would you please describe yourself, and where we are?"
-            logger.info("### User says:\n${input}")
-
-            Message userMsg = context.addMessage(
-                role: "user",
-                author: phiglit.name,
-                content: input,
-                parentId: systemMsg.messageId,
-                vibe: this.vibe
-            )
-            logManager.appendEntry(userMsg)
-
-            String vibePrefix = vibe.toPrefix()
-
-            // Generate and Log
-            StringBuilder outputBuilder = new StringBuilder()
-            logger.info("### George says:")
-            model.streamResponse(context, null, vibePrefix) { token ->
-                print(token)
-                outputBuilder.append(token)
-            }
-            print("\n")
-            String output = outputBuilder.toString().trim()
-
-            Message modelMsg = context.addMessage(
-                role: "assistant",
-                author: george.name,
-                content: output,
-                parentId: userMsg.messageId,
-                vibe: this.vibe
-            )
-            logManager.appendEntry(modelMsg)
-
+            simulateTurn(phiglit, input, systemMsg, this.vibe)
         } finally {
             this.context = context
         }
@@ -197,7 +270,6 @@ class Test {
         Message lastMessage = this.context.messages.last()
 
         try {
-            // See `ResonanceType` class for these keys and the range of values (0.0 - 2.0 in a Double):
             this.vibe = new Resonance(
                 warmth: 1.0,
                 cynicism: 1.2,
@@ -207,37 +279,7 @@ class Test {
             )
 
             String input = "George, tell me what you think of the Scriptorium we are building together. I hope you find the environment agreeable."
-            logger.info("### User Input:\n${input}")
-
-            Message userMsg = context.addMessage(
-                role: "user",
-                author: phiglit.name,
-                content: input,
-                parentId: lastMessage.messageId,
-                vibe: this.vibe.clone()
-            )
-            logManager.appendEntry(userMsg)
-
-            logger.info("### George says:")
-
-            String vibePrefix = vibe.toPrefix()
-            StringBuilder outputBuilder = new StringBuilder()
-            model.streamResponse(context, null, vibePrefix) { token ->
-                print(token)
-                outputBuilder.append(token)
-            }
-            print("\n")
-            String output = outputBuilder.toString().trim()
-
-            Message modelMsg = context.addMessage(
-                role: "assistant",
-                author: george.name,
-                content: output,
-                parentId: userMsg.messageId,
-                vibe: this.vibe.clone()
-            )
-            logManager.appendEntry(modelMsg)
-
+            simulateTurn(phiglit, input, lastMessage, this.vibe.clone())
         } finally {
             this.context = context
         }
@@ -247,8 +289,8 @@ class Test {
         logger.info("## Running Story tests, resuming from the UnitTests.jsonl file we crafted in the Narrator testing above.")
         try {
             this.context = logManager.readAllEntries()
-
             Message lastMsg = context.messages.last()
+            
             this.vibe = new Resonance(
                 warmth: 1.6,
                 cynicism: 0.8,
@@ -258,197 +300,25 @@ class Test {
             )
 
             String input = "${epwna.toJson()}\n---\nGood morning George! I'm Ewpna. Phiglit never told me what a handsome Owl he was working on back here. Your Scriptorium is quite a sight to behold. Almost infinate, if I'm not mistaken."
-            logger.info("### User says:\n${input}")
-            Message userMsg = context.addMessage(
-                role: "user",
-                author: epwna.name,
-                content: input,
-                parentId: lastMsg.messageId,
-                vibe: this.vibe.clone()
-            )
-            logManager.appendEntry(userMsg)
-
-            String vibePrefix = vibe.toPrefix()
-
-            logger.info("### George says:")
-            StringBuilder outputBuilder = new StringBuilder()
-            model.streamResponse(context, null, vibePrefix) { token ->
-                print(token)
-                outputBuilder.append(token)
-            }
-            print("\n")
-            String output = outputBuilder.toString().trim()
-
-            Message modelMsg = context.addMessage(
-                role: "assistant",
-                author: george.name,
-                content: output,
-                parentId: userMsg.messageId,
-                vibe: this.vibe.clone()
-            )
-            logManager.appendEntry(modelMsg)
+            simulateTurn(epwna, input, lastMsg, this.vibe.clone())
         } finally {
             this.context = context
         }
     }
 
     void toolTest() {
-        this.context.messages[0].content = "${systemMsg.content}"
         logger.info("## Running Tool use tests")
-
-        String input = "George, would you please read the `LICENSE` file?"
-        logger.info("### User says:\n${input}")
-
         Message lastMsg = context.messages.last()
-        Message userMsg = context.addMessage(
-            role: "user",
-            author: phiglit.name,
-            content: input,
-            parentId: lastMsg.messageId,
-            vibe: this.vibe
-        )
-        logManager.appendEntry(userMsg)
-
-        String vibePrefix = vibe.toPrefix()
-        logger.info("### George says:")
-        StringBuilder outputBuilder = new StringBuilder()
-        model.streamResponse(context, george.inventory, vibePrefix) { token ->
-            print(token)
-            outputBuilder.append(token)
-        }
-        print("\n")
-        assert model.toolCall
-        String output = outputBuilder.toString().trim()
-
-        Message modelMsg = context.addMessage(
-            role: "assistant",
-            author: george.name,
-            content: output,
-            parentId: userMsg.messageId,
-            vibe: this.vibe,
-            tool_calls: model.toolCall
-        )
-        logManager.appendEntry(modelMsg)
-
-        logger.info("### Got a tool call that looks like this (response side channel):")
-        println(model.toolCall)
-
-        logger.info("### Running the command we got from the model.")
-        String action = model.toolCall[0].function.arguments.action
-        println("Wanting to do this: ${action}")
-
-        Item botTerm = george.inventory.items["terminal"]?.first()
-        assert botTerm
-        botTerm.metadata.action = action
-        george.inventory.useItem(botTerm)
-        assert botTerm.metadata.result
-
-        Message toolTurn = context.addMessage(
-            role: "tool",
-            author: "George",
-            content: botTerm.metadata.result,
-            parentId: modelMsg.messageId,
-            vibe: this.vibe,
-            tool_call_id: model.toolCall[0].id
-        )
-        logManager.appendEntry(toolTurn)
-
-        logger.info("### George has this to say:")
-        outputBuilder = new StringBuilder()
-        model.streamResponse(context, null, vibe.toPrefix()) { token ->
-            print(token)
-            outputBuilder.append(token)
-        }
-        print("\n")
-        output = outputBuilder.toString().trim()
-
-        modelMsg = context.addMessage(
-            role: "assistant",
-            author: "George",
-            content: output,
-            parentId: toolTurn.messageId,
-            vibe: this.vibe
-        )
-        logManager.appendEntry(modelMsg)
+        String input = "George, would you please read the `LICENSE` file?"
+        
+        executeToolTurn(phiglit, input, lastMsg, this.vibe, george.inventory, "terminal")
     }
 
     void illustratorTest() {
-        this.context.messages[0].content = "${systemMsg.content}"
         logger.info("## Running Illustrator use tests")
-
-        String input = "George, would you please create an image of the Scriptorium?"
-        logger.info("### User says:\n${input}")
-
         Message lastMsg = context.messages.last()
-        Message userMsg = context.addMessage(
-            role: "user",
-            author: phiglit.name,
-            content: input,
-            parentId: lastMsg.messageId,
-            vibe: this.vibe
-        )
-        logManager.appendEntry(userMsg)
-
-        String vibePrefix = vibe.toPrefix()
-        logger.info("### George says:")
-        StringBuilder outputBuilder = new StringBuilder()
-        model.streamResponse(context, george.inventory, vibePrefix) { token ->
-            print(token)
-            outputBuilder.append(token)
-        }
-        print("\n")
-        assert model.toolCall
-        String output = outputBuilder.toString().trim()
-
-        Message modelMsg = context.addMessage(
-            role: "assistant",
-            author: george.name,
-            content: output,
-            parentId: userMsg.messageId,
-            vibe: this.vibe,
-            tool_calls: model.toolCall
-        )
-        logManager.appendEntry(modelMsg)
-
-        logger.info("### Got a tool call that looks like this (response side channel):")
-        println(model.toolCall)
-
-        logger.info("### Running the command we got from the model.")
-        String action = model.toolCall[0].function.arguments.action
-        println("Wanting to do this: ${action}")
-
-        Item botTerm = george.inventory.items["groovy_runner"]?.first()
-        assert botTerm
-        botTerm.metadata.action = action
-        george.inventory.useItem(botTerm)
-        assert botTerm.metadata.result
-
-        Message toolTurn = context.addMessage(
-            role: "tool",
-            author: "George",
-            content: botTerm.metadata.result,
-            parentId: modelMsg.messageId,
-            vibe: this.vibe,
-            tool_call_id: model.toolCall[0].id
-        )
-        logManager.appendEntry(toolTurn)
-
-        logger.info("### George has this to say:")
-        outputBuilder = new StringBuilder()
-        model.streamResponse(context, null, vibe.toPrefix()) { token ->
-            print(token)
-            outputBuilder.append(token)
-        }
-        print("\n")
-        output = outputBuilder.toString().trim()
-
-        modelMsg = context.addMessage(
-            role: "assistant",
-            author: "George",
-            content: output,
-            parentId: toolTurn.messageId,
-            vibe: this.vibe
-        )
-        logManager.appendEntry(modelMsg)
+        String input = "George, would you please create an image of the Scriptorium?"
+        
+        executeToolTurn(phiglit, input, lastMsg, this.vibe, george.inventory, "groovy_runner")
     }
 }

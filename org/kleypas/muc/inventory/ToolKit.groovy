@@ -110,6 +110,9 @@ class ToolKit {
         }
         // For now, all tools are ShellTools, but this factory can be extended
         // to return different Tool implementations based on item metadata or name.
+        if (item.metadata.get("tool_type") == "FILE_EDITOR") {
+            return new FileEditTool(item)
+        }
         return new ShellTool(item)
     }
 }
